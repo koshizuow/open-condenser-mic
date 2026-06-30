@@ -84,7 +84,7 @@ Refer to the NTE10/3 datasheet for wire colour identification before soldering.
 ### PCB
 - 2-layer, 36 × 93 mm, ENIG or HASL
 - All other components sourced from standard distributors; LCSC part numbers included in BOM
-- 4 × M2.5 mounting holes with GND pads for chassis bonding
+- 4 × M2.5 mounting holes with GND pads for chassis bonding — 28 mm horizontal span, 80 mm vertical span
 
 ## Software Requirements
 
