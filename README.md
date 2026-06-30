@@ -1,6 +1,6 @@
 # Op-Amp Transformer Condenser Microphone
 
-A compact, phantom-powered true condenser microphone with all SMD/THT components available from standard distributors.
+A code-driven open true condenser microphone. PCB layout, schematic, BOM, and CPL are all generated from Python scripts.
 
 ![Prototype](img/prototype.jpeg)
 
