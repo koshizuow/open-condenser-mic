@@ -1,0 +1,47 @@
+name: Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            kicad kicad-footprints kicad-symbols \
+            ngspice python3-numpy python3-matplotlib
+
+      - name: Python syntax check
+        run: |
+          python3 -m py_compile \
+            pcb/gen_project.py pcb/gen_schematic.py \
+            pcb/gen_pcb.py pcb/gen_bom.py sim/plot_all.py
+
+      - name: Generate KiCad files
+        env:
+          PYTHONPATH: /usr/lib/kicad/lib/python3/dist-packages
+        run: |
+          python3 pcb/gen_project.py
+          python3 pcb/gen_schematic.py
+          python3 pcb/gen_pcb.py
+          python3 pcb/gen_bom.py
+
+      - name: Run SPICE simulations
+        working-directory: sim
+        run: |
+          ngspice -b boost_dickson.sp
+          ngspice -b amp_ac.sp
+          ngspice -b amp_bias_compare.sp
+          ngspice -b amp_noise_opa1641.sp
+
+      - name: Generate plots
+        run: python3 sim/plot_all.py
