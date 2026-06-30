@@ -1,0 +1,43 @@
+# KiCad automatic backups
+*-backups/
+
+# KiCad generated outputs
+*.kicad_pcb
+*.kicad_sch
+*.kicad_pro
+*.kicad_prl
+*.kicad_dru
+fp-lib-table
+sym-lib-table
+
+# Gerber / drill exports
+*.gbr
+*.gtl
+*.gbl
+*.gts
+*.gbs
+*.gto
+*.gbo
+*.gtp
+*.gbp
+*.g2l
+*.g3l
+*.drl
+*.xln
+*.exc
+
+# BOM and CPL
+pcb/bom.csv
+pcb/cpl.csv
+
+# ngspice temp and output files
+sim/_tmp_*.sp
+*.dat
+*.raw
+
+# KiCad DRC / ERC reports
+*.rpt
+
+# Python
+__pycache__/
+*.pyc
