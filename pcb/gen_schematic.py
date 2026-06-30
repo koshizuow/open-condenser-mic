@@ -292,22 +292,17 @@ elements = []
 
 # ── POWER BLOCK ──────────────────────────────────────────────────────────────
 
-# J1: XLR phantom input  (Conn_01x02: pin1=PHANTOM+, pin2=GND)
-elements += component("Connector_Generic:Conn_01x02", "J1", "XLR_PHANTOM_IN",
-    20, 30, pins={"1": "PHANTOM", "2": "GND"},
-    footprint="Connector_Dsub:DSUB-9_Male_Horizontal_P2.77x2.84mm_EdgePinOffset4.94mm_Housed_MountingHolesOffset7.48mm")
-
-# R1: 6.8kΩ 0.1% phantom feed PIN2
+# R1: 6.8kΩ phantom feed from XLR pin 2 (XLR_HOT carries phantom +48V + audio hot)
 elements += component("Device:R", "R1", "6.8k 0.1%",
     45, 22.5,
     footprint="Resistor_SMD:R_0603_1608Metric",
-    pins={"1": "PHANTOM", "2": "V_OPA_RAW"})
+    pins={"1": "XLR_HOT", "2": "V_OPA_RAW"})
 
-# R2: 6.8kΩ 0.1% phantom feed PIN3
+# R2: 6.8kΩ phantom feed from XLR pin 3 (XLR_COLD carries phantom +48V + audio cold)
 elements += component("Device:R", "R2", "6.8k 0.1%",
     45, 37.5,
     footprint="Resistor_SMD:R_0603_1608Metric",
-    pins={"1": "PHANTOM", "2": "V_OPA_RAW"})
+    pins={"1": "XLR_COLD", "2": "V_OPA_RAW"})
 
 # U2: 78L24 SOT89  (MC78L05_SOT89 parent: OUT=pin1, GND=pin2, IN=pin3)
 elements += component("Regulator_Linear:L78L24_SOT89", "U2", "L78L24",
