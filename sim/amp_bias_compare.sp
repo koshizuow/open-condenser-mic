@@ -16,8 +16,8 @@ R5    NET_24V  NET_VMID  470k
 R6    NET_VMID  0         470k     ; V_MID = 12V
 C3    NET_VMID  0         10u      ; V_MID stiff (AC ground)
 
-* HV supply (phantom regulated ≈ 56V), AC grounded via C9
-Vhv   NET_HV  0  DC 56
+* HV supply (VBOOST ≈ 68V), AC grounded via C9
+Vhv   NET_HV  0  DC 68
 * C9 is implicit via Vhv being ideal voltage source
 
 * V_OPA (24V supply rail), AC ground reference for closed-loop
@@ -72,7 +72,7 @@ R_in_m  NET_VMID  VINV    2.2k
 * OUTPUT
 * ---------------------------------------------------------------------------
 R8   SIG_OUT     OPA_R8     100
-C6   OPA_R8      XFMR_IN    10u
+C6   OPA_R8      XFMR_IN    4.7u   ; C_DC on PCB
 
 X_XFMR  XFMR_IN  0  XLR_P2  XLR_P3  NTE10_3
 R_load   XLR_P2   XLR_P3  600

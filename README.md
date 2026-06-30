@@ -38,7 +38,7 @@ Charge pump settles to 67.97 V within ~1 ms. HV_FILT (LC-filtered polarization r
 
 ![Frequency response](img/freq_response.png)
 
-Behavioral model, gain normalized to 1 kHz. Flat within ±1 dB from ~200 Hz to ~20 kHz. High-pass rolloff from output coupling (C6 = 10 µF); high-frequency rolloff from op-amp GBW. Response above 20 kHz is outside the audio band.
+Behavioral model, gain normalized to 1 kHz. Flat within ±1 dB from ~200 Hz to ~20 kHz. High-pass rolloff from output DC block (C_DC = 4.7 µF) and R_GBIAS (94 MΩ) × capsule capacitance (55 pF); high-frequency rolloff from op-amp GBW. Response above 20 kHz is outside the audio band.
 
 ### Input-Referred Noise Spectrum (`amp_noise_opa1641.sp`)
 

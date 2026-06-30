@@ -38,14 +38,10 @@ Vhv   NET_HV  0  DC 68
 
 * ---------------------------------------------------------------------------
 * BEHAVIORAL OPA1641 — voltage noise + input current noise sources
-* Voltage noise: 5.1 nV/rtHz modeled as white noise resistor at IN+
-*   Req = V_noise^2 / (4kT) = (5.1e-9)^2 / (4 * 1.38e-23 * 300)
-*       = 26.01e-18 / 1.656e-20 = 1571 Ω (noise resistance equivalent)
-* Current noise: ~0.8 fA/rtHz at IN+ and IN-
-*   Req_in = I_noise^2 / (4kT) - tiny but we model via high-R shunt
+* Voltage noise: 2.5 nV/rtHz → Req = (2.5e-9)^2/(4kT) = 6.25e-18/1.656e-20 ≈ 377Ω
+* Current noise: ~0.8 fA/rtHz at IN+ and IN- (negligible vs resistor noise)
 * ---------------------------------------------------------------------------
 
-* Voltage noise: 2.5 nV/rtHz → Req = (2.5e-9)^2/(4kT) = 6.25e-18/1.656e-20 ≈ 377Ω
 R_vn  PIN3_NODE  PIN3_VN  377
 
 * Current noise at IN+ (0.8fA/rtHz modeled as 320GΩ shunt)
