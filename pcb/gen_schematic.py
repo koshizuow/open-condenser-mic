@@ -344,13 +344,13 @@ elements += component("Device:C", "C4", "10u 25V X5R",
 elements += component("Device:C_Polarized", "C5", "10u 25V",
     78, 45,
     footprint="Capacitor_SMD:CP_Elec_4x5.4",
-    pins={"1": "V_MID", "2": "GND"})
+    pins={"1": "GND", "2": "V_MID"})
 
 # C6: 10µF SMD electrolytic VCC bypass
 elements += component("Device:C_Polarized", "C6", "10u 25V",
     78, 62.5,
     footprint="Capacitor_SMD:CP_Elec_4x5.4",
-    pins={"1": "V_OPA", "2": "GND"})
+    pins={"1": "GND", "2": "V_OPA"})
 
 # R_ZEN: 6.8kΩ series resistor for Z_OSC
 elements += component("Device:R", "R_ZEN1", "6.8k",
