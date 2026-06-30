@@ -84,4 +84,10 @@ C5    NET_24V  0  10u  IC=24
 * ---------------------------------------------------------------------------
 .noise V(XLR_DIFF) Vcap dec 50 10 20k
 
+.control
+run
+setplot noise1
+print inoise_spectrum onoise_spectrum
+.endc
+
 .end

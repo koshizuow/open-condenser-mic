@@ -598,7 +598,7 @@ def main():
     with open(out_path, "w") as f:
         f.write(schematic)
     print(f"Written: {out_path}")
-    print(f"Components: {len([e for e in elements if isinstance(e, list) and e and e[0].startswith('(symbol')])} instances")
+    print(f"Components: {schematic.count('(lib_id ')} instances")
 
 
 if __name__ == "__main__":
