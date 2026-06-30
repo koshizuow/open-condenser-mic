@@ -35,6 +35,14 @@ jobs:
           python3 pcb/gen_pcb.py
           python3 pcb/gen_bom.py
 
+      - name: Verify KiCad outputs exist
+        run: |
+          ls pcb/open-condenser-mic.kicad_pro
+          ls pcb/open-condenser-mic.kicad_pcb
+          ls pcb/open-condenser-mic.kicad_sch
+          ls pcb/bom.csv
+          ls pcb/cpl.csv
+
       - name: Run SPICE simulations
         working-directory: sim
         run: |
@@ -45,3 +53,9 @@ jobs:
 
       - name: Generate plots
         run: python3 sim/plot_all.py
+
+      - name: Verify plot outputs exist
+        run: |
+          ls img/hv_startup.png
+          ls img/noise_spectrum.png
+          ls img/freq_response.png
