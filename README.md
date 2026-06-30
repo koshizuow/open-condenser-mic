@@ -48,7 +48,7 @@ SPICE input-referred noise, computed by dividing total output noise by the signa
 
 ## Measured Performance
 
-Tested in a 2.77-hour vocal live stream (singing + speech), signal chain:  
+Tested in a 2.77-hour vocal live stream (singing + speech) in an untreated room with ambient road noise. Signal chain:  
 Microphone → SSL SiX (gain ~1 o'clock, compressor) → Yamaha AG06 (XLR in, −29 dB pad) → streaming software.
 
 | Parameter | Measured |
@@ -59,6 +59,8 @@ Microphone → SSL SiX (gain ~1 o'clock, compressor) → Yamaha AG06 (XLR in, �
 | Noise floor (quiet passages) | −∞ (digital silence) |
 | RF interference / hum | None observed |
 | Session duration | 2.77 h, no anomalies |
+
+The noise floor registers as digital silence in quiet passages despite the untreated environment, indicating the design has sufficient self-noise margin for typical home streaming conditions.
 
 **Reference comparison:** Same signal chain, gain one notch higher (~2 o'clock), Sound Skulptor SK-49 (K47-style, transformer-coupled): −20.9 LUFS integrated. The OPA1641 mic achieves higher output sensitivity with less preamp gain.
 
