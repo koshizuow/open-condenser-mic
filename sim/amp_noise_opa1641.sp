@@ -1,10 +1,10 @@
 * OPA1641 Mic Preamp — Noise Analysis
 * Behavioral op-amp noise model for OPA1641:
-*   Voltage noise: 5.1 nV/rtHz (vs OPA134 8 nV/rtHz)
-*   Current noise: ~0.8 fA/rtHz (JFET input, similar to OPA134)
+*   Voltage noise: 2.5 nV/rtHz (OPA1641 datasheet)
+*   Current noise: ~0.8 fA/rtHz (JFET input, negligible vs resistor noise)
 *   GBW: 11 MHz (behavioral single-pole at 110Hz -> GBW=11MHz with gain 100k)
-* Also includes: 1GΩ thermal, R3 10MΩ thermal, R4/R7 thermal
-* Capsule Cc=55pF shapes the 1GΩ noise at low freq
+* Input network: R_GBIAS=94MΩ (R_GBIAS1+R_GBIAS2 in series) dominates noise floor
+*   R_BIAS1=100MΩ bootstrapped (VPLUS follows output) -> AC-invisible, omitted
 * ---------------------------------------------------------------------------
 .title OPA1641 Mic Noise Analysis
 
@@ -31,10 +31,10 @@ Cc    CAP_BOT  0  55p
 Rconn CAP_HOT  PIN3_NODE  1
 
 * High-Z bias network
-R3    NET_HV  PIN3_NODE  10Meg   ; connects 56V to pin3 via R3
-R_1G  NET_VBIAS  PIN3_NODE  1G
-* Treat NET_HV as AC GND (decoupled by C_filt 100nF in real circuit)
-Vhv   NET_HV  0  DC 56
+* R_GBIAS = R_GBIAS1 + R_GBIAS2 = 47M + 47M = 94MΩ to HV rail (AC ground, decoupled)
+* R_BIAS1 = 100MΩ bootstrapped (VPLUS follows output) -> AC-invisible, omitted
+R_GBIAS  NET_HV  PIN3_NODE  94Meg
+Vhv   NET_HV  0  DC 68
 
 * ---------------------------------------------------------------------------
 * BEHAVIORAL OPA1641 — voltage noise + input current noise sources
@@ -45,8 +45,8 @@ Vhv   NET_HV  0  DC 56
 *   Req_in = I_noise^2 / (4kT) - tiny but we model via high-R shunt
 * ---------------------------------------------------------------------------
 
-* Voltage noise: thermal noise of equivalent 1571Ω resistor
-R_vn  PIN3_NODE  PIN3_VN  1571
+* Voltage noise: 2.5 nV/rtHz → Req = (2.5e-9)^2/(4kT) = 6.25e-18/1.656e-20 ≈ 377Ω
+R_vn  PIN3_NODE  PIN3_VN  377
 
 * Current noise at IN+ (0.8fA/rtHz modeled as 320GΩ shunt)
 *   R_in_noise = 4kT / I_noise^2 = 4*1.38e-23*300 / (0.8e-15)^2 = 32e18 Ω
@@ -74,7 +74,7 @@ R7    NET_OPA_OUT  PIN2_NODE  130k
 * OUTPUT PATH
 * ---------------------------------------------------------------------------
 R8    NET_OPA_OUT  OPA_OUT_R8  100
-C6    OPA_OUT_R8  XFMR_PRI_IN  10u
+C6    OPA_OUT_R8  XFMR_PRI_IN  4.7u
 X_XFMR  XFMR_PRI_IN  0  XLR_P2  XLR_P3  NTE10_3
 R_load   XLR_P2  XLR_P3  600
 R_cm1  XLR_P2  0  10Meg
