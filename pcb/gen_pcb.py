@@ -934,8 +934,8 @@ def main():
         fix_ref(board, old, new_text=new, x_mm=x, y_mm=5)
 
     # R_OSC1: footprint at 90° rotates silk vertical — force horizontal (angle=0).
-    # Place below component at (14,57.5): clear of via(15,55.49) and C10(18,59).
-    fix_ref(board, "R_OSC1", x_mm=14, y_mm=57.5, angle_deg=0)
+    # Place above component at (16,54): clears top pad (~y=55.5) and via(15,55.49).
+    fix_ref(board, "R_OSC1", x_mm=16, y_mm=54.0, angle_deg=0)
 
     # D1: default silk lands left of component; move right of body (SOT-23 right edge ~x=23.8).
     fix_ref(board, "D1", x_mm=25, y_mm=53)
@@ -955,6 +955,8 @@ def main():
 
     # DZ1: right silk line at x=32.94..33.06 — move label to x=35 to clear it
     fix_ref(board, "DZ1", x_mm=35, y_mm=65.5)
+    # Cres1: default ref is above body (y=65.3), overlaps DZ1 silk — move below body
+    fix_ref(board, "Cres1", x_mm=29, y_mm=69)
 
     # C4: rotated 90°, default ref near board left edge (x=2); move above top pad
     fix_ref(board, "C4", x_mm=4, y_mm=41)
