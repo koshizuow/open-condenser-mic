@@ -24,6 +24,12 @@ OUT = os.path.join(_SCRIPT_DIR, f"{_args.name}.kicad_sch")
 PROJECT = _args.name
 
 
+# ── Grid snap ─────────────────────────────────────────────────────────────────
+def _G(n):
+    """Snap coordinate to nearest 1.27 mm (50 mil) schematic grid point."""
+    return round(n / 1.27) * 1.27
+
+
 # ── UUID helpers ──────────────────────────────────────────────────────────────
 _uuid_counter = 0
 def new_uuid():
@@ -96,26 +102,26 @@ def lib_symbols_section():
 
 # ── Wire ──────────────────────────────────────────────────────────────────────
 def wire(x1, y1, x2, y2):
-    return (f'(wire (pts (xy {x1+OX:.2f} {y1+OY:.2f}) (xy {x2+OX:.2f} {y2+OY:.2f}))\n'
+    return (f'(wire (pts (xy {_G(x1+OX):.2f} {_G(y1+OY):.2f}) (xy {_G(x2+OX):.2f} {_G(y2+OY):.2f}))\n'
             f'  (stroke (width 0) (type default))\n'
             f'  (uuid "{new_uuid()}")\n)')
 
 
 # ── Local net label ───────────────────────────────────────────────────────────
 def label(net, x, y, angle=0):
-    return (f'(label "{net}" (at {x+OX:.2f} {y+OY:.2f} {angle})\n'
+    return (f'(label "{net}" (at {_G(x+OX):.2f} {_G(y+OY):.2f} {angle})\n'
             f'  (effects (font (size 1.27 1.27)) (justify left bottom))\n'
             f'  (uuid "{new_uuid()}")\n)')
 
 
 # ── No-connect ────────────────────────────────────────────────────────────────
 def no_connect(x, y):
-    return f'(no_connect (at {x+OX:.2f} {y+OY:.2f}) (uuid "{new_uuid()}"))'
+    return f'(no_connect (at {_G(x+OX):.2f} {_G(y+OY):.2f}) (uuid "{new_uuid()}"))'
 
 
 # ── Junction ──────────────────────────────────────────────────────────────────
 def junction(x, y):
-    return f'(junction (at {x+OX:.2f} {y+OY:.2f}) (diameter 0) (color 0 0 0 0) (uuid "{new_uuid()}"))'
+    return f'(junction (at {_G(x+OX):.2f} {_G(y+OY):.2f}) (diameter 0) (color 0 0 0 0) (uuid "{new_uuid()}"))'
 
 
 # ── Power symbol (GND / +24V etc.) ────────────────────────────────────────────
@@ -125,7 +131,7 @@ def power_sym(lib_id, x, y, angle=0):
     _pwr_seq[0] += 1
     ref = f"#PWR{_pwr_seq[0]:04d}"
     short = lib_id.split(":")[1]
-    ax, ay = x + OX, y + OY
+    ax, ay = _G(x + OX), _G(y + OY)
     return (f'(symbol (lib_id "{lib_id}") (at {ax:.2f} {ay:.2f} {angle}) (unit 1)\n'
             f'  (in_bom yes) (on_board yes) (dnp no)\n'
             f'  (uuid "{new_uuid()}")\n'
@@ -147,7 +153,7 @@ def sym(lib_id, ref, val, x, y, angle=0, unit=1,
     Pin positions are looked up from PIN_OFFSETS below.
     """
     dnp_str = "yes" if dnp else "no"
-    ax, ay = x + OX, y + OY
+    ax, ay = _G(x + OX), _G(y + OY)
     lines = [
         f'(symbol (lib_id "{lib_id}") (at {ax:.2f} {ay:.2f} {angle}) (unit {unit})',
         f'  (in_bom yes) (on_board yes) (dnp {dnp_str})',
