@@ -214,11 +214,19 @@ PIN_OFFSETS = {
         "3": (-7.62,  0,    "L"),   # IN
     },
     "4xxx:40106": {
-        # All gate units share the same pin layout, just different pin numbers
+        # All gate units share the same visual pin layout, just different pin numbers
         "1":  (-7.62, 0, "L"),   # A1 input  (unit 1)
         "2":  ( 7.62, 0, "R"),   # Y1 output (unit 1)
         "3":  (-7.62, 0, "L"),   # A2 input  (unit 2)
         "4":  ( 7.62, 0, "R"),   # Y2 output (unit 2)
+        "5":  (-7.62, 0, "L"),   # A3 input  (unit 3)
+        "6":  ( 7.62, 0, "R"),   # Y3 output (unit 3)
+        "9":  (-7.62, 0, "L"),   # A4 input  (unit 4)
+        "8":  ( 7.62, 0, "R"),   # Y4 output (unit 4)
+        "11": (-7.62, 0, "L"),   # A5 input  (unit 5)
+        "10": ( 7.62, 0, "R"),   # Y5 output (unit 5)
+        "13": (-7.62, 0, "L"),   # A6 input  (unit 6)
+        "12": ( 7.62, 0, "R"),   # Y6 output (unit 6)
         "14": (0, -12.7, "U"),   # VDD (sym y=+12.7 → sch -12.7, above)
         "7":  (0,  12.7, "D"),   # VSS (sym y=-12.7 → sch +12.7, below)
     },
@@ -467,6 +475,21 @@ elements += component("4xxx:40106", "U3", "CD40106B",
     40, 145, unit=7,
     footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
     pins={"14": "V_OSC", "7": "GND"})
+
+# U3 unused gate units 3–6: inputs tied to GND, outputs no-connect
+# Placed in a column to the right of the power unit to keep the boost section tidy
+for _u, _in_pin, _out_pin, _uy in [
+    (3, "5",  "6",  155),
+    (4, "9",  "8",  165),
+    (5, "11", "10", 175),
+    (6, "13", "12", 185),
+]:
+    elements += component("4xxx:40106", "U3", "CD40106B",
+        40, _uy, unit=_u,
+        footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+        pins={_in_pin: "GND"})
+    # no-connect at output pin tip (7.62mm right of centre)
+    elements.append(no_connect(40 + 7.62, _uy))
 
 # R_OSC: 47kΩ oscillator timing resistor (between CLKA and CLKA_IN)
 elements += component("Device:R", "R_OSC1", "47k",
