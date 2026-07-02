@@ -624,7 +624,7 @@ def main():
 
     body = "\n\n".join(body_lines)
 
-    schematic = f"""(kicad_sch (version 20230121) (generator kiutils)
+    schematic = f"""(kicad_sch (version 20230819) (generator kiutils)
 
   (uuid "{ROOT_UUID}")
 
