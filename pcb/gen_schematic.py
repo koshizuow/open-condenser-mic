@@ -477,19 +477,20 @@ elements += component("4xxx:40106", "U3", "CD40106B",
     pins={"14": "V_OSC", "7": "GND"})
 
 # U3 unused gate units 3–6: inputs tied to GND, outputs no-connect
-# Placed in a column to the right of the power unit to keep the boost section tidy
-for _u, _in_pin, _out_pin, _uy in [
-    (3, "5",  "6",  155),
-    (4, "9",  "8",  165),
-    (5, "11", "10", 175),
-    (6, "13", "12", 185),
+# x=70 keeps these clear of the power-flag wires at x=25–35, y=185–210.
+_UX = 70
+for _u, _in_pin, _uy in [
+    (3, "5",  155),
+    (4, "9",  165),
+    (5, "11", 175),
+    (6, "13", 185),
 ]:
     elements += component("4xxx:40106", "U3", "CD40106B",
-        40, _uy, unit=_u,
+        _UX, _uy, unit=_u,
         footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
         pins={_in_pin: "GND"})
     # no-connect at output pin tip (7.62mm right of centre)
-    elements.append(no_connect(40 + 7.62, _uy))
+    elements.append(no_connect(_UX + 7.62, _uy))
 
 # R_OSC: 47kΩ oscillator timing resistor (between CLKA and CLKA_IN)
 elements += component("Device:R", "R_OSC1", "47k",
