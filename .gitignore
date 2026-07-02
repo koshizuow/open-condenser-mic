@@ -23,6 +23,10 @@ sym-lib-table
 *.gbo
 *.gtp
 *.gbp
+*.gta
+*.gba
+*.gm1
+*.gbrjob
 *.g2l
 *.g3l
 *.drl
@@ -32,6 +36,9 @@ sym-lib-table
 # BOM and CPL
 pcb/bom.csv
 pcb/cpl.csv
+
+# CI fabrication artifact staging (gerbers.zip + bom.csv + cpl.csv)
+/fab/
 
 # ngspice temp and output files
 sim/_tmp_*.sp

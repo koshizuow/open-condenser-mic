@@ -93,18 +93,13 @@ Refer to the NTE10/3 datasheet for wire colour identification before soldering.
 | Tool | Version | Purpose |
 |---|---|---|
 | Python | 3.8+ | PCB / schematic / BOM generation |
-| KiCad | 7.0.x | PCB editor; provides `pcbnew` Python module |
-| kicad-cli | 7.0.x | Gerber / drill export (bundled with KiCad) |
+| KiCad | 9.0.x | PCB editor; provides `pcbnew` Python module |
+| kicad-cli | 9.0.x | Gerber / drill export, DRC / ERC (bundled with KiCad) |
 | ngspice | any recent | SPICE simulation (optional) |
 | numpy | any recent | Simulation plot generation (`sim/plot_all.py`) |
 | matplotlib | any recent | Simulation plot generation (`sim/plot_all.py`) |
 
-The `pcbnew` Python module ships with KiCad. On Linux it is typically available after installing KiCad 7 and may require sourcing the KiCad Python environment:
-
-```bash
-# Ubuntu / Debian (KiCad 7 PPA)
-export PYTHONPATH=/usr/lib/kicad/lib/python3/dist-packages:$PYTHONPATH
-```
+The `pcbnew` Python module ships with KiCad and is on the default Python path after installing KiCad 9 (e.g. via the [official KiCad PPA](https://www.kicad.org/download/linux/) on Ubuntu/Debian) — no `PYTHONPATH` override needed.
 
 ## Generating Outputs
 
@@ -120,11 +115,21 @@ python pcb/gen_schematic.py  # writes pcb/open-condenser-mic.kicad_sch
 
 All three scripts accept `--name PROJECT_NAME` to change the output filename (default: `open-condenser-mic`). After generating, open the project in KiCad via **File → Open Project** and select `pcb/open-condenser-mic.kicad_pro`.
 
-### 2. Fill copper zones and export gerbers
+### 2. Export gerbers
 
-After opening the project in KiCad, fill all copper zones (**Edit → Fill All Zones**, or press **B**), then export gerbers and drill files via **File → Fabrication Outputs**. Alternatively use `kicad-cli pcb export gerbers` and `kicad-cli pcb export drill` for scripted export.
+`gen_pcb.py` fills all copper zones itself before writing the board file, so no manual zone-fill step is needed. Export gerbers and drill files via **File → Fabrication Outputs** in KiCad, or from the command line:
 
-> **Important:** Zone fill must be performed after `gen_pcb.py` runs and before exporting gerbers. The Python script creates the board without filled zones.
+```bash
+kicad-cli pcb export gerbers --output fab/ pcb/open-condenser-mic.kicad_pcb
+kicad-cli pcb export drill   --output fab/ pcb/open-condenser-mic.kicad_pcb
+```
+
+Run DRC / ERC before fabricating:
+
+```bash
+kicad-cli pcb drc --severity-error --exit-code-violations pcb/open-condenser-mic.kicad_pcb
+kicad-cli sch erc --severity-error --exit-code-violations pcb/open-condenser-mic.kicad_sch
+```
 
 ### 3. Generate BOM and CPL
 
