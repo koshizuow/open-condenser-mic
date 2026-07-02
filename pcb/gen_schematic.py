@@ -88,13 +88,27 @@ def lib_symbols_section():
     lines = ["(lib_symbols"]
     for lib_id, (fpath, sname) in LIBS.items():
         raw = extract_sym(fpath, sname)
-        # Replace '  (symbol "SHORTNAME"' with '  (symbol "LIB:SHORTNAME"'
         short_name = lib_id.split(":")[1]   # e.g. "R" or "L78L24_SOT89"
+        # Rename outer symbol name to the full lib_id.
         raw = raw.replace(f'(symbol "{sname}"', f'(symbol "{lib_id}"', 1)
-        # Inner sub-symbols must use the short name (no lib: prefix).
-        # When sname != short_name (e.g. we use a parent symbol), rename them.
+        # When sname != short_name we're using a parent symbol (because the real
+        # target uses (extends sname) which kicad-cli can't resolve in embedded
+        # lib_symbols). Apply the target's property values and rename sub-symbols
+        # so the embedded flat symbol matches the resolved library symbol.
         if sname != short_name:
             raw = re.sub(rf'\(symbol "{re.escape(sname)}_', f'(symbol "{short_name}_', raw)
+            try:
+                target_raw = extract_sym(fpath, short_name)
+                target_props = {m.group(1): m.group(2)
+                                for m in re.finditer(r'\(property "([^"]+)" "([^"]*)"', target_raw)}
+                def _patch(m):
+                    name, val = m.group(1), m.group(2)
+                    if name in target_props and target_props[name] != val:
+                        return m.group(0).replace(f'"{val}"', f'"{target_props[name]}"', 1)
+                    return m.group(0)
+                raw = re.sub(r'\(property "([^"]+)" "([^"]*)"', _patch, raw)
+            except ValueError:
+                pass  # target symbol not in library; keep parent's properties
         lines.append(raw)
     lines.append(")")
     return "\n".join(lines)
