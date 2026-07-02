@@ -113,8 +113,6 @@ Pad numbers run left to right as viewed from the **front** (component side). The
 | numpy | any recent | Simulation plot generation (`sim/plot_all.py`) |
 | matplotlib | any recent | Simulation plot generation (`sim/plot_all.py`) |
 
-The `pcbnew` Python module ships with KiCad and is on the default Python path after installing KiCad 9 (e.g. via the [official KiCad PPA](https://www.kicad.org/download/linux/) on Ubuntu/Debian) — no `PYTHONPATH` override needed.
-
 ## Generating Outputs
 
 Run from the **project root** (the directory containing this README).
