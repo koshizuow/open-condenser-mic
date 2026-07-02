@@ -24,6 +24,12 @@ OUT = os.path.join(_SCRIPT_DIR, f"{_args.name}.kicad_sch")
 PROJECT = _args.name
 
 
+# ── Grid snap ─────────────────────────────────────────────────────────────────
+def _G(n):
+    """Snap coordinate to nearest 1.27 mm (50 mil) schematic grid point."""
+    return round(n / 1.27) * 1.27
+
+
 # ── UUID helpers ──────────────────────────────────────────────────────────────
 _uuid_counter = 0
 def new_uuid():
@@ -82,13 +88,27 @@ def lib_symbols_section():
     lines = ["(lib_symbols"]
     for lib_id, (fpath, sname) in LIBS.items():
         raw = extract_sym(fpath, sname)
-        # Replace '  (symbol "SHORTNAME"' with '  (symbol "LIB:SHORTNAME"'
         short_name = lib_id.split(":")[1]   # e.g. "R" or "L78L24_SOT89"
+        # Rename outer symbol name to the full lib_id.
         raw = raw.replace(f'(symbol "{sname}"', f'(symbol "{lib_id}"', 1)
-        # Inner sub-symbols must use the short name (no lib: prefix).
-        # When sname != short_name (e.g. we use a parent symbol), rename them.
+        # When sname != short_name we're using a parent symbol (because the real
+        # target uses (extends sname) which kicad-cli can't resolve in embedded
+        # lib_symbols). Apply the target's property values and rename sub-symbols
+        # so the embedded flat symbol matches the resolved library symbol.
         if sname != short_name:
             raw = re.sub(rf'\(symbol "{re.escape(sname)}_', f'(symbol "{short_name}_', raw)
+            try:
+                target_raw = extract_sym(fpath, short_name)
+                target_props = {m.group(1): m.group(2)
+                                for m in re.finditer(r'\(property "([^"]+)" "([^"]*)"', target_raw)}
+                def _patch(m):
+                    name, val = m.group(1), m.group(2)
+                    if name in target_props and target_props[name] != val:
+                        return m.group(0).replace(f'"{val}"', f'"{target_props[name]}"', 1)
+                    return m.group(0)
+                raw = re.sub(r'\(property "([^"]+)" "([^"]*)"', _patch, raw)
+            except ValueError:
+                pass  # target symbol not in library; keep parent's properties
         lines.append(raw)
     lines.append(")")
     return "\n".join(lines)
@@ -96,26 +116,26 @@ def lib_symbols_section():
 
 # ── Wire ──────────────────────────────────────────────────────────────────────
 def wire(x1, y1, x2, y2):
-    return (f'(wire (pts (xy {x1+OX:.2f} {y1+OY:.2f}) (xy {x2+OX:.2f} {y2+OY:.2f}))\n'
+    return (f'(wire (pts (xy {_G(x1+OX):.2f} {_G(y1+OY):.2f}) (xy {_G(x2+OX):.2f} {_G(y2+OY):.2f}))\n'
             f'  (stroke (width 0) (type default))\n'
             f'  (uuid "{new_uuid()}")\n)')
 
 
 # ── Local net label ───────────────────────────────────────────────────────────
 def label(net, x, y, angle=0):
-    return (f'(label "{net}" (at {x+OX:.2f} {y+OY:.2f} {angle})\n'
+    return (f'(label "{net}" (at {_G(x+OX):.2f} {_G(y+OY):.2f} {angle})\n'
             f'  (effects (font (size 1.27 1.27)) (justify left bottom))\n'
             f'  (uuid "{new_uuid()}")\n)')
 
 
 # ── No-connect ────────────────────────────────────────────────────────────────
 def no_connect(x, y):
-    return f'(no_connect (at {x+OX:.2f} {y+OY:.2f}) (uuid "{new_uuid()}"))'
+    return f'(no_connect (at {_G(x+OX):.2f} {_G(y+OY):.2f}) (uuid "{new_uuid()}"))'
 
 
 # ── Junction ──────────────────────────────────────────────────────────────────
 def junction(x, y):
-    return f'(junction (at {x+OX:.2f} {y+OY:.2f}) (diameter 0) (color 0 0 0 0) (uuid "{new_uuid()}"))'
+    return f'(junction (at {_G(x+OX):.2f} {_G(y+OY):.2f}) (diameter 0) (color 0 0 0 0) (uuid "{new_uuid()}"))'
 
 
 # ── Power symbol (GND / +24V etc.) ────────────────────────────────────────────
@@ -125,7 +145,7 @@ def power_sym(lib_id, x, y, angle=0):
     _pwr_seq[0] += 1
     ref = f"#PWR{_pwr_seq[0]:04d}"
     short = lib_id.split(":")[1]
-    ax, ay = x + OX, y + OY
+    ax, ay = _G(x + OX), _G(y + OY)
     return (f'(symbol (lib_id "{lib_id}") (at {ax:.2f} {ay:.2f} {angle}) (unit 1)\n'
             f'  (in_bom yes) (on_board yes) (dnp no)\n'
             f'  (uuid "{new_uuid()}")\n'
@@ -147,7 +167,7 @@ def sym(lib_id, ref, val, x, y, angle=0, unit=1,
     Pin positions are looked up from PIN_OFFSETS below.
     """
     dnp_str = "yes" if dnp else "no"
-    ax, ay = x + OX, y + OY
+    ax, ay = _G(x + OX), _G(y + OY)
     lines = [
         f'(symbol (lib_id "{lib_id}") (at {ax:.2f} {ay:.2f} {angle}) (unit {unit})',
         f'  (in_bom yes) (on_board yes) (dnp {dnp_str})',
@@ -208,11 +228,19 @@ PIN_OFFSETS = {
         "3": (-7.62,  0,    "L"),   # IN
     },
     "4xxx:40106": {
-        # All gate units share the same pin layout, just different pin numbers
+        # All gate units share the same visual pin layout, just different pin numbers
         "1":  (-7.62, 0, "L"),   # A1 input  (unit 1)
         "2":  ( 7.62, 0, "R"),   # Y1 output (unit 1)
         "3":  (-7.62, 0, "L"),   # A2 input  (unit 2)
         "4":  ( 7.62, 0, "R"),   # Y2 output (unit 2)
+        "5":  (-7.62, 0, "L"),   # A3 input  (unit 3)
+        "6":  ( 7.62, 0, "R"),   # Y3 output (unit 3)
+        "9":  (-7.62, 0, "L"),   # A4 input  (unit 4)
+        "8":  ( 7.62, 0, "R"),   # Y4 output (unit 4)
+        "11": (-7.62, 0, "L"),   # A5 input  (unit 5)
+        "10": ( 7.62, 0, "R"),   # Y5 output (unit 5)
+        "13": (-7.62, 0, "L"),   # A6 input  (unit 6)
+        "12": ( 7.62, 0, "R"),   # Y6 output (unit 6)
         "14": (0, -12.7, "U"),   # VDD (sym y=+12.7 → sch -12.7, above)
         "7":  (0,  12.7, "D"),   # VSS (sym y=-12.7 → sch +12.7, below)
     },
@@ -446,7 +474,7 @@ elements += component("Connector_Generic:Conn_01x02", "TS1", "NTE10/3_SEC",
 # J3: XLR balanced output connector (3-pin: GND, HOT, COLD)
 elements += component("Connector_Generic:Conn_01x03", "J3", "XLR_OUT",
     255, 60, pins={"1": "GND", "2": "XLR_HOT", "3": "XLR_COLD"},
-    footprint="Connector_Audio:XLR3_Male_Neutrik_NC3MXX_Horizontal")
+    footprint="")
 
 # ── BOOST SECTION ─────────────────────────────────────────────────────────────
 
@@ -461,6 +489,22 @@ elements += component("4xxx:40106", "U3", "CD40106B",
     40, 145, unit=7,
     footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
     pins={"14": "V_OSC", "7": "GND"})
+
+# U3 unused gate units 3–6: inputs tied to GND, outputs no-connect
+# x=70 keeps these clear of the power-flag wires at x=25–35, y=185–210.
+_UX = 70
+for _u, _in_pin, _uy in [
+    (3, "5",  155),
+    (4, "9",  165),
+    (5, "11", 175),
+    (6, "13", 185),
+]:
+    elements += component("4xxx:40106", "U3", "CD40106B",
+        _UX, _uy, unit=_u,
+        footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+        pins={_in_pin: "GND"})
+    # no-connect at output pin tip (7.62mm right of centre)
+    elements.append(no_connect(_UX + 7.62, _uy))
 
 # R_OSC: 47kΩ oscillator timing resistor (between CLKA and CLKA_IN)
 elements += component("Device:R", "R_OSC1", "47k",
@@ -580,7 +624,7 @@ def main():
 
     body = "\n\n".join(body_lines)
 
-    schematic = f"""(kicad_sch (version 20230121) (generator kiutils)
+    schematic = f"""(kicad_sch (version 20230819) (generator kiutils)
 
   (uuid "{ROOT_UUID}")
 

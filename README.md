@@ -74,14 +74,28 @@ The noise floor registers as digital silence in quiet passages despite the untre
 
 ### Transformer wiring
 
-The NTE10/3 connects to two sets of bare solder pads on the PCB (5 mm pitch):
+The NTE10/3 has 5 free wires and connects to two sets of bare solder pads on the PCB (5 mm pitch). The circuit uses the transformer in reverse — the secondary (3-turn tap) is driven from the OPA1641 and the primary is the XLR output, giving a 3:1 step-down.
 
-| Pad group | Location | Nets | NTE10/3 winding |
-|---|---|---|---|
-| TP1 (3 pads) | Above transformer cutout | TX_DRV · GND · GND | Primary (signal in, return/centre-tap) |
-| TS1 (2 pads) | Below transformer cutout | XLR_HOT · XLR_COLD | Secondary (XLR pin 2 · XLR pin 3) |
+![Transformer wiring diagram](img/transformer_wiring.png)
 
-Refer to the NTE10/3 datasheet for wire colour identification before soldering.
+![Transformer wiring — PCB back](img/back_wiring.jpeg)
+
+Pad numbers run left to right as viewed from the **front** (component side). The photo above shows the board from the back, so left and right are mirrored.
+
+**TP1 — 3 pads above transformer cutout (secondary, driven side)**
+
+| Pad | Net | Wire colour |
+|---|---|---|
+| S1 (leftmost) | TX\_DRV | **Red** — 3-turn tap (signal in) |
+| S2 (centre) | GND | **Blue** — centre tap (return) |
+| S3 (rightmost) | GND | **Black** — 10-turn end (grounded, unused) |
+
+**TS1 — 2 pads below transformer cutout (primary, XLR output)**
+
+| Pad | Net | Wire colour |
+|---|---|---|
+| P1 (leftmost) | XLR\_HOT (XLR pin 2) | **White** |
+| P2 (rightmost) | XLR\_COLD (XLR pin 3) | **Yellow** |
 
 ### PCB
 - 2-layer, 36 × 93 mm, ENIG or HASL
