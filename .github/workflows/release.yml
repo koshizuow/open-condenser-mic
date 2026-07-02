@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag (e.g. v1.0.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/verify.yml
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download fabrication outputs
+        uses: actions/download-artifact@v8
+        with:
+          name: fabrication-outputs
+          path: release-assets/fabrication-outputs
+
+      - name: Download KiCad project files
+        uses: actions/download-artifact@v8
+        with:
+          name: kicad-project
+          path: release-assets/kicad-project
+
+      - name: Download DRC/ERC reports
+        uses: actions/download-artifact@v8
+        with:
+          name: drc-erc-reports
+          path: release-assets/drc-erc-reports
+
+      - name: Bundle KiCad project files into a single zip
+        run: (cd release-assets/kicad-project && zip -j ../open-condenser-mic-kicad-project.zip *)
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ inputs.version }}" \
+            --title "${{ inputs.version }}" \
+            --generate-notes \
+            release-assets/fabrication-outputs/gerbers.zip \
+            release-assets/fabrication-outputs/bom.csv \
+            release-assets/fabrication-outputs/cpl.csv \
+            release-assets/open-condenser-mic-kicad-project.zip \
+            release-assets/drc-erc-reports/drc-report.rpt \
+            release-assets/drc-erc-reports/erc-report.rpt

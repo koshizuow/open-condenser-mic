@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_call:
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -123,6 +125,15 @@ jobs:
         with:
           name: fabrication-outputs
           path: fab/
+
+      - name: Upload KiCad project files
+        uses: actions/upload-artifact@v7
+        with:
+          name: kicad-project
+          path: |
+            pcb/open-condenser-mic.kicad_pro
+            pcb/open-condenser-mic.kicad_sch
+            pcb/open-condenser-mic.kicad_pcb
 
       - name: Upload DRC/ERC reports
         if: always()
