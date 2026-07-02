@@ -460,7 +460,7 @@ elements += component("Connector_Generic:Conn_01x02", "TS1", "NTE10/3_SEC",
 # J3: XLR balanced output connector (3-pin: GND, HOT, COLD)
 elements += component("Connector_Generic:Conn_01x03", "J3", "XLR_OUT",
     255, 60, pins={"1": "GND", "2": "XLR_HOT", "3": "XLR_COLD"},
-    footprint="Connector_Audio:XLR3_Male_Neutrik_NC3MXX_Horizontal")
+    footprint="")
 
 # ── BOOST SECTION ─────────────────────────────────────────────────────────────
 
