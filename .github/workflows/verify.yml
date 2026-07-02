@@ -9,16 +9,17 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-24.04
+    container: debian:trixie
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          apt-get update
+          apt-get install -y --no-install-recommends \
             kicad kicad-footprints kicad-symbols \
-            ngspice python3-numpy python3-matplotlib
+            ngspice python3-numpy python3-matplotlib git ca-certificates zip
 
       - name: Python syntax check
         run: |
@@ -27,8 +28,6 @@ jobs:
             pcb/gen_pcb.py pcb/gen_bom.py sim/plot_all.py
 
       - name: Generate KiCad files
-        env:
-          PYTHONPATH: /usr/lib/kicad/lib/python3/dist-packages
         run: |
           python3 pcb/gen_project.py
           python3 pcb/gen_schematic.py
@@ -42,6 +41,65 @@ jobs:
           ls pcb/open-condenser-mic.kicad_sch
           ls pcb/bom.csv
           ls pcb/cpl.csv
+
+      - name: PCB DRC report (all severities)
+        if: always()
+        run: kicad-cli pcb drc --severity-all --format report -o drc-report.rpt pcb/open-condenser-mic.kicad_pcb
+
+      - name: PCB DRC gate (fail on errors only)
+        run: kicad-cli pcb drc --severity-error --exit-code-violations pcb/open-condenser-mic.kicad_pcb
+
+      - name: Schematic ERC report (all severities)
+        if: always()
+        run: kicad-cli sch erc --severity-all -o erc-report.rpt pcb/open-condenser-mic.kicad_sch
+
+      - name: Schematic ERC gate (fail on errors only)
+        run: kicad-cli sch erc --severity-error --exit-code-violations pcb/open-condenser-mic.kicad_sch
+
+      - name: Write DRC/ERC summary
+        if: always()
+        run: |
+          # Severity labels ("; error" / "; warning") in kicad-cli report output
+          # stay in English regardless of locale, unlike the header/footer text,
+          # so count violations that way rather than parsing localized strings.
+          summarize() {
+            local file="$1" label="$2"
+            echo "### $label"
+            if [ -f "$file" ]; then
+              local total errors warnings
+              total=$(grep -c "^\[" "$file" || true)
+              errors=$(grep -c "; error" "$file" || true)
+              warnings=$(grep -c "; warning" "$file" || true)
+              echo ""
+              echo "**$total violations** — $errors error(s), $warnings warning(s)"
+              echo ""
+              echo "<details><summary>Full report</summary>"
+              echo ""
+              echo '```'
+              cat "$file"
+              echo '```'
+              echo "</details>"
+            else
+              echo ""
+              echo "_${file} not generated (an earlier step likely failed)_"
+            fi
+            echo ""
+          }
+          {
+            echo "## DRC / ERC results"
+            echo ""
+            summarize drc-report.rpt "PCB DRC"
+            summarize erc-report.rpt "Schematic ERC"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Export Gerbers + drill files
+        run: |
+          mkdir -p fab/gerbers
+          kicad-cli pcb export gerbers --output fab/gerbers/ pcb/open-condenser-mic.kicad_pcb
+          kicad-cli pcb export drill --output fab/gerbers/ pcb/open-condenser-mic.kicad_pcb
+          (cd fab/gerbers && zip -j ../gerbers.zip *)
+          rm -rf fab/gerbers
+          cp pcb/bom.csv pcb/cpl.csv fab/
 
       - name: Run SPICE simulations
         working-directory: sim
@@ -59,3 +117,18 @@ jobs:
           ls img/hv_startup.png
           ls img/noise_spectrum.png
           ls img/freq_response.png
+
+      - name: Upload fabrication outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabrication-outputs
+          path: fab/
+
+      - name: Upload DRC/ERC reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drc-erc-reports
+          path: |
+            drc-report.rpt
+            erc-report.rpt

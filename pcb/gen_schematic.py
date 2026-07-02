@@ -44,10 +44,12 @@ def extract_sym(lib_file, name):
     """Return the top-level (symbol "name" ...) block from a .kicad_sym file."""
     with open(lib_file) as f:
         txt = f.read()
-    target = f'  (symbol "{name}"'
-    idx = txt.find(target)
-    if idx == -1:
+    # Leading whitespace before top-level "(symbol" varies by KiCad version
+    # (2 spaces pre-9.0, tabs from 9.0 onward), so match it generically.
+    m = re.search(rf'^[ \t]+\(symbol "{re.escape(name)}"', txt, re.MULTILINE)
+    if m is None:
         raise ValueError(f'Symbol "{name}" not found in {lib_file}')
+    idx = m.start()
     depth = 0
     for i in range(idx, len(txt)):
         if txt[i] == '(':  depth += 1
@@ -103,9 +105,7 @@ def wire(x1, y1, x2, y2):
 def label(net, x, y, angle=0):
     return (f'(label "{net}" (at {x+OX:.2f} {y+OY:.2f} {angle})\n'
             f'  (effects (font (size 1.27 1.27)) (justify left bottom))\n'
-            f'  (uuid "{new_uuid()}")\n'
-            f'  (property "Intersheet References" "${{INTERSHEET_REFS}}" (at 0 0 0)\n'
-            f'    (effects (font (size 1.27 1.27)) hide))\n)')
+            f'  (uuid "{new_uuid()}")\n)')
 
 
 # ── No-connect ────────────────────────────────────────────────────────────────

@@ -38,7 +38,7 @@ OUT = os.path.join(_SCRIPT_DIR, f"{_parse_args().name}.kicad_pcb")
 
 
 def fp_load(lib_dir: str, name: str) -> pcbnew.FOOTPRINT:
-    io = pcbnew.IO_MGR.PluginFind(pcbnew.IO_MGR.KICAD_SEXP)
+    io = pcbnew.PCB_IO_MGR.PluginFind(pcbnew.PCB_IO_MGR.KICAD_SEXP)
     path = os.path.join(FP_LIB, f"{lib_dir}.pretty")
     fp = io.FootprintLoad(path, name)
     if fp is None:
@@ -889,7 +889,7 @@ def main():
                  {"1": "VBOOST", "2": "GND"})
     for pad in cres.Pads():
         if pad.GetNumber() == "2":
-            pad.SetZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
+            pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
 
     # DZ1: 68V zener clamp on VBOOST (K=pad1=VBOOST, A=pad2=GND)
     # At (32,65.5): nearest courtyard corner (31.15,67.5) to ZT2 center (31,72): 4.50mm > r=3.455mm OK
@@ -974,6 +974,14 @@ def main():
         fix_ref(board, ref, hide=True)
 
     # ── Save ─────────────────────────────────────────────────────────────────
+    pcbnew.SaveBoard(OUT, board)
+
+    # ── Fill copper zones ───────────────────────────────────────────────────────
+    # ZONE_FILLER segfaults when run against a freshly-constructed in-memory
+    # BOARD() (a long-standing upstream pcbnew scripting issue); reloading the
+    # just-saved file first avoids it.
+    board = pcbnew.LoadBoard(OUT)
+    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(OUT, board)
 
     print(f"Written: {OUT}")
