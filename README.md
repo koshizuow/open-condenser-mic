@@ -6,13 +6,13 @@ A code-driven open true condenser microphone. PCB layout, schematic, BOM, and CP
 
 ## Overview
 
-This design uses a Dickson charge pump oscillator to generate ~68 V capsule polarization from 48 V phantom power, and feeds a transformer-coupled output stage built around a low-noise op-amp. The reference implementation uses the **OPA1641** (2.5 nV/√Hz, JFET input), chosen for its low voltage noise and LCSC availability. The circuit fits on a 36 × 93 mm 2-layer PCB.
+This design uses a Dickson charge pump oscillator to generate a 68 V HV rail from 48 V phantom power, providing ~56 V capsule polarization (V_BOOST − 12 V midpoint), and feeds a transformer-coupled output stage built around a low-noise op-amp. The reference implementation uses the **OPA1641** (2.5 nV/√Hz, JFET input), chosen for its low voltage noise and LCSC availability. The circuit fits on a 36 × 93 mm 2-layer PCB.
 
 **Key design points:**
 - Op-amp output stage; reference design uses OPA1641 (2.5 nV/√Hz voltage noise)
 - NTE10/3 audio transformer, 3:1 step-down, transformer-coupled output
 - CD40106B Schmitt-trigger oscillator + 3-stage active Dickson charge pump
-- 68 V capsule polarization (BZT52C68 zener clamp)
+- 56 V capsule polarization (68 V HV rail, BZT52C68 zener clamp referenced to 12 V midpoint)
 - HV rail LC filter: 10 mH + 470 nF, corner ~2.3 kHz
 - Phantom power draw: ~2.4–3 mA typical (IEC 61938 limit: 14 mA)
 - All SMD/THT components available from standard distributors (LCSC, Mouser, Digi-Key); capsule and transformer are customer-supplied
@@ -26,7 +26,7 @@ Run with ngspice from `sim/` (see [Running Simulations](#running-simulations)):
 | V_BOOST steady-state | 67.97 V | target 68.2 V, DZ1-clamped |
 | HV_FILT ripple | 10.7 µV p-p | L1=10 mH, C9=470 nF, 10–15 ms window |
 | LC filter corner | ~2.3 kHz | startup resonance; dissipates in seconds |
-| Capsule voltage | ~68 V | polarization at steady state |
+| Capsule polarization | ~56 V | V_BOOST (68 V) − V_MID (12 V) at steady state |
 
 ### HV Rail Startup (`boost_dickson.sp`)
 
@@ -69,7 +69,7 @@ The noise floor registers as digital silence in quiet passages despite the untre
 ### Customer-supplied (not in PCBA BOM)
 | Item | Spec | Notes |
 |---|---|---|
-| Capsule | Single-diaphragm, 55–70 V polarization | Most standard large/small-diaphragm capsules in this voltage range are compatible. K47-style capsules typically require ~45 V — change DZ1 from BZT52C68 to BZT52C47 if using one. |
+| Capsule | Single-diaphragm condenser | Design delivers 56 V polarization (68 V HV rail − 12 V V_MID). Compatible with most standard large/small-diaphragm capsules; K47-type capsules (typically rated 40–60 V) are compatible at this voltage. |
 | Transformer | **Neutrik NTE10/3** (3:1, audio) | Mouser / Newark. No other transformer is currently supported; the PCB cutout and solder pads are sized for this specific part. |
 
 ### Transformer wiring
