@@ -522,11 +522,7 @@ def route_all(board):
           (5.0,    36.5),
           (5.0,    62.0),
           (8.0,    62.0))
-    # GND: T1A.2(13,62)→T1A.3(18,62) on both layers
-    # F.Cu trace bridges the isolated T1A.3 F.Cu pad ring to the main GND zone.
-    # B.Cu trace connects T1A.3 B.Cu pad to the B.Cu GND zone.
-    route(board, "GND", F, SIG, (13.0, 62.0), (18.0, 62.0))
-    route(board, "GND", B, SIG, (13.0, 62.0), (18.0, 62.0))
+    # S3 (TP1.3) is floating — no GND connection to (18,62)
 
     # ── XLR_HOT: T1B-pad1 → J3-pad2 ────────────────────────────────────────
     # T1B pad1 (17.0,82.0); J3-pad2 (20.0,92.0)
@@ -874,7 +870,7 @@ def main():
 
     # Transformer wire solder pads — bare THT holes
     # T1A horizontal 5mm pitch: pads at (8,62),(13,62),(18,62) — x=8 keeps S1 inboard of MH column (x=5)
-    place_solder_pads(board, "TP1", 8, 62, ["TX_DRV", "GND", "GND"], axis='x', pitch_mm=5.0)
+    place_solder_pads(board, "TP1", 8, 62, ["TX_DRV", "GND", ""], axis='x', pitch_mm=5.0)
 
     # T1B horizontal 5mm pitch: pads at (17,82),(22,82) — below transformer cutout, close to J3
     place_solder_pads(board, "TS1", 17, 82, ["XLR_HOT", "XLR_COLD"], axis='x', pitch_mm=5.0)

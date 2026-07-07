@@ -88,7 +88,7 @@ Pad numbers run left to right as viewed from the **front** (component side). The
 |---|---|---|
 | S1 (leftmost) | TX\_DRV | **Red** — 3-turn tap (signal in) |
 | S2 (centre) | GND | **Blue** — centre tap (return) |
-| S3 (rightmost) | GND | **Black** — 10-turn end (grounded, unused) |
+| S3 (rightmost) | — (floating) | **Black** — far end of winding; leave unconnected |
 
 **TS1 — 2 pads below transformer cutout (primary, XLR output)**
 
