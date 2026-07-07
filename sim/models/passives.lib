@@ -14,10 +14,10 @@
 * Primary inductance (red-blue, 3-turn section): 0.5H estimate
 * Secondary inductance (white-yellow, 1-turn): 0.5 / 9 = 55.6mH  (Ls = Lp/n^2, n=3)
 * Coupling k=0.99 (high quality audio transformer)
-* Primary DC resistance: ~30Ω estimate
+* Primary DC resistance: 521Ω measured (Red-Blue, S1-S2)
 * Secondary DC resistance: ~10Ω estimate
 .subckt NTE10_3 PRI_A PRI_B SEC_P SEC_N
-Rp1  PRI_A    PRI_A2   30
+Rp1  PRI_A    PRI_A2   521
 Lp   PRI_A2   PRI_B    0.5
 Ls   SEC_P2   SEC_N    55.6m
 Rs1  SEC_P    SEC_P2   10
