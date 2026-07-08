@@ -181,6 +181,28 @@ def add_zone(board, net_name, layer, pts_mm, clearance_mm=0.2, min_width_mm=0.2)
     return z
 
 
+def add_keepout(board, layer, pts_mm):
+    """Add a Rule Area that blocks copper pour on the given layer.
+
+    Tracks, vias, and pads inside the keepout are still allowed.
+    Use for high-Z nodes where GND copper causes leakage or stray capacitance.
+    """
+    z = pcbnew.ZONE(board)
+    z.SetIsRuleArea(True)
+    z.SetDoNotAllowCopperPour(True)
+    z.SetDoNotAllowTracks(False)
+    z.SetDoNotAllowVias(False)
+    z.SetDoNotAllowPads(False)
+    z.SetDoNotAllowFootprints(False)
+    z.SetLayer(layer)
+    outline = z.Outline()
+    outline.NewOutline()
+    for x, y in pts_mm:
+        outline.Append(MX(x), MY(y))
+    board.Add(z)
+    return z
+
+
 def route_all(board):
     F = pcbnew.F_Cu
     B = pcbnew.B_Cu
@@ -209,10 +231,9 @@ def route_all(board):
     # to <0.2mm between pad2 right (33.1) and V_OPA (33.85). Via at (33,45) stitches isolated fill
     # inside the C-shape to B.Cu GND plane.
     via(board, "GND", 33.0, 45.0)
-    # Island 2: U1/R_BIAS1 area (x=7.45-30.3, y=20.89-39.06). Dense routing isolates this
-    # F.Cu GND island from the main zone. Via at (12,25) stitches it to B.Cu GND plane.
-    # Position verified: inside island polygon, clear of all tracks (nearest: VPLUS@0.3mm+ gap).
-    via(board, "GND", 12.0, 25.0)
+    # Island 2: U1/R7 area (x=15-30, y=24-30) — keepout carves out the left portion of this
+    # region; remaining GND fill around U1/R7 becomes an island. Stitch to B.Cu here.
+    via(board, "GND", 22.0, 27.0)
 
     # ════════════════════════════════════════════════════════════════════════
     # HV NETS  (0.4mm)
@@ -702,7 +723,13 @@ def main():
         place(board, "MountingHole", "MountingHole_3.2mm_M3", ref, ref, x, y)
 
     # ── Capsule input zone (y=5..20) ─────────────────────────────────────────
-    # High-Z island: J2, C8, R_GBIAS1/2 — guard ring goes here in editor
+    # F.Cu GND copper pour exclusion around all high-Z nodes.
+    # L-shape covers CAP_FP trace network (J2/C8/R_GBIAS1/2, x=6..36.5, y=0..17)
+    # and VPLUS trace + R_BIAS1 (x=6..14.5, y=17..30).
+    # B.Cu GND plane is retained: THT pads (J2-GND, MH1/2) stay connected,
+    # and through-board stray capacitance is small (<1 pF, through 1.6 mm FR4).
+    add_keepout(board, pcbnew.F_Cu,
+                [(6, 0), (36.5, 0), (36.5, 17), (14.5, 17), (14.5, 30), (6, 30)])
 
     # J2: bare THT solder pads for capsule wires
     place_solder_pads(board, "J2", 15.23, 3, ["CAP_FP", "GND"], axis='x')
@@ -724,9 +751,13 @@ def main():
 
     # ── OPA1641 amplifier zone (y=18..42) ────────────────────────────────────
 
-    place(board, "Package_SO", "SOIC-8_3.9x4.9mm_P1.27mm",
-          "U1", "OPA1641", 17.5, 27, 0,
-          {"2": "VINV", "3": "VPLUS", "4": "GND", "6": "SIG_OUT", "7": "V_OPA"})
+    u1_fp = place(board, "Package_SO", "SOIC-8_3.9x4.9mm_P1.27mm",
+                  "U1", "OPA1641", 17.5, 27, 0,
+                  {"2": "VINV", "3": "VPLUS", "4": "GND", "6": "SIG_OUT", "7": "V_OPA"})
+    for _pad in u1_fp.Pads():
+        if _pad.GetNumber() == "4":
+            _pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
+            break
 
     # R_BIAS: VPLUS -> V_MID  (100M, establishes DC operating point for IN+)
     place(board, "Resistor_SMD", "R_1206_3216Metric",
