@@ -342,7 +342,7 @@ elements += component("Device:R", "R1", "6.8k 0.1%",
     pins={"1": "XLR_HOT", "2": "V_OPA_RAW"})
 
 elements += component("Device:R", "R2", "6.8k 0.1%",
-    22, 28,
+    22, 37,
     footprint="Resistor_SMD:R_0603_1608Metric",
     pins={"1": "XLR_COLD", "2": "V_OPA_RAW"})
 
@@ -363,12 +363,12 @@ elements += component("Device:C", "C2", "100n 25V X7R",
     pins={"1": "V_OPA", "2": "GND"})
 
 elements += component("Device:C_Polarized", "C5", "10u 25V",
-    74, 30,
+    74, 35,
     footprint="Capacitor_SMD:CP_Elec_4x5.4",
     pins={"1": "V_MID", "2": "GND"})
 
 elements += component("Device:C_Polarized", "C6", "10u 25V",
-    74, 46,
+    74, 63,
     footprint="Capacitor_SMD:CP_Elec_4x5.4",
     pins={"1": "V_OPA", "2": "GND"})
 
@@ -388,21 +388,21 @@ elements += component("Device:D_Zener", "Z_OSC1", "15V MMSZ15VT1G",
 elements.append(wire(44, 44.35, 53.65, 44.35))
 elements.append(wire(53.65, 44.35, 53.65, 38))
 
-# V_OPA spine at x=80: vertical bus visible-connecting C2, U2.OUT, R_ZEN1, C6, R4
-# (each pin also retains its auto-stub + "V_OPA" label; spine adds physical wire)
-elements.append(wire(80, 8.19, 80, 46.19))          # V_OPA spine
+# V_OPA spine at x=80: vertical bus visible-connecting C2, U2.OUT, R_ZEN1, R4, C6
+# C5→y=38, C6→y=63; spine bottom = C6.pin1 tip at y=59.19; R4.pin1 at y=46.19 is T
+elements.append(wire(80, 8.19, 80, 59.19))          # V_OPA spine
 elements.append(wire(74, 8.19, 80, 8.19))            # C2.pin1 tip → spine top
 elements.append(wire(67.16, 20, 80, 20))             # U2.OUT stub_end → spine
 elements.append(wire(44, 34.19, 80, 34.19))          # R_ZEN1.pin1 tip → spine
-elements.append(wire(74, 42.19, 80, 42.19))          # C6.pin1 tip → spine (pin1=V_OPA after fix)
-elements.append(wire(72, 46.19, 80, 46.19))          # R4.pin1 tip → spine bottom
+elements.append(wire(72, 46.19, 80, 46.19))          # R4.pin1 tip → spine (T-junction)
+elements.append(wire(74, 59.19, 80, 59.19))          # C6.pin1 tip → spine bottom
 elements.append(junction(80, 20))                    # T: spine + U2.OUT branch
 elements.append(junction(80, 34.19))                 # T: spine + R_ZEN1 branch
-elements.append(junction(80, 42.19))                 # T: spine + C6 branch
+elements.append(junction(80, 46.19))                 # T: spine + R4 branch
 
-# V_OPA_RAW: R1.pin2 stub_end ↔ R2.pin1 stub_end (shows phantom resistors share same rail)
-# R1(22,12) pin2(D) stub_end=(22,18.35); R2(22,28) pin1(U) stub_end=(22,21.65)
-elements.append(wire(22, 18.35, 22, 21.65))
+# V_OPA_RAW: R1.pin2 stub_end ↔ R2.pin1 stub_end
+# R1(22,12) pin2(D) stub_end=(22,18.35); R2(22,37) pin1(U) stub_end=(22,30.65)
+elements.append(wire(22, 18.35, 22, 30.65))
 
 # V_OPA_RAW: C1.pin1 stub_end → U2.pin3 stub_end (input bypass cap visibly tied to regulator)
 # C1(38,20) pin1(U) stub_end=(38,13.65); U2(57,20) pin3(L) stub_end=(46.84,20)
@@ -417,12 +417,12 @@ elements += component("Device:R", "R4", "470k",
     pins={"1": "V_OPA", "2": "V_MID"})
 
 elements += component("Device:R", "R5", "470k",
-    72, 66,
+    72, 75,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "V_MID", "2": "GND"})
 
-# R4.pin2 (D stub) → (72,56.35); R5.pin1 (U stub) → (72,59.65); C4.pin1 → same node
-elements.append(wire(72, 56.35, 72, 59.65))          # R4.pin2 ↔ R5.pin1 (V_MID node)
+# R4.pin2 (D stub) → (72,56.35); R5.pin1 (U stub) → (72,68.65); C4 branches at y=58
+elements.append(wire(72, 56.35, 72, 68.65))          # R4.pin2 ↔ R5.pin1 (V_MID node)
 elements.append(wire(72, 58, 87, 58))                # V_MID node → right to C4 column
 elements.append(wire(87, 58, 87, 54.19))             # down to C4.pin1 tip
 elements.append(junction(72, 58))                    # T: V_MID wire + C4 branch
@@ -435,18 +435,18 @@ elements += component("Device:C", "C4", "10u 25V X5R",
 # ── BLOCK C: HV BIAS CHAIN + CAPSULE + AC COUPLING (x=20..58, y=48..95) ──────
 
 elements += component("Device:R", "R_GBIAS1", "47M 1206",
-    30, 52,
+    30, 60,
     footprint="Resistor_SMD:R_1206_3216Metric",
     pins={"1": "HV_FILT", "2": "HV_MID"})
 
 elements += component("Device:R", "R_GBIAS2", "47M 1206",
-    30, 68,
+    30, 85,
     footprint="Resistor_SMD:R_1206_3216Metric",
     pins={"1": "HV_MID", "2": "CAP_FP"})
 
 # R_GBIAS1↔R_GBIAS2 series wire (HV_MID node)
-# GBIAS1.pin2 tip=(30,55.81) stub D→(30,58.35); GBIAS2.pin1 tip=(30,64.19) stub U→(30,61.65)
-elements.append(wire(30, 58.35, 30, 61.65))
+# GBIAS1(30,60).pin2 stub D→(30,66.35); GBIAS2(30,85).pin1 stub U→(30,78.65)
+elements.append(wire(30, 66.35, 30, 78.65))
 
 elements += component("Connector_Generic:Conn_01x02", "J2", "CAPSULE",
     50, 52,
@@ -464,13 +464,13 @@ elements += component("Device:R", "R_BIAS1", "100M 1206",
     pins={"1": "VPLUS", "2": "V_MID"})
 
 # CAP_FP bus at x=44: R_GBIAS2.pin2 → J2.pin1 → C8.pin1
-# R_GBIAS2(30,68) pin2 tip=(30,71.81) stub D→(30,74.35)
+# R_GBIAS2(30,85) pin2 tip=(30,88.81) stub D→(30,91.35)
 # J2(50,52) pin1 tip=(44.92,52) stub L→(42.38,52)
 # C8(50,70) pin1 tip=(50,66.19) stub U→(50,63.65)
-elements.append(wire(44, 52, 44, 74.35))         # vertical CAP_FP bus at x=44
+elements.append(wire(44, 52, 44, 91.35))         # vertical CAP_FP bus at x=44 (extended)
 elements.append(wire(42.38, 52, 44, 52))          # J2.pin1 stub_end → bus top
 elements.append(wire(50, 63.65, 44, 63.65))      # C8.pin1 stub_end → bus mid
-elements.append(wire(30, 74.35, 44, 74.35))      # R_GBIAS2.pin2 stub_end → bus bot
+elements.append(wire(30, 91.35, 44, 91.35))      # R_GBIAS2.pin2 stub_end → bus bot
 elements.append(junction(44, 63.65))             # T: bus + C8 branch
 
 # VPLUS node: C8.pin2 → R_BIAS1.pin1 (vertical at x=50); then right to U1.IN+
@@ -734,17 +734,17 @@ for _u, _in_pin, _uy in [
 
 # ── POWER FLAGS ───────────────────────────────────────────────────────────────
 
-elements.append(power_sym("power:GND",      20, 230))
-elements.append(power_sym("power:PWR_FLAG", 33, 230))
-elements.append(wire(20, 230, 33, 230))
+elements.append(power_sym("power:GND",      20, 215))
+elements.append(power_sym("power:PWR_FLAG", 33, 215))
+elements.append(wire(20, 215, 33, 215))
 
-elements.append(label("V_OPA_RAW", 15, 243, 0))
-elements.append(wire(15, 243, 33, 243))
-elements.append(power_sym("power:PWR_FLAG", 33, 243))
+elements.append(label("V_OPA_RAW", 15, 228, 0))
+elements.append(wire(15, 228, 33, 228))
+elements.append(power_sym("power:PWR_FLAG", 33, 228))
 
-elements.append(label("V_OSC", 15, 256, 0))
-elements.append(wire(15, 256, 33, 256))
-elements.append(power_sym("power:PWR_FLAG", 33, 256))
+elements.append(label("V_OSC", 15, 241, 0))
+elements.append(wire(15, 241, 33, 241))
+elements.append(power_sym("power:PWR_FLAG", 33, 241))
 
 # ── SHEET / SYMBOL INSTANCES (required for KiCad 7 validity) ─────────────────
 SHEET_INST = f'(sheet_instances (path "/" (page "1")))'
