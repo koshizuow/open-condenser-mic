@@ -61,7 +61,7 @@ LCSC = {
     ("6.8k",      "R_0402_1005Metric"):            "C144738",   # YAGEO AC0402FR-076K8L ±1% 757pcs; C93940 out of stock; C26022 maps to 4.7kΩ 0805 in JLCPCB
     ("47k",       "R_0402_1005Metric"):            "C25792",    # UNI-ROYAL 0402WGF4702TCE ±1% BASIC; C25900 maps to 4.7kΩ in JLCPCB
     ("100R",      "R_0402_1005Metric"):            "C25076",
-    ("130k",      "R_0402_1005Metric"):            "C93946",    # YAGEO RC0402FR-07130KL ±1%; C25812 unavailable
+    ("5.6k",      "R_0402_1005Metric"):            "C25908",    # UNI-ROYAL 0402WGF5601TCE ±1% 244k pcs
     ("470k",      "R_0402_1005Metric"):            "C137976",   # YAGEO RC0402FR-07470KL ±1%; C25905 maps to 5.1kΩ in JLCPCB
 
     # Precision resistors (0603) — R1/R2 matched pair
