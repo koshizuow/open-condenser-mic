@@ -40,9 +40,9 @@ def new_uuid():
 ROOT_UUID = new_uuid()
 
 # Centering offset for A3 (420×297mm) page.
-# Circuit spans roughly x=20..255, y=15..175 → center at (137, 95).
-# A3 center at (210, 148.5) → shift = (210-137, 148.5-95) ≈ (76.20, 55.88)
-OX, OY = 76.20, 55.88
+# Circuit spans x=15..240, y=5..265 → center at (127.5, 135).
+# A3 center at (210, 148.5) → shift = (210-127.5, 148.5-135) = (82.5, 13.5)
+OX, OY = 82.5, 13.5
 
 
 # ── Symbol extraction from .kicad_sym library files ───────────────────────────
@@ -265,15 +265,30 @@ PIN_OFFSETS = {
 
 STUB_LEN = 2.54  # 100 mil wire stub — keeps same-column stubs from overlapping
 
+# Nets that become power symbols instead of wire-stub + label.
+# Key: net name. Value: (power lib_id, {direction: angle}) where angle orients the symbol.
+# GND on a D-direction pin → power:GND pointing downward (angle 0).
+# V_OPA on a U-direction pin → power:+24V pointing upward (angle 0).
+_POWER_SYMBOL_NETS = {
+    "GND": {"D": ("power:GND", 0)},
+    # V_OPA is drawn as an explicit bus spine + local wires (see Block A / Block D wires)
+}
+
 def stub_and_label(lib_id, cx, cy, pin_num, net_name, angle=0):
-    """Return (wire_str, label_str) for one pin."""
+    """Return (wire_str, label_or_power_str) for one pin."""
     offsets = PIN_OFFSETS.get(lib_id, {})
     if pin_num not in offsets:
         return "", ""
     dx, dy, direction = offsets[pin_num]
-    # Pin tip in schematic coordinates
-    px, py = cx + dx, cy + dy
-    # Stub end
+    px, py = cx + dx, cy + dy  # pin tip
+
+    # Power symbol substitution (replaces stub + label)
+    pmap = _POWER_SYMBOL_NETS.get(net_name, {})
+    if direction in pmap:
+        plib, pangle = pmap[direction]
+        return "", power_sym(plib, px, py, pangle)
+
+    # Normal stub + label
     if direction == "L":
         lx, ly = px - STUB_LEN, py
         la = 0
@@ -305,304 +320,431 @@ def component(lib_id, ref, val, x, y, angle=0, unit=1,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SCHEMATIC COMPONENTS
-# Each component defined as: (lib_id, ref, val, x, y, angle, unit, fp, ds, {pins})
-# Grid: 2.54mm. Blocks separated by ~20mm.
+# SCHEMATIC COMPONENTS  (all coords are raw mm, before OX/OY offset)
 #
-# Coordinate map (all mm, Y increases downward):
-#   Power / regulator block      : x=20..90,   y=20..70
-#   Capsule input / OPA1641 block: x=100..190, y=20..80
-#   Boost section                : x=20..160,  y=90..170
-#   Transformer / XLR output     : x=170..260, y=60..100
+# Layout (inspired by OPIC.TX3): left→right signal flow, GND/V_OPA as power symbols
+#
+# ROW 1 (y≈5–48):    Phantom feed + regulator + V_OSC zener
+# ROW 2 (y≈48–100):  HV bias | V_MID divider | OPA1641 stage | transformer + XLR
+# ROW 3 (y≈108–150): Schmitt oscillator | Dickson charge pump | LC filter
+# ROW 4 (y≈165+):    Unused U3 gates | PWR flags
 # ─────────────────────────────────────────────────────────────────────────────
 
 elements = []
 
-# ── POWER BLOCK ──────────────────────────────────────────────────────────────
+# ── BLOCK A: PHANTOM FEED + VOLTAGE REGULATOR (x=15..80, y=5..48) ────────────
+# GND pins (direction D) → power:GND symbols automatically
+# V_OPA pins (direction U) → power:+24V symbols automatically
 
-# R1: 6.8kΩ phantom feed from XLR pin 2 (XLR_HOT carries phantom +48V + audio hot)
 elements += component("Device:R", "R1", "6.8k 0.1%",
-    45, 22.5,
+    22, 12,
     footprint="Resistor_SMD:R_0603_1608Metric",
     pins={"1": "XLR_HOT", "2": "V_OPA_RAW"})
 
-# R2: 6.8kΩ phantom feed from XLR pin 3 (XLR_COLD carries phantom +48V + audio cold)
 elements += component("Device:R", "R2", "6.8k 0.1%",
-    45, 37.5,
+    22, 28,
     footprint="Resistor_SMD:R_0603_1608Metric",
     pins={"1": "XLR_COLD", "2": "V_OPA_RAW"})
 
-# U2: 78L24 SOT89  (MC78L05_SOT89 parent: OUT=pin1, GND=pin2, IN=pin3)
-elements += component("Regulator_Linear:L78L24_SOT89", "U2", "L78L24",
-    65, 30,
-    footprint="Package_TO_SOT_SMD:SOT-89-3",
-    pins={"3": "V_OPA_RAW", "2": "GND", "1": "V_OPA"})
-
-# C1: 100nF 78L24 input decoupling
 elements += component("Device:C", "C1", "100n 63V X7R",
-    52, 22,
+    38, 20,
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "V_OPA_RAW", "2": "GND"})
 
-# C2: 100nF 78L24 output decoupling
+# U2: MC78L05_SOT89 pinout: OUT=pin1(right), GND=pin2(bot), IN=pin3(left)
+elements += component("Regulator_Linear:L78L24_SOT89", "U2", "L78L24",
+    57, 20,
+    footprint="Package_TO_SOT_SMD:SOT-89-3",
+    pins={"3": "V_OPA_RAW", "2": "GND", "1": "V_OPA"})
+
 elements += component("Device:C", "C2", "100n 25V X7R",
-    78, 22,
+    74, 12,
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "V_OPA", "2": "GND"})
 
-# R4: 470kΩ V_MID divider high side
-elements += component("Device:R", "R4", "470k",
-    90, 30,
-    footprint="Resistor_SMD:R_0402_1005Metric",
-    pins={"1": "V_OPA", "2": "V_MID"})
-
-# R5: 470kΩ V_MID divider low side
-elements += component("Device:R", "R5", "470k",
-    90, 45,
-    footprint="Resistor_SMD:R_0402_1005Metric",
-    pins={"1": "V_MID", "2": "GND"})
-
-# C4: 10µF V_MID bypass
-elements += component("Device:C", "C4", "10u 25V X5R",
-    103, 37.5,
-    footprint="Capacitor_SMD:C_0603_1608Metric",
-    pins={"1": "V_MID", "2": "GND"})
-
-# C5: 10µF SMD electrolytic VBIAS bypass
 elements += component("Device:C_Polarized", "C5", "10u 25V",
-    78, 45,
+    74, 30,
     footprint="Capacitor_SMD:CP_Elec_4x5.4",
-    pins={"1": "GND", "2": "V_MID"})
+    pins={"1": "V_MID", "2": "GND"})
 
-# C6: 10µF SMD electrolytic VCC bypass
 elements += component("Device:C_Polarized", "C6", "10u 25V",
-    78, 62.5,
+    74, 46,
     footprint="Capacitor_SMD:CP_Elec_4x5.4",
-    pins={"1": "GND", "2": "V_OPA"})
+    pins={"1": "V_OPA", "2": "GND"})
 
-# R_ZEN: 6.8kΩ series resistor for Z_OSC
+# R_ZEN1 + Z_OSC1: V_OPA → 6.8kΩ → V_OSC → 15V zener → GND
 elements += component("Device:R", "R_ZEN1", "6.8k",
-    90, 15,
+    44, 38,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "V_OPA", "2": "V_OSC"})
 
-# Z_OSC: 15V zener shunt regulator for U3 VDD  (pin2=A=GND, pin1=K=V_OSC)
 elements += component("Device:D_Zener", "Z_OSC1", "15V MMSZ15VT1G",
-    110, 15,
+    60, 38,
     footprint="Diode_SMD:D_SOD-123",
-    pins={"2": "GND", "1": "V_OSC"})
+    pins={"1": "V_OSC", "2": "GND"})
 
-# ── OPA1641 SIGNAL BLOCK ──────────────────────────────────────────────────────
+# V_OSC node wire: R_ZEN1.pin2 stub_end (44,44.35) → right → Z_OSC1.pin1 stub_end
+# Route below both components to stay clear of bodies
+elements.append(wire(44, 44.35, 53.65, 44.35))
+elements.append(wire(53.65, 44.35, 53.65, 38))
 
-# R_GBIAS1: 47MΩ HV polarization resistor (first half)
+# V_OPA spine at x=80: vertical bus visible-connecting C2, U2.OUT, R_ZEN1, C6, R4
+# (each pin also retains its auto-stub + "V_OPA" label; spine adds physical wire)
+elements.append(wire(80, 8.19, 80, 46.19))          # V_OPA spine
+elements.append(wire(74, 8.19, 80, 8.19))            # C2.pin1 tip → spine top
+elements.append(wire(67.16, 20, 80, 20))             # U2.OUT stub_end → spine
+elements.append(wire(44, 34.19, 80, 34.19))          # R_ZEN1.pin1 tip → spine
+elements.append(wire(74, 42.19, 80, 42.19))          # C6.pin1 tip → spine (pin1=V_OPA after fix)
+elements.append(wire(72, 46.19, 80, 46.19))          # R4.pin1 tip → spine bottom
+elements.append(junction(80, 20))                    # T: spine + U2.OUT branch
+elements.append(junction(80, 34.19))                 # T: spine + R_ZEN1 branch
+elements.append(junction(80, 42.19))                 # T: spine + C6 branch
+
+# V_OPA_RAW: R1.pin2 stub_end ↔ R2.pin1 stub_end (shows phantom resistors share same rail)
+# R1(22,12) pin2(D) stub_end=(22,18.35); R2(22,28) pin1(U) stub_end=(22,21.65)
+elements.append(wire(22, 18.35, 22, 21.65))
+
+# V_OPA_RAW: C1.pin1 stub_end → U2.pin3 stub_end (input bypass cap visibly tied to regulator)
+# C1(38,20) pin1(U) stub_end=(38,13.65); U2(57,20) pin3(L) stub_end=(46.84,20)
+elements.append(wire(38, 13.65, 46.84, 13.65))
+elements.append(wire(46.84, 13.65, 46.84, 20))
+
+# ── BLOCK B: V_MID VOLTAGE DIVIDER (x=68..90, y=48..88) ─────────────────────
+
+elements += component("Device:R", "R4", "470k",
+    72, 50,
+    footprint="Resistor_SMD:R_0402_1005Metric",
+    pins={"1": "V_OPA", "2": "V_MID"})
+
+elements += component("Device:R", "R5", "470k",
+    72, 66,
+    footprint="Resistor_SMD:R_0402_1005Metric",
+    pins={"1": "V_MID", "2": "GND"})
+
+# R4.pin2 (D stub) → (72,56.35); R5.pin1 (U stub) → (72,59.65); C4.pin1 → same node
+elements.append(wire(72, 56.35, 72, 59.65))          # R4.pin2 ↔ R5.pin1 (V_MID node)
+elements.append(wire(72, 58, 87, 58))                # V_MID node → right to C4 column
+elements.append(wire(87, 58, 87, 54.19))             # down to C4.pin1 tip
+elements.append(junction(72, 58))                    # T: V_MID wire + C4 branch
+
+elements += component("Device:C", "C4", "10u 25V X5R",
+    87, 58,
+    footprint="Capacitor_SMD:C_0603_1608Metric",
+    pins={"1": "V_MID", "2": "GND"})
+
+# ── BLOCK C: HV BIAS CHAIN + CAPSULE + AC COUPLING (x=20..58, y=48..95) ──────
+
 elements += component("Device:R", "R_GBIAS1", "47M 1206",
-    120, 22.5,
+    30, 52,
     footprint="Resistor_SMD:R_1206_3216Metric",
     pins={"1": "HV_FILT", "2": "HV_MID"})
 
-# R_GBIAS2: 47MΩ HV polarization resistor (second half, net 94MΩ total)
 elements += component("Device:R", "R_GBIAS2", "47M 1206",
-    120, 30,
+    30, 68,
     footprint="Resistor_SMD:R_1206_3216Metric",
     pins={"1": "HV_MID", "2": "CAP_FP"})
 
-# J2: Capsule front plate wire pad
-elements += component("Connector_Generic:Conn_01x02", "J2", "CAPSULE",
-    140, 17.5, pins={"1": "CAP_FP", "2": "GND"},
-    footprint="Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical")
+# R_GBIAS1↔R_GBIAS2 series wire (HV_MID node)
+# GBIAS1.pin2 tip=(30,55.81) stub D→(30,58.35); GBIAS2.pin1 tip=(30,64.19) stub U→(30,61.65)
+elements.append(wire(30, 58.35, 30, 61.65))
 
-# C8: 10nF C0G input coupling cap
+elements += component("Connector_Generic:Conn_01x02", "J2", "CAPSULE",
+    50, 52,
+    footprint="Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+    pins={"1": "CAP_FP", "2": "GND"})
+
 elements += component("Device:C", "C8", "10n X7R 0805",
-    135, 30,
+    50, 70,
     footprint="Capacitor_SMD:C_0805_2012Metric",
     pins={"1": "CAP_FP", "2": "VPLUS"})
 
-# R_BIAS: 100MΩ input bias VPLUS→V_MID
 elements += component("Device:R", "R_BIAS1", "100M 1206",
-    135, 45,
+    50, 88,
     footprint="Resistor_SMD:R_1206_3216Metric",
     pins={"1": "VPLUS", "2": "V_MID"})
 
-# U1: OPA1641 SOIC-8
-elements += component("Amplifier_Operational:OPA1641", "U1", "OPA1641",
-    165, 55,
-    footprint="Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
-    pins={"3": "VPLUS", "2": "VINV", "6": "SIG_OUT", "7": "V_OPA", "4": "GND"})
+# CAP_FP bus at x=44: R_GBIAS2.pin2 → J2.pin1 → C8.pin1
+# R_GBIAS2(30,68) pin2 tip=(30,71.81) stub D→(30,74.35)
+# J2(50,52) pin1 tip=(44.92,52) stub L→(42.38,52)
+# C8(50,70) pin1 tip=(50,66.19) stub U→(50,63.65)
+elements.append(wire(44, 52, 44, 74.35))         # vertical CAP_FP bus at x=44
+elements.append(wire(42.38, 52, 44, 52))          # J2.pin1 stub_end → bus top
+elements.append(wire(50, 63.65, 44, 63.65))      # C8.pin1 stub_end → bus mid
+elements.append(wire(30, 74.35, 44, 74.35))      # R_GBIAS2.pin2 stub_end → bus bot
+elements.append(junction(44, 63.65))             # T: bus + C8 branch
 
-# R3: 2.2kΩ inverting input bias (Rin)
+# VPLUS node: C8.pin2 → R_BIAS1.pin1 (vertical at x=50); then right to U1.IN+
+# C8(50,70) pin2 tip=(50,73.81); R_BIAS1(50,88) pin1 tip=(50,84.19)
+# U1(122,67) IN+ tip=(114.38,64.46) stub L→(111.84,64.46)
+elements.append(wire(50, 73.81, 50, 84.19))      # C8.pin2 → R_BIAS1.pin1 (VPLUS vertical)
+elements.append(wire(50, 76.35, 111.84, 76.35))  # horizontal to U1.IN+ column
+elements.append(wire(111.84, 76.35, 111.84, 64.46))  # up to U1.IN+ stub_end
+elements.append(junction(50, 76.35))             # T: vertical VPLUS + horizontal
+
+# ── BLOCK D: OPA1641 SIGNAL STAGE (x=88..172, y=48..102) ────────────────────
+
 elements += component("Device:R", "R3", "2.2k",
-    148, 52.5,
+    92, 84,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "V_MID", "2": "VINV"})
 
-# R6: 130kΩ feedback (Rf)
 elements += component("Device:R", "R6", "130k",
-    165, 40,
+    107, 52,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "SIG_OUT", "2": "VINV"})
 
-# R7: 100Ω output series protection
-elements += component("Device:R", "R7", "100R",
-    185, 55,
-    footprint="Resistor_SMD:R_0402_1005Metric",
-    pins={"1": "SIG_OUT", "2": "SIG_PROT"})
+# U1: OPA1641; GND(pin4,D)→GND sym automatically; V_OPA connected via local wire below
+elements += component("Amplifier_Operational:OPA1641", "U1", "OPA1641",
+    122, 67,
+    footprint="Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+    pins={"3": "VPLUS", "2": "VINV", "6": "SIG_OUT", "7": "V_OPA", "4": "GND"})
 
-# C3: 100nF VCC HF decoupling near OPA1641
 elements += component("Device:C", "C3", "100n 25V X7R",
-    158, 70,
+    113, 83,
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "V_OPA", "2": "GND"})
 
-# C7: 4.7µF X7R 1206 DC blocking cap to transformer
+elements += component("Device:R", "R7", "100R",
+    143, 64,
+    footprint="Resistor_SMD:R_0402_1005Metric",
+    pins={"1": "SIG_OUT", "2": "SIG_PROT"})
+
 elements += component("Device:C", "C7", "4.7u 50V X7R 1206",
-    200, 55,
+    159, 58,
     footprint="Capacitor_SMD:C_1206_3216Metric",
     pins={"1": "SIG_PROT", "2": "TX_DRV"})
 
-# ── TRANSFORMER (NTE10/3) — modeled as 5 solder pad connectors ───────────────
-# T1 is a TH transformer with flying wires; represented by two connectors:
-# Connector A: primary (3× winding driven side): TX_DRV, GND, GND  (red, blue, black wires)
-# Connector B: secondary (1× winding balanced out): XLR_HOT, XLR_COLD  (white, yellow wires)
+# VINV node: R6.pin2 → vertical bus → R3.pin2 branch + U1.IN− branch
+# R6(107,52) pin2 tip=(107,55.81) stub D→(107,58.35)
+# R3(92,84) pin2 tip=(92,87.81) stub D→(92,90.35)   [VINV,D → NOT GND, keeps stub]
+# U1(122,67) IN− tip=(114.38,69.54) stub L→(111.84,69.54)
+elements.append(wire(107, 58.35, 107, 90.35))    # vertical VINV bus
+elements.append(wire(92, 90.35, 107, 90.35))     # R3.pin2 stub_end → right to bus
+elements.append(wire(107, 69.54, 111.84, 69.54)) # bus → U1.IN− stub_end
+elements.append(junction(107, 69.54))            # T: bus + U1.IN− branch
+elements.append(junction(107, 90.35))            # T: bus + R3 branch
+
+# SIG_OUT node: U1.OUT → feedback arc to R6.pin1 + output to R7.pin1
+# U1(122,67) OUT tip=(129.62,67) stub R→(132.16,67)
+# R6(107,52) pin1 tip=(107,48.19) stub U→(107,45.65)
+# R7(143,64) pin1 tip=(143,60.19) stub U→(143,57.65)
+elements.append(wire(132.16, 67, 132.16, 45.65)) # U1.OUT stub up to R6.pin1 level
+elements.append(wire(132.16, 45.65, 107, 45.65)) # left to R6.pin1 stub_end (feedback)
+elements.append(wire(132.16, 67, 143, 67))        # right toward R7
+elements.append(wire(143, 67, 143, 60.19))        # up to R7.pin1 tip
+elements.append(junction(132.16, 67))             # T: feedback up + output right
+
+# SIG_PROT: R7.pin2 → around C7 right side → C7.pin1
+# R7(143,64) pin2 tip=(143,67.81) stub D→(143,70.35)
+# C7(159,58) pin1 tip=(159,54.19) stub U→(159,51.65)
+elements.append(wire(143, 70.35, 162, 70.35))    # right of C7
+elements.append(wire(162, 70.35, 162, 54.19))    # up
+elements.append(wire(162, 54.19, 159, 54.19))    # left to C7.pin1 tip
+
+# V_OPA local: C3.pin1 stub_end (113,76.65) → up → U1.V+ tip (119.46,59.38)
+# Visually shows that U1.V+ and C3 (bypass) share the same V_OPA supply
+elements.append(wire(113, 76.65, 113, 59.38))    # vertical up from C3 stub_end
+elements.append(wire(113, 59.38, 119.46, 59.38)) # horizontal to U1.V+ tip
+
+# ── BLOCK E: TRANSFORMER + XLR OUTPUT (x=178..230, y=55..78) ─────────────────
+
 elements += component("Connector_Generic:Conn_01x03", "TP1", "NTE10/3_PRI",
-    218, 55, pins={"1": "TX_DRV", "2": "GND", "3": "GND"},
-    footprint="Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical")
+    178, 63,
+    footprint="Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+    pins={"1": "TX_DRV", "2": "GND", "3": "GND"})
 
 elements += component("Connector_Generic:Conn_01x02", "TS1", "NTE10/3_SEC",
-    235, 55, pins={"1": "XLR_HOT", "2": "XLR_COLD"},
-    footprint="Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical")
+    196, 63,
+    footprint="Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+    pins={"1": "XLR_HOT", "2": "XLR_COLD"})
 
-# J3: XLR balanced output connector (3-pin: GND, HOT, COLD)
 elements += component("Connector_Generic:Conn_01x03", "J3", "XLR_OUT",
-    255, 60, pins={"1": "GND", "2": "XLR_HOT", "3": "XLR_COLD"},
-    footprint="")
+    213, 67,
+    footprint="",
+    pins={"1": "GND", "2": "XLR_HOT", "3": "XLR_COLD"})
 
-# ── BOOST SECTION ─────────────────────────────────────────────────────────────
+# TX_DRV: C7.pin2 stub_end (159,51.65) → TP1.pin1 stub_end (170.38,60.46)
+# C7(159,58) pin2(U) stub_end=(159,51.65); TP1(178,63) pin1(L) stub_end=(170.38,60.46)
+elements.append(wire(159, 51.65, 170.38, 51.65))
+elements.append(wire(170.38, 51.65, 170.38, 60.46))
 
-# U3: CD40106B hex Schmitt inverter, unit 1 (oscillator gate)
+# XLR outputs: TS1.pin1/2 → below connector bodies → J3.pin2/3
+# TS1(196,63) pin1(XLR_HOT,L) stub_end=(188.38,63); pin2(XLR_COLD,L) stub_end=(188.38,65.54)
+# J3(213,67) pin2(XLR_HOT,L) stub_end=(205.38,67); pin3(XLR_COLD,L) stub_end=(205.38,69.54)
+# Routes offset at x=186/x=184 to avoid crossing each other at the shared stub column x=188.38
+# and to clear TP1 body right edge (~x=184)
+elements.append(wire(188.38, 63,    186,    63))       # XLR_HOT: left offset
+elements.append(wire(186,    63,    186,    73))       # down below connectors
+elements.append(wire(186,    73,    204,    73))       # right
+elements.append(wire(204,    73,    204,    67))       # up to J3.pin2 y-level
+elements.append(wire(204,    67,    205.38, 67))       # right to J3.pin2 stub_end
+
+elements.append(wire(188.38, 65.54, 184,    65.54))   # XLR_COLD: left offset
+elements.append(wire(184,    65.54, 184,    75))       # down
+elements.append(wire(184,    75,    205.38, 75))       # right
+elements.append(wire(205.38, 75,    205.38, 69.54))   # up to J3.pin3 stub_end
+
+# ── BLOCK F: SCHMITT OSCILLATOR (x=15..67, y=108..160) ───────────────────────
+
 elements += component("4xxx:40106", "U3", "CD40106B",
-    40, 110, unit=1,
+    28, 118, unit=1,
     footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
     pins={"1": "CLKA_IN", "2": "CLKA"})
 
-# U3 power unit (unit 7): VDD=pin14, VSS=pin7
 elements += component("4xxx:40106", "U3", "CD40106B",
-    40, 145, unit=7,
+    52, 118, unit=2,
+    footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+    pins={"3": "CLKA", "4": "CLKB"})
+
+elements += component("4xxx:40106", "U3", "CD40106B",
+    28, 148, unit=7,
     footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
     pins={"14": "V_OSC", "7": "GND"})
 
-# U3 unused gate units 3–6: inputs tied to GND, outputs no-connect
-# x=70 keeps these clear of the power-flag wires at x=25–35, y=185–210.
-_UX = 70
-for _u, _in_pin, _uy in [
-    (3, "5",  155),
-    (4, "9",  165),
-    (5, "11", 175),
-    (6, "13", 185),
-]:
-    elements += component("4xxx:40106", "U3", "CD40106B",
-        _UX, _uy, unit=_u,
-        footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
-        pins={_in_pin: "GND"})
-    # no-connect at output pin tip (7.62mm right of centre)
-    elements.append(no_connect(_UX + 7.62, _uy))
-
-# R_OSC: 47kΩ oscillator timing resistor (between CLKA and CLKA_IN)
 elements += component("Device:R", "R_OSC1", "47k",
-    58, 107.5,
+    40, 106,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "CLKA", "2": "CLKA_IN"})
 
-# C10: 100pF oscillator timing cap
+# R_OSC1(40,106): pin1(CLKA,U) tip=(40,102.19) stub→(40,99.65)
+#                 pin2(CLKA_IN,D) tip=(40,109.81) stub→(40,112.35)
+# C10(40,128): pin1(CLKA_IN,U) tip=(40,124.19) stub→(40,121.65)
+#              pin2(GND,D) auto
 elements += component("Device:C", "C10", "100p C0G",
-    58, 122.5,
+    40, 128,
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "CLKA_IN", "2": "GND"})
 
-# U3 bypass cap on V_OSC
+# R_OSC1↔C10 CLKA_IN vertical wire
+elements.append(wire(40, 112.35, 40, 121.65))
+
+# CLKA horizontal bus: U3A(28,118).pin2 stub(38.16,118) ↔ U3B(52,118).pin3 stub(41.84,118)
+# branch up to R_OSC1.pin1 tip (40,102.19) via junction at (40,118)
+elements.append(wire(38.16, 118, 41.84, 118))
+elements.append(wire(40, 118, 40, 102.19))
+elements.append(junction(40, 118))
+
+# CLKA_IN feedback: R_OSC1.pin2 stub (40,112.35) → left → down to U3A.pin1 stub (17.84,118)
+# horizontal at y=112.35 is above gate bodies (gates at y=118, body top ≈ y=114)
+elements.append(wire(40, 112.35, 17.84, 112.35))
+elements.append(wire(17.84, 112.35, 17.84, 118))
+elements.append(junction(40, 112.35))
+
 elements += component("Device:C", "C_U3", "100n 25V X7R",
-    48, 120,
+    38, 140,
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "V_OSC", "2": "GND"})
 
-# Dickson pump diodes — 2× BAT54S (series dual Schottky, A→COM→K = 2 diodes per pkg)
-# D1: pin1(A)=V_OPA → [D1a] → pin3(COM)=N1 → [D1b] → pin2(K)=N2
-# D2: pin1(A)=N2    → [D2a] → pin3(COM)=N3 → [D2b] → pin2(K)=VBOOST
+# V_OSC: U3G.pin14 stub_end (28,132.76) → C_U3.pin1 stub_end (38,133.65)
+elements.append(wire(28, 132.76, 38, 132.76))
+elements.append(wire(38, 132.76, 38, 133.65))
+
+# ── BLOCK G: DICKSON CHARGE PUMP (x=82..180, y=108..150) ─────────────────────
 
 elements += component("Diode:BAT54S", "D1", "BAT54S",
-    85, 100,
+    88, 113,
     footprint="Package_TO_SOT_SMD:SOT-23",
     pins={"1": "V_OPA", "3": "N1", "2": "N2"})
 
 elements += component("Diode:BAT54S", "D2", "BAT54S",
-    113, 100,
+    118, 113,
     footprint="Package_TO_SOT_SMD:SOT-23",
     pins={"1": "N2", "3": "N3", "2": "VBOOST"})
 
-# Pump caps: Cp1 (CLKA), Cp2 (CLKB), Cp3 (CLKA)
-# CLKB = inverted CLKA (second gate of CD40106B)
 elements += component("Device:C", "Cp1", "100n 100V X7R",
-    83, 115,
+    88, 133,
     footprint="Capacitor_SMD:C_0805_2012Metric",
     pins={"1": "N1", "2": "CLKA"})
 
 elements += component("Device:C", "Cp2", "100n 100V X7R",
-    100, 115,
+    103, 133,
     footprint="Capacitor_SMD:C_0805_2012Metric",
     pins={"1": "N2", "2": "CLKB"})
 
 elements += component("Device:C", "Cp3", "100n 100V X7R",
-    117, 115,
+    118, 133,
     footprint="Capacitor_SMD:C_0805_2012Metric",
     pins={"1": "N3", "2": "CLKA"})
 
-# CLKB second gate of CD40106B (unit 2)
-elements += component("4xxx:40106", "U3", "CD40106B",
-    55, 130, unit=2,
-    footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
-    pins={"3": "CLKA", "4": "CLKB"})
+# N1: D1.pin3(COM,D) stub_end(88,120.62) → Cp1.pin1(N1,U) stub_end(88,126.65)
+elements.append(wire(88, 120.62, 88, 126.65))
 
-# Reservoir cap
+# N2: D1.pin2(K,R) stub_end(98.16,113) ↔ D2.pin1(A,L) stub_end(107.84,113)
+#     branch at x=103 down to Cp2.pin1(N2,U) stub_end(103,126.65)
+elements.append(wire(98.16, 113, 107.84, 113))
+elements.append(wire(103, 113, 103, 126.65))
+elements.append(junction(103, 113))
+
+# N3: D2.pin3(COM,D) stub_end(118,120.62) → Cp3.pin1(N3,U) stub_end(118,126.65)
+elements.append(wire(118, 120.62, 118, 126.65))
+
+# CLKA pump bus at y=145: connects Cp1.pin2(88,139.35) and Cp3.pin2(118,139.35)
+# Cp2.pin2(CLKB) stub at (103,139.35) is between them — bus routed below to avoid crossing CLKB
+elements.append(wire(88, 139.35, 88, 145))
+elements.append(wire(118, 139.35, 118, 145))
+elements.append(wire(88, 145, 118, 145))
+
 elements += component("Device:C", "Cres1", "470n 100V X7R",
-    146, 100,
+    150, 113,
     footprint="Capacitor_SMD:C_0805_2012Metric",
     pins={"1": "VBOOST", "2": "GND"})
 
-# DZ1: 68V zener HV clamp on VBOOST  (pin2=A=GND, pin1=K=VBOOST)
 elements += component("Device:D_Zener", "DZ1", "68V BZT52C68",
-    160, 115,
+    166, 128,
     footprint="Diode_SMD:D_SOD-123",
-    pins={"2": "GND", "1": "VBOOST"})
+    pins={"1": "VBOOST", "2": "GND"})
 
-# L1: 10mH SMD LC filter inductor
+# VBOOST horizontal bus at y=106.65: D2 → Cres1 → DZ1 → L1
+# Cres1.stub_end=(150,106.65), L1.stub_end=(188,106.65) already at this y level
+elements.append(wire(128.16, 106.65, 188, 106.65)) # VBOOST horizontal bus
+elements.append(wire(128.16, 113, 128.16, 106.65))  # D2.pin2 stub_end → bus
+elements.append(wire(159.65, 128, 159.65, 106.65))  # DZ1.pin1 stub_end → bus
+elements.append(junction(150, 106.65))              # T: bus + Cres1 stub
+elements.append(junction(159.65, 106.65))           # T: bus + DZ1 branch
+
+# ── BLOCK H: LC FILTER (x=183..215, y=108..140) ──────────────────────────────
+
 elements += component("Device:L", "L1", "10mH FNR5040S",
-    178, 100,
+    188, 113,
     footprint="Inductor_SMD:L_Changjiang_FNR5040S",
     pins={"1": "VBOOST", "2": "HV_FILT"})
 
-# C9: 470nF 100V LC filter cap
 elements += component("Device:C", "C9", "470n 100V X7R",
-    193, 112,
+    204, 128,
     footprint="Capacitor_SMD:C_0805_2012Metric",
     pins={"1": "HV_FILT", "2": "GND"})
 
-# ── POWER FLAGS (suppress ERC power_pin_not_driven) ──────────────────────────
-# Placed in a dedicated block below the main circuit (y=185..215, before shift).
-# Net labels connect the flags to the appropriate nets without overlapping components.
+# HV_FILT: L1.pin2 stub_end (188,119.35) → right → C9.pin1 stub_end (204,121.65)
+elements.append(wire(188, 119.35, 204, 119.35))  # horizontal
+elements.append(wire(204, 119.35, 204, 121.65))  # down to C9.pin1 stub_end
 
-# GND: power symbol + PWR_FLAG on same wire
-elements.append(power_sym("power:GND",      25, 185))
-elements.append(power_sym("power:PWR_FLAG", 35, 185))
-elements.append(wire(25, 185, 35, 185))
+# ── BLOCK I: UNUSED U3 GATES (x=232, y=165..210) ─────────────────────────────
 
-# V_OPA_RAW: U2 IN pin (power_in) needs a driver
-elements.append(label("V_OPA_RAW", 20, 200, 0))
-elements.append(wire(20, 200, 35, 200))
-elements.append(power_sym("power:PWR_FLAG", 35, 200))
+for _u, _in_pin, _uy in [
+    (3, "5",  165),
+    (4, "9",  180),
+    (5, "11", 195),
+    (6, "13", 210),
+]:
+    elements += component("4xxx:40106", "U3", "CD40106B",
+        232, _uy, unit=_u,
+        footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+        pins={_in_pin: "GND"})
+    elements.append(no_connect(232 + 7.62, _uy))
 
-# V_OSC: U3 VDD (power_in) needs a driver
-elements.append(label("V_OSC", 20, 210, 0))
-elements.append(wire(20, 210, 35, 210))
-elements.append(power_sym("power:PWR_FLAG", 35, 210))
+# ── POWER FLAGS ───────────────────────────────────────────────────────────────
+
+elements.append(power_sym("power:GND",      20, 230))
+elements.append(power_sym("power:PWR_FLAG", 33, 230))
+elements.append(wire(20, 230, 33, 230))
+
+elements.append(label("V_OPA_RAW", 15, 243, 0))
+elements.append(wire(15, 243, 33, 243))
+elements.append(power_sym("power:PWR_FLAG", 33, 243))
+
+elements.append(label("V_OSC", 15, 256, 0))
+elements.append(wire(15, 256, 33, 256))
+elements.append(power_sym("power:PWR_FLAG", 33, 256))
 
 # ── SHEET / SYMBOL INSTANCES (required for KiCad 7 validity) ─────────────────
 SHEET_INST = f'(sheet_instances (path "/" (page "1")))'
