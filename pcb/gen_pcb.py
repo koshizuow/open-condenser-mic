@@ -293,6 +293,24 @@ def route_all(board):
           (27.5375, 12.0),
           (30.5375, 12.0))
 
+    # ── Guard ring: HV_MID rectangle around CAP_FP / J2 / R_GBIAS area ───────
+    # Closed rectangle (x=8.0..36, y=1..16.5) on F.Cu inside the keepout.
+    # MH1/MH2 are NPTH (no copper); drill radius 1.35mm.
+    # Left  x=8.0: gap 0.45mm to MH1 NPTH drill right edge (x=7.35).
+    # Right x=36:  gap 0.45mm to MH2 NPTH drill right edge (x=35.35).
+    # Right side (x=36) crosses HV_FILT track (y=9) on B.Cu.
+    # VPLUS via(12.95,15.5): bottom y=16.5 → top edge 16.3, via bottom 15.95 (+0.35mm).
+    route(board, "HV_MID", F, HV,      # top + right upper
+          (8.0, 1), (36, 1), (36, 8.2))
+    via(board, "HV_MID", 36.0, 8.2)   # F.Cu → B.Cu (above HV_FILT at y=9)
+    route(board, "HV_MID", B, HV,      # B.Cu crossing over HV_FILT
+          (36, 8.2), (36, 9.8))
+    via(board, "HV_MID", 36.0, 9.8)   # B.Cu → F.Cu (below HV_FILT)
+    route(board, "HV_MID", F, HV,      # right lower + bottom + left
+          (36, 9.8), (36, 16.5), (8.0, 16.5), (8.0, 1))
+    route(board, "HV_MID", F, HV,      # spur: ring top T-junction → R_GBIAS1 pad1
+          (27.5375, 1), (27.5375, 8))
+
     # ── CAP_FP: R_GBIAS2-pad2 → J2-pad1 → C8-pad1 ───────────────────────
     # R_GBIAS2 pad2 (CAP_FP) at (33.4625, 12); exit right then route left
     route(board, "CAP_FP", F, HV,
@@ -716,7 +734,11 @@ def main():
     # Mount hole pattern: 30mm horizontal x 80mm vertical (per housing bosses)
     # Centred on 40mm wide board: x=5 and x=35 (5mm margins each side)
 
-    for ref, x, y in [("MH1",6,5),("MH2",34,5),("MH3",6,85),("MH4",34,85)]:
+    # MH1/MH2 in capsule zone: NPTH (no F.Cu copper) so guard ring can enclose the zone.
+    for ref, x, y in [("MH1",6,5),("MH2",34,5)]:
+        place(board, "MountingHole", "MountingHole_2.7mm_M2.5", ref, ref, x, y)
+    # MH3/MH4 in XLR zone: PTH with GND pad for housing grounding.
+    for ref, x, y in [("MH3",6,85),("MH4",34,85)]:
         place(board, "MountingHole", "MountingHole_2.7mm_M2.5_Pad_TopBottom",
               ref, ref, x, y, pad_nets={"1": "GND"})
     for ref, x, y in [("ZT1",8,72),("ZT2",31,72)]:
@@ -726,8 +748,9 @@ def main():
     # F.Cu GND copper pour exclusion around all high-Z nodes.
     # L-shape covers CAP_FP trace network (J2/C8/R_GBIAS1/2, x=6..36.5, y=0..17)
     # and VPLUS trace + R_BIAS1 (x=6..14.5, y=17..30).
-    # B.Cu GND plane is retained: THT pads (J2-GND, MH1/2) stay connected,
-    # and through-board stray capacitance is small (<1 pF, through 1.6 mm FR4).
+    # B.Cu GND plane is retained: THT pads (J2-GND) stay connected;
+    # MH1/MH2 are NPTH (no copper) so the guard ring can fully enclose the zone.
+    # Through-board stray capacitance is small (<1 pF, through 1.6 mm FR4).
     add_keepout(board, pcbnew.F_Cu,
                 [(6, 0), (36.5, 0), (36.5, 17), (14.5, 17), (14.5, 30), (6, 30)])
 
