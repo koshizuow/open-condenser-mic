@@ -483,7 +483,7 @@ elements += component("Device:R", "R3", "2.2k",
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "V_MID", "2": "VINV"})
 
-elements += component("Device:R", "R6", "5.6k",
+elements += component("Device:R", "R6", "47k",
     107, 52,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "SIG_OUT", "2": "VINV"})
