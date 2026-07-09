@@ -136,6 +136,12 @@ python pcb/gen_schematic.py  # writes pcb/open-condenser-mic.kicad_sch
 
 All three scripts accept `--name PROJECT_NAME` to change the output filename (default: `open-condenser-mic`). After generating, open the project in KiCad via **File → Open Project** and select `pcb/open-condenser-mic.kicad_pro`.
 
+A pre-rendered schematic PDF is available at [docs/schematic.pdf](docs/schematic.pdf). To regenerate it:
+
+```bash
+kicad-cli sch export pdf --black-and-white --output docs/schematic.pdf pcb/open-condenser-mic.kicad_sch
+```
+
 ### 2. Export gerbers
 
 `gen_pcb.py` fills all copper zones itself before writing the board file, so no manual zone-fill step is needed. Export gerbers and drill files via **File → Fabrication Outputs** in KiCad, or from the command line:

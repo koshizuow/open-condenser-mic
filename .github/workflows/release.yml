@@ -33,6 +33,12 @@ jobs:
           name: kicad-project
           path: release-assets/kicad-project
 
+      - name: Download schematic PDF
+        uses: actions/download-artifact@v8
+        with:
+          name: schematic
+          path: release-assets/schematic
+
       - name: Download DRC/ERC reports
         uses: actions/download-artifact@v8
         with:
@@ -54,6 +60,7 @@ jobs:
             release-assets/fabrication-outputs/cpl_flat.csv \
             release-assets/fabrication-outputs/bom_presence.csv \
             release-assets/fabrication-outputs/cpl_presence.csv \
+            release-assets/schematic/schematic.pdf \
             release-assets/open-condenser-mic-kicad-project.zip \
             release-assets/drc-erc-reports/drc-report.rpt \
             release-assets/drc-erc-reports/erc-report.rpt
