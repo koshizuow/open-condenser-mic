@@ -68,17 +68,25 @@ R8    NET_OPA_OUT  OPA_OUT_R8  100
 C6    OPA_OUT_R8  XFMR_PRI_IN  4.7u
 
 * NTE10/3 transformer (reversed: red-blue as primary, white-yellow as secondary)
-* Load: 600Ω typical XLR/preamp input (differential, so 600Ω across HOT/COLD)
 X_XFMR  XFMR_PRI_IN  0  XLR_P2  XLR_P3  NTE10_3
-R_load  XLR_P2  XLR_P3  600
+
+* RFI filter: 100Ω series + 100pF C0G shunt on each XLR leg (fc ~16 MHz)
+* Creates -2.5 dB drop at 600Ω load; negligible at typical 2k+ preamp input
+R_RFI1  XLR_P2  XLR_HOT_F  100
+R_RFI2  XLR_P3  XLR_COLD_F  100
+C_RFI1  XLR_HOT_F  0  100p
+C_RFI2  XLR_COLD_F  0  100p
+
+* Load: 600Ω typical XLR/preamp input (differential, so 600Ω across HOT/COLD)
+R_load  XLR_HOT_F  XLR_COLD_F  600
 
 * Common-mode bleed — prevents floating secondary node in SPICE
 * 10MΩ >> 600Ω load, negligible effect on signal
-R_cm1  XLR_P2  0  10Meg
-R_cm2  XLR_P3  0  10Meg
+R_cm1  XLR_HOT_F  0  10Meg
+R_cm2  XLR_COLD_F  0  10Meg
 
-* Differential output node (XLR_P2 – XLR_P3)
-Ediff_out  XLR_DIFF  0  XLR_P2  XLR_P3  1
+* Differential output node (XLR_HOT_F – XLR_COLD_F)
+Ediff_out  XLR_DIFF  0  XLR_HOT_F  XLR_COLD_F  1
 
 * ---------------------------------------------------------------------------
 * ANALYSIS: AC sweep 10Hz to 200kHz

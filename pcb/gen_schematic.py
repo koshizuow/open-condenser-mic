@@ -556,7 +556,30 @@ elements += component("Connector_Generic:Conn_01x02", "TS1", "NTE10/3_SEC",
 elements += component("Connector_Generic:Conn_01x03", "J3", "XLR_OUT",
     213, 67,
     footprint="",
-    pins={"1": "GND", "2": "XLR_HOT", "3": "XLR_COLD"})
+    pins={"1": "GND", "2": "XLR_HOT_F", "3": "XLR_COLD_F"})
+
+# RFI filter: 100R series + 100pF C0G shunt on each XLR leg (fc ~16 MHz)
+# Placed to the right of J3; XLR_HOT/COLD nets connect via local label to TS1
+# XLR_HOT_F/COLD_F connect via local label to J3 stubs above
+elements += component("Device:R", "R_RFI1", "100R",
+    235, 58,
+    footprint="Resistor_SMD:R_0402_1005Metric",
+    pins={"1": "XLR_HOT", "2": "XLR_HOT_F"})
+
+elements += component("Device:C", "C_RFI1", "100p C0G",
+    247, 58,
+    footprint="Capacitor_SMD:C_0402_1005Metric",
+    pins={"1": "XLR_HOT_F", "2": "GND"})
+
+elements += component("Device:R", "R_RFI2", "100R",
+    235, 76,
+    footprint="Resistor_SMD:R_0402_1005Metric",
+    pins={"1": "XLR_COLD", "2": "XLR_COLD_F"})
+
+elements += component("Device:C", "C_RFI2", "100p C0G",
+    247, 76,
+    footprint="Capacitor_SMD:C_0402_1005Metric",
+    pins={"1": "XLR_COLD_F", "2": "GND"})
 
 # TX_DRV: C7.pin2 stub_end (159,51.65) → TP1.pin1 stub_end (170.38,60.46)
 # C7(159,58) pin2(U) stub_end=(159,51.65); TP1(178,63) pin1(L) stub_end=(170.38,60.46)
