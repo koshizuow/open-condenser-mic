@@ -865,17 +865,18 @@ def main():
           "C4", "10u 25V X5R", 4, 44, 90,
           {"1": "V_MID", "2": "GND"})
 
-    # CP_Elec_4x5.4: pad1(−) at (−1.8,0), pad2(+) at (+1.8,0)
-    # Component at (30,43) → pad2(V_MID) at (31.8,43), pad1(GND) at (28.2,43)
+    # CP_Elec_4x5.4: pad1(+) at (−1.8,0), pad2(−) at (+1.8,0) in footprint frame.
+    # angle=180: pad1(+) rotates to (+1.8,0) in board frame.
+    # C5 at (30,43) angle=180: pad1(V_MID) at (31.8,43), pad2(GND) at (28.2,43) ✓
     place(board, "Capacitor_SMD", "CP_Elec_4x5.4",
-          "C5", "10u 25V", 30, 43, 0,
-          {"1": "GND", "2": "V_MID"})
+          "C5", "10u 25V", 30, 43, 180,
+          {"1": "V_MID", "2": "GND"})
 
-    # C6 at (31,60): pad1(GND) at (29.2,60) left=27.9mm; VBOOST right=27.1mm → gap 0.8mm ✓
-    # pad2(V_OPA) at (32.8,60)
+    # C6 at (31,60) angle=180: pad1(V_OPA) at (32.8,60), pad2(GND) at (29.2,60)
+    # pad2(GND) left=27.4mm; VBOOST right=27.1mm → gap 0.3mm ✓
     place(board, "Capacitor_SMD", "CP_Elec_4x5.4",
-          "C6", "10u 25V", 31, 60, 0,
-          {"1": "GND", "2": "V_OPA"})
+          "C6", "10u 25V", 31, 60, 180,
+          {"1": "V_OPA", "2": "GND"})
 
     # Z_OSC shunt regulator: V_OPA -> R_ZEN -> V_OSC -> Z_OSC -> GND (15V supply for U3)
     # SOD-123 pad1=K, pad2=A; K=V_OSC (high side of zener), A=GND
@@ -1034,6 +1035,10 @@ def main():
     fix_ref(board, "C2",     x_mm=31, y_mm=38, angle_deg=0)
     # R_ZEN1: angle=180 rotates silk; force horizontal above component (body top ~y=32.77)
     fix_ref(board, "R_ZEN1", x_mm=31.0, y_mm=32.2, angle_deg=0)
+
+    # C5/C6: angle=180 rotates default silk below body; force above
+    fix_ref(board, "C5", x_mm=30.0, y_mm=39.8, angle_deg=0)
+    fix_ref(board, "C6", x_mm=31.0, y_mm=56.8, angle_deg=0)
 
     # Cp1/Cp2: silk below body
     fix_ref(board, "Cp1", x_mm=25.0, y_mm=55.5, angle_deg=0)
