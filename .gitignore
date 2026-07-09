@@ -34,8 +34,8 @@ sym-lib-table
 *.exc
 
 # BOM and CPL
-pcb/bom.csv
-pcb/cpl.csv
+pcb/bom*.csv
+pcb/cpl*.csv
 
 # CI fabrication artifact staging (gerbers.zip + bom.csv + cpl.csv)
 /fab/
