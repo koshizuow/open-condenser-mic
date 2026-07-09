@@ -560,7 +560,8 @@ elements.append(wire(113, 59.38, 119.46, 59.38)) # horizontal to U1.V+ tip
 elements += component("Connector_Generic:Conn_01x03", "TP1", "NTE10/3_PRI",
     178, 63,
     footprint="Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
-    pins={"1": "TX_DRV", "2": "GND", "3": "GND"})
+    pins={"1": "TX_DRV", "2": "GND"})
+elements.append(no_connect(172.92, 65.54))  # S3 pin tip: far end of secondary winding, leave floating
 
 elements += component("Connector_Generic:Conn_01x02", "TS1", "NTE10/3_SEC",
     196, 63,
