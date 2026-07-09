@@ -216,13 +216,17 @@ def route_all(board):
     # F.Cu GND zone connects all SMD GND pads directly — no per-pad vias needed.
     # Stitching vias tie F.Cu and B.Cu GND together at corners and mid-board.
     # Both zones use 0.3mm clearance from other nets.
+    # F.Cu GND zone starts at y=17: no copper above that line.
+    # The capsule zone (y<17) has only B.Cu GND plane + F.Cu HV_MID guard ring trace.
+    # Avoids fragmented copper islands that form when the full-board zone is cut by
+    # the HV keepout and guard ring.
     add_zone(board, "GND", F,
-             [(2,0),(38,0),(38,93),(2,93)],
+             [(2,17),(38,17),(38,93),(2,93)],
              clearance_mm=0.3)
     add_zone(board, "GND", B,
              [(2,0),(38,0),(38,93),(2,93)],
              clearance_mm=0.3)
-    for vx, vy in [(3,2),(37,2),(3,60),(36,60),(3,91),(37,91)]:
+    for vx, vy in [(3,60),(36,60),(3,91),(37,91)]:
         via(board, "GND", vx, vy)
     # Extra via inside isolated Island 0 (CLKA L-shape cuts off C_OSC.2 from main zone).
     # Connects Island 0 F.Cu fill to B.Cu GND plane.
@@ -763,8 +767,10 @@ def main():
     # B.Cu GND plane is retained: THT pads (J2-GND) stay connected;
     # MH1/MH2 are NPTH (no copper) so the guard ring can fully enclose the zone.
     # Through-board stray capacitance is small (<1 pF, through 1.6 mm FR4).
+    # Keepout: only the VPLUS trace corridor (x=6..14.5, y=17..30).
+    # The y<17 portion is now redundant: F.Cu GND zone no longer extends above y=17.
     add_keepout(board, pcbnew.F_Cu,
-                [(6, 0), (36.5, 0), (36.5, 17), (14.5, 17), (14.5, 30), (6, 30)])
+                [(6, 17), (14.5, 17), (14.5, 30), (6, 30)])
 
     # J2: bare THT solder pads for capsule wires
     place_solder_pads(board, "J2", 15.23, 3, ["CAP_FP", "GND"], axis='x')
