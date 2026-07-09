@@ -97,6 +97,16 @@ jobs:
             summarize erc-report.rpt "Schematic ERC"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Export schematic PDF
+        run: |
+          mkdir -p docs
+          kicad-cli sch export pdf --black-and-white \
+            --output docs/schematic.pdf \
+            pcb/open-condenser-mic.kicad_sch
+
+      - name: Verify schematic PDF exists
+        run: ls docs/schematic.pdf
+
       - name: Export Gerbers + drill files
         run: |
           mkdir -p fab/gerbers
@@ -128,6 +138,12 @@ jobs:
         with:
           name: fabrication-outputs
           path: fab/
+
+      - name: Upload schematic PDF
+        uses: actions/upload-artifact@v7
+        with:
+          name: schematic
+          path: docs/schematic.pdf
 
       - name: Upload KiCad project files
         uses: actions/upload-artifact@v7
