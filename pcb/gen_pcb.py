@@ -780,7 +780,7 @@ def main():
           "R_PRES1", "6.2k", 16, 33, 0,
           {"1": "V_MID", "2": "RS_MID"})
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C_PRES1", "12n 25V C0G", 19, 33, 0,
+          "C_PRES1", "12n 25V X7R", 19, 33, 0,
           {"1": "RS_MID", "2": "VINV"})
 
     # R6: SIG_OUT -> VINV  (47k feedback, sets gain = 1 + 47k/2.2k = 22.4x → -22 dBV/Pa)

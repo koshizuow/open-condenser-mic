@@ -26,5 +26,5 @@ OPA1641,U1,SOIC-8_3.9x4.9mm_P1.27mm,1,C2057597,
 
 # DNP (Do Not Populate) — optional presence-peak network
 # Omit for K87/C12-type capsules (natural presence peak); populate for flat capsules
-12n 25V C0G,C_PRES1,C_0402_1005Metric,1,,DNP — LCSC# needed
-6.2k,R_PRES1,R_0402_1005Metric,1,,DNP — LCSC# needed
+12n 25V X7R,C_PRES1,C_0402_1005Metric,1,C113786,DNP — 
+6.2k,R_PRES1,R_0402_1005Metric,1,C25915,DNP — 

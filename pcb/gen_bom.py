@@ -23,27 +23,23 @@ def _parse_args():
     p = argparse.ArgumentParser(description="Generate BOM and CPL from KiCad PCB file.")
     p.add_argument("--name", default="open-condenser-mic",
                    help="Project name (default: open-condenser-mic)")
-    p.add_argument("--flat", action="store_true",
-                   help="Flat-response build: mark R_PRES1/C_PRES1 DNP (omit presence-peak network). "
-                        "Recommended for K87/C12-type capsules that already have a natural presence peak.")
-    p.add_argument("--suffix", default="",
-                   help="Append suffix to output filenames, e.g. '_flat' → bom_flat.csv (default: '')")
+    p.add_argument("--presence", action="store_true",
+                   help="Presence-peak build: populate R_PRES1/C_PRES1 (adds +2.6 dB shelf above ~2.1 kHz). "
+                        "Default is flat-response (DNP). Omit this flag to keep the presence-peak network unpopulated.")
     return p.parse_args()
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _args = _parse_args()
 PCB = os.path.join(_SCRIPT_DIR, f"{_args.name}.kicad_pcb")
-BOM_OUT = os.path.join(_SCRIPT_DIR, f"bom{_args.suffix}.csv")
-CPL_OUT = os.path.join(_SCRIPT_DIR, f"cpl{_args.suffix}.csv")
+_suffix = "_presence" if _args.presence else "_flat"
+BOM_OUT = os.path.join(_SCRIPT_DIR, f"bom{_suffix}.csv")
+CPL_OUT = os.path.join(_SCRIPT_DIR, f"cpl{_suffix}.csv")
 
 # ── DNP: hand-solder or no component ─────────────────────────────────────────
 # Matched by reference OR by footprint library prefix (more robust — fix_ref
 # changes GetReference() so original ref strings like "TP1.1" are gone).
-DNP_REFS = set()  # populated by --flat; all SMD parts in standard BOM
-
-# Presence-peak network: DNP in flat-response build (--flat flag)
-if _args.flat:
-    DNP_REFS.update({"R_PRES1", "C_PRES1"})
+# Presence-peak network (R_PRES1/C_PRES1): DNP by default; use --presence to populate
+DNP_REFS = set() if _args.presence else {"R_PRES1", "C_PRES1"}
 
 # Skip any footprint whose library name starts with one of these prefixes
 DNP_LIB_PREFIXES = (
@@ -67,7 +63,7 @@ LCSC = {
     ("68V BZT52C68","D_SOD-123"):                  "C242416",   # MMSZ5266BT1G onsemi 68V 500mW SOD-123; C7427990 has no 3D model in JLCPCB viewer
 
     # Standard resistors (0402)
-    ("6.2k",      "R_0402_1005Metric"):            "",          # R_PRES1 (DNP) — verify LCSC before ordering
+    ("6.2k",      "R_0402_1005Metric"):            "C25915",    # UNI-ROYAL 0402WGF6201TCE ±1%; matches 2.2k/47k series
     ("2.2k",      "R_0402_1005Metric"):            "C25879",
     ("6.8k",      "R_0402_1005Metric"):            "C144738",   # YAGEO AC0402FR-076K8L ±1% 757pcs; C93940 out of stock; C26022 maps to 4.7kΩ 0805 in JLCPCB
     ("47k",       "R_0402_1005Metric"):            "C25792",    # UNI-ROYAL 0402WGF4702TCE ±1% BASIC; C25900 maps to 4.7kΩ in JLCPCB
@@ -82,7 +78,7 @@ LCSC = {
     ("47M 1206",  "R_1206_3216Metric"):            "C163361",   # RC1206JR-0747ML YAGEO 200V ±5% — R_GBIAS1/2
 
     # Standard capacitors (0402)
-    ("12n 25V C0G",   "C_0402_1005Metric"):        "",          # C_PRES1 (DNP) — verify LCSC before ordering
+    ("12n 25V X7R",   "C_0402_1005Metric"):        "C113786",   # YAGEO CC0402KRX7R8BB123; X7R fine — no DC bias, mV signal level
     ("100n 25V X7R",  "C_0402_1005Metric"):        "C77014",    # GRM155R71E104KE14D Murata; C307331 out of stock
     ("100n 63V X7R",  "C_0402_1005Metric"):        "C162178",   # GRM155R62A104KE14D muRata 100V X5R
     ("100p C0G",      "C_0402_1005Metric"):        "C445763",   # TDK C1005C0G1H101JT000F 100pF 50V C0G; C1554 maps to 20pF in JLCPCB
@@ -205,7 +201,7 @@ def main():
         if dnp_groups:
             w.writerow([])
             w.writerow(["# DNP (Do Not Populate) — optional presence-peak network"])
-            w.writerow(["# Omit for K87/C12-type capsules (natural presence peak); populate for flat capsules"])
+            w.writerow(["# Populate if using a flat-response capsule and presence lift is desired"])
             for (val, fp_nm), items in sorted(dnp_groups.items(), key=lambda x: x[0]):
                 refs = ",".join(sorted(c["ref"] for c in items))
                 lcsc = items[0]["lcsc"]
