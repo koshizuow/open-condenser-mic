@@ -1036,6 +1036,10 @@ def main():
     # R_ZEN1: angle=180 rotates silk; force horizontal above component (body top ~y=32.77)
     fix_ref(board, "R_ZEN1", x_mm=31.0, y_mm=32.2, angle_deg=0)
 
+    # C5/C6: angle=180 rotates default silk below body; force above
+    fix_ref(board, "C5", x_mm=30.0, y_mm=39.8, angle_deg=0)
+    fix_ref(board, "C6", x_mm=31.0, y_mm=56.8, angle_deg=0)
+
     # Cp1/Cp2: silk below body
     fix_ref(board, "Cp1", x_mm=25.0, y_mm=55.5, angle_deg=0)
     fix_ref(board, "Cp2", x_mm=23.1, y_mm=62.0, angle_deg=0)
