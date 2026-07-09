@@ -334,18 +334,19 @@ def route_all(board):
     via(board, "V_OPA_RAW", 28.5, 54.0)
     route(board, "V_OPA_RAW", F, PWR, (28.5, 54.0), (30.49, 54.0))
 
-    # ── V_OPA: vertical bus at x=31, individual branches to each consumer ────
-    # U2 pad1 (21.05,42.5) → bus at x=31, y=21.48..42.5
-    # Bus extends: C3(27.51,21), C2(28.52,38), R_ZEN(30,34.51), U1-pin7(19.975,26.365)
+    # ── V_OPA: vertical bus at x=30.75, individual branches to each consumer ────
+    # U2 pad1 (21.05,42.5) → bus at x=30.75, y=24.5..42.5
+    # Bus extends: C2(28.52,38), R_ZEN(30,34.51), U1-pin7(19.975,26.365)
+    # C3 bypass taps at (22.5,26.365) directly off pin7 horizontal stub (minimum loop area)
     # Separate: R4 branch up from U2, D1 branch left then down, C6 branch right then down
     # Main bus: UP from U2-pad1 to y=40.8 (clears C5 SMD pad top at ~42.2mm),
-    # RIGHT to x=30.75 (clears V_OSC right end x=30.0 by 0.3mm; Z_OSC-pad2 x=31.65 by 0.45mm).
+    # RIGHT to x=30.75 (clears V_OSC right end x=30.0 by 0.3mm; Z_OSC-pad2 x=31.65 by 0.45mm),
+    # UP to y=24.5 (T-junction with U1 pin7 tap).
     route(board, "V_OPA", F, PWR,
           (21.05, 42.5 ),
           (21.05, 40.8 ),
           (30.75,  40.8 ),
-          (30.75,  21.0 ),
-          (27.51,  21.0 ))
+          (30.75,  24.5 ))
     # C2 tap: angle=180 puts pad1(V_OPA) at right (29.51,38); direct stub from bus
     route(board, "V_OPA", F, PWR,
           (30.75, 38.0),
@@ -354,13 +355,13 @@ def route_all(board):
     route(board, "V_OPA", F, PWR,
           (30.75, 33.5),
           (30.12, 33.5))
-    # U1 pin7 tap: RIGHT to x=21.5 (clears pad8 right edge 20.95),
-    # UP to y=24.5 (clears R6.pad1 top 25.965; clears SIG_PROT via at (27,25.5)),
+    # U1 pin7 tap: RIGHT to x=22.5 (clears pad8 right edge 20.95 by 1.55mm),
+    # UP to y=24.5 — C3 pad1 at (22.5,24.48) sits on this vertical run,
     # RIGHT to bus at x=30.75.
     route(board, "V_OPA", F, PWR,
           (19.975, 26.365),
-          (21.5,   26.365),
-          (21.5,   24.5  ),
+          (22.5,   26.365),
+          (22.5,   24.5  ),
           (30.75,  24.5  ))
     # R4 pad1 (8.02,40.8): via at F.Cu main bus corner (21.05,40.8); B.Cu at same y
     via(board, "V_OPA", 21.05, 40.8)
@@ -794,9 +795,12 @@ def main():
           "R7", "100R", 27, 27, 90,
           {"1": "SIG_OUT", "2": "SIG_PROT"})
 
-    # C3: V_OPA -> GND  (100n, HF bypass within 5mm of U1 pin 7)
+    # C3: V_OPA -> GND  (100n, HF bypass adjacent to U1 pin7)
+    # angle=90: pad1(V_OPA) at center+0.48 = y=24.48, sits on V_OPA vertical stub.
+    # pad2(GND) at center-0.48 = y=23.52, in open GND fill above the bus — 3+ spokes.
+    # x=22.5: ~1.5mm from U1 pad8 right edge (20.95), courtyard gap ~1mm
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C3", "100n 25V X7R", 27, 21, 180,
+          "C3", "100n 25V X7R", 22.5, 24, 90,
           {"1": "V_OPA", "2": "GND"})
 
     # C_DC: SIG_PROT -> TX_DRV  (4.7u DC block to transformer primary)
@@ -1013,7 +1017,7 @@ def main():
     # Shift slightly right; keep above pads (pad2 copper reaches y=28.35).
     fix_ref(board, "Z_OSC1", x_mm=31.5, y_mm=26.5)
     # C3: angle=180 rotates silk; force horizontal above component (body top ~y=20.5)
-    fix_ref(board, "C3", x_mm=27.0, y_mm=20.0, angle_deg=0)
+    fix_ref(board, "C3", x_mm=24.0, y_mm=23.2, angle_deg=0)
 
     # R6/R7: angle rotates silk; force horizontal and place above component,
     # above SIG_PROT via at (27,25.5) copper top ~y=25.0; both at y=24.5
