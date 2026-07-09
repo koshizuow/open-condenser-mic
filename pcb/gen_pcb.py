@@ -229,10 +229,6 @@ def route_all(board):
     # Extra via inside isolated Island 0 (CLKA L-shape cuts off C_OSC.2 from main zone).
     # Connects Island 0 F.Cu fill to B.Cu GND plane.
     via(board, "GND", 18.5, 53)
-    # Island 1: V_OPA C-shape (x=30.75→34, y=40.8-57) + C5-pad2 (V_MID) narrows GND zone corridor
-    # to <0.2mm between pad2 right (33.1) and V_OPA (33.85). Via at (33,45) stitches isolated fill
-    # inside the C-shape to B.Cu GND plane.
-    via(board, "GND", 33.0, 45.0)
     # Upper section (y<30.3): stitch at y=18 row alongside corner vias (3,18)/(36,18).
     # x=18.5 > VPLUS keepout right edge (14.5); SIG_OUT starts at x=19.975 so the
     # strip y=27.635..30.3 connects leftward and is not isolated.
