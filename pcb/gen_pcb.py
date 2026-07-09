@@ -563,13 +563,13 @@ def route_all(board):
           (8.0,    62.0))
     # S3 (TP1.3) is floating — no GND connection to (18,62)
 
-    # ── XLR_HOT: T1B-pad1 → J3-pad2 ────────────────────────────────────────
-    # T1B pad1 (17.0,82.0); J3-pad2 (20.0,92.0)
+    # ── XLR_HOT: T1B-pad1 → R_RFI1-pad2 ────────────────────────────────
+    # T1B pad1 (17.0,82.0); R_RFI1 pad2 (10.0,85.47)
     # Jog down to y=83 before going left: V_OPA_RAW horizontal at y=82.2 (x=12-13, w=0.3mm)
     # would overlap XLR_HOT at y=82.0 (w=0.2mm); y=83 gives 0.55mm gap ✓
     # y=83 vs R2.pad1 (XLR_COLD, y=83.825 top=83.35): gap=0.25mm ✓
     # y=83 vs R2.pad2 (V_OPA_RAW, y=82.175 top=82.65): gap=0.25mm ✓
-    # XLR_HOT vertical at x=10: MH3 screw head (~r=2.5mm from x=6) edge at x=8.5; gap=1.4mm ✓
+    # XLR_HOT vertical at x=10: MH3 copper edge at x=7.55; gap=2.45mm ✓
     route(board, "XLR_HOT", F, SIG,
           (17.0,  82.0),
           (17.0,  83.0),
@@ -578,12 +578,18 @@ def route_all(board):
     route(board, "XLR_HOT", F, SIG, (10.0, 80.8), (12.0, 80.8))  # R1 tap
     route(board, "XLR_HOT", F, SIG,
           (10.0,  83.0),
-          (10.0,  88.54),
-          (20.0,  88.54),
-          (20.0,  90.0))
+          (10.0,  85.47))   # to R_RFI1 pad2
 
-    # ── XLR_COLD: T1B-pad2 → J3-pad3 ───────────────────────────────────────
-    # T1B pad2 (22.0,82.0); J3-pad3 (22.54,92.0)
+    # ── XLR_HOT_F: R_RFI1-pad1 → C_RFI1-pad1 + J3-pad2 ─────────────
+    # R_RFI1 pad1 (10.0,86.53); T-junction at (10,87); C_RFI1 pad1 (12.47,87)
+    # GND: C_RFI1 pad2 (13.53,87) → short stub → via → B.Cu GND plane
+    route(board, "XLR_HOT_F", F, SIG, (10.0, 86.53), (10.0, 87.0), (12.47, 87.0))
+    route(board, "XLR_HOT_F", F, SIG, (10.0, 87.0), (10.0, 88.54), (20.0, 88.54), (20.0, 90.0))
+    route(board, "GND", F, SIG, (13.53, 87.0), (13.53, 87.7))
+    via(board, "GND", 13.53, 87.7)
+
+    # ── XLR_COLD: T1B-pad2 → R_RFI2-pad2 ───────────────────────────────
+    # T1B pad2 (22.0,82.0); R_RFI2 pad2 (22.0,85.47)
     # P2 below transformer cutout — simple F.Cu; no CLKB/VBOOST conflicts below y=77.3
     # R2 tap at (12,83.8) approached from x=22; XLR_HOT vertical at x=10 stays left of x=12 ✓
     route(board, "XLR_COLD", F, SIG,
@@ -592,9 +598,15 @@ def route_all(board):
           (12.0,  83.8))   # R2 tap
     route(board, "XLR_COLD", F, SIG,
           (22.0,  83.8),
-          (22.0,  89.0),
-          (22.54, 89.0),
-          (22.54, 90.0))
+          (22.0,  85.47))   # to R_RFI2 pad2
+
+    # ── XLR_COLD_F: R_RFI2-pad1 → C_RFI2-pad1 + J3-pad3 ───────────
+    # R_RFI2 pad1 (22.0,86.53); T-junction at (22,87); C_RFI2 pad1 (24.47,87)
+    # GND: C_RFI2 pad2 (25.53,87) → short stub → via → B.Cu GND plane
+    route(board, "XLR_COLD_F", F, SIG, (22.0, 86.53), (22.0, 87.0), (24.47, 87.0))
+    route(board, "XLR_COLD_F", F, SIG, (22.0, 87.0), (22.0, 89.0), (22.54, 89.0), (22.54, 90.0))
+    route(board, "GND", F, SIG, (25.53, 87.0), (25.53, 87.7))
+    via(board, "GND", 25.53, 87.7)
 
 
     # ── Dickson pump nodes ───────────────────────────────────────────────────
@@ -823,6 +835,25 @@ def main():
           "R2", "6.8k 0.1%", 12, 83, 90,
           {"1": "XLR_COLD", "2": "V_OPA_RAW"})
 
+    # RFI filter: 100R series + 100pF C0G shunt on each XLR leg (fc ~16 MHz)
+    # Placed in-line with XLR_HOT/COLD verticals (x=10, x=22) at y=86
+    # Shunt caps at y=87, 1.5mm right of series R; GND via below each cap
+    place(board, "Resistor_SMD", "R_0402_1005Metric",
+          "R_RFI1", "100R", 10, 86, 90,
+          {"1": "XLR_HOT_F", "2": "XLR_HOT"})
+
+    place(board, "Resistor_SMD", "R_0402_1005Metric",
+          "R_RFI2", "100R", 22, 86, 90,
+          {"1": "XLR_COLD_F", "2": "XLR_COLD"})
+
+    place(board, "Capacitor_SMD", "C_0402_1005Metric",
+          "C_RFI1", "100p C0G", 13, 87, 0,
+          {"1": "XLR_HOT_F", "2": "GND"})
+
+    place(board, "Capacitor_SMD", "C_0402_1005Metric",
+          "C_RFI2", "100p C0G", 25, 87, 0,
+          {"1": "XLR_COLD_F", "2": "GND"})
+
     # U2: 78L24 linear regulator SOT-89  (OUT=pad1, GND=pad2, IN=pad3)
     place(board, "Package_TO_SOT_SMD", "SOT-89-3",
           "U2", "L78L24", 23, 44, 0,
@@ -961,9 +992,9 @@ def main():
           {"1": "HV_FILT", "2": "GND"})
 
     # ── XLR output solder pads (bare THT, horizontal row) ────────────────────
-    # J3.1=(17.46,90)=GND, J3.2=(20,90)=XLR_HOT, J3.3=(22.54,90)=XLR_COLD
-    # XLR_HOT approaches J3.2 from above at x=20; XLR_COLD approaches J3.3 from above at x=22.54
-    place_solder_pads(board, "J3", 17.46, 90, ["GND", "XLR_HOT", "XLR_COLD"], axis='x')
+    # J3.1=(17.46,90)=GND, J3.2=(20,90)=XLR_HOT_F, J3.3=(22.54,90)=XLR_COLD_F
+    # XLR_HOT_F approaches J3.2 from above at x=20; XLR_COLD_F approaches J3.3 from above at x=22.54
+    place_solder_pads(board, "J3", 17.46, 90, ["GND", "XLR_HOT_F", "XLR_COLD_F"], axis='x')
 
     # ── Route all nets + zones ────────────────────────────────────────────────
     route_all(board)
@@ -1017,6 +1048,17 @@ def main():
     # R1/R2: rotated 90°, align silk to same x=14 so labels form a vertical straight line
     fix_ref(board, "R1", x_mm=14, y_mm=80)
     fix_ref(board, "R2", x_mm=14, y_mm=83)
+
+    # R_RFI1: rotated 90°, default silk (8.83,86) overlaps C_RFI1 and is near MH3 copper.
+    # x=10 aligns with component body; y=82 clears R2 top pad (y=82.47) and stays left of R1/R2 silk (x=14).
+    fix_ref(board, "R_RFI1", x_mm=10, y_mm=82)
+
+    # R_RFI2: rotated 90°, default silk (20.83,86) overlaps C_RFI2 ref and P2 silk.
+    # x=20 is right of previous x=18, still clear of P2 (x=22,y=84) and C_RFI2 (x=25).
+    fix_ref(board, "R_RFI2", x_mm=20, y_mm=86)
+
+    fix_ref(board, "C_RFI1", x_mm=14.5, y_mm=85.5)
+    fix_ref(board, "C_RFI2", x_mm=26.5, y_mm=85.5)
 
     # C9: default ref at x=38.18 cut by new board edge (x=38); move above pads
     fix_ref(board, "C9", x_mm=36.5, y_mm=75.5)
