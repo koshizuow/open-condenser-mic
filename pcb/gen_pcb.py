@@ -14,7 +14,7 @@ Routing is fully scripted (reproducible):
   - Power nets (V_OPA, V_MID, V_OSC, PHANTOM, V_OPA_RAW): 0.3mm width
   - Signal/clock nets: 0.2mm width
   - GND: B.Cu zone + vias at each SMD GND pad; no F.Cu GND star
-  - V_MID guard ring around VPLUS island (F.Cu zone, x=7..21, y=12..32)
+  - Capsule zone (y<17): B.Cu GND only, no F.Cu pour
 """
 
 import argparse
@@ -217,9 +217,7 @@ def route_all(board):
     # Stitching vias tie F.Cu and B.Cu GND together at corners and mid-board.
     # Both zones use 0.3mm clearance from other nets.
     # F.Cu GND zone starts at y=17: no copper above that line.
-    # The capsule zone (y<17) has only B.Cu GND plane + F.Cu HV_MID guard ring trace.
-    # Avoids fragmented copper islands that form when the full-board zone is cut by
-    # the HV keepout and guard ring.
+    # The capsule zone (y<17) has B.Cu GND plane only; no F.Cu pour.
     add_zone(board, "GND", F,
              [(2,17),(38,17),(38,93),(2,93)],
              clearance_mm=0.3)
@@ -296,24 +294,6 @@ def route_all(board):
           (27.5375, 8.0),
           (27.5375, 12.0),
           (30.5375, 12.0))
-
-    # ── Guard ring: HV_MID rectangle around CAP_FP / J2 / R_GBIAS area ───────
-    # Closed rectangle (x=8.0..36, y=1..16.5) on F.Cu inside the keepout.
-    # MH1/MH2 are NPTH (no copper); drill radius 1.35mm.
-    # Left  x=8.0: gap 0.45mm to MH1 NPTH drill right edge (x=7.35).
-    # Right x=36:  gap 0.45mm to MH2 NPTH drill right edge (x=35.35).
-    # Right side (x=36) crosses HV_FILT track (y=9) on B.Cu.
-    # VPLUS via(12.95,15.5): bottom y=16.5 → top edge 16.3, via bottom 15.95 (+0.35mm).
-    route(board, "HV_MID", F, HV,      # top + right upper
-          (8.0, 1), (36, 1), (36, 8.2))
-    via(board, "HV_MID", 36.0, 8.2)   # F.Cu → B.Cu (above HV_FILT at y=9)
-    route(board, "HV_MID", B, HV,      # B.Cu crossing over HV_FILT
-          (36, 8.2), (36, 9.8))
-    via(board, "HV_MID", 36.0, 9.8)   # B.Cu → F.Cu (below HV_FILT)
-    route(board, "HV_MID", F, HV,      # right lower + bottom + left
-          (36, 9.8), (36, 16.5), (8.0, 16.5), (8.0, 1))
-    route(board, "HV_MID", F, HV,      # spur: ring top T-junction → R_GBIAS1 pad1
-          (27.5375, 1), (27.5375, 8))
 
     # ── CAP_FP: R_GBIAS2-pad2 → J2-pad1 → C8-pad1 ───────────────────────
     # R_GBIAS2 pad2 (CAP_FP) at (33.4625, 12); exit right then route left
