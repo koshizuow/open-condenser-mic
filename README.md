@@ -14,6 +14,8 @@ This design uses a Dickson charge pump oscillator to generate a 68 V HV rail fro
 - CD40106B Schmitt-trigger oscillator + 3-stage active Dickson charge pump
 - 56 V capsule polarization (68 V HV rail, BZT52C68 zener clamp referenced to 12 V midpoint)
 - HV rail LC filter: 10 mH + 470 nF, corner ~2.3 kHz
+- Output sensitivity ~−38 dBV/Pa (R6 = 47 kΩ feedback, R3 = 2.2 kΩ, gain ≈ 22×)
+- RFI filter on XLR output: differential RC network (R_RFI1/R_RFI2 + C_RFI1/C_RFI2)
 - Phantom power draw: ~2.4–3 mA typical (IEC 61938 limit: 14 mA)
 - All SMD/THT components available from standard distributors (LCSC, Mouser, Digi-Key); capsule and transformer are customer-supplied
 

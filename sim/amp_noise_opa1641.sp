@@ -64,7 +64,7 @@ R_oout  NET_OPA_IDEAL  NET_OPA_OUT  50
 
 * Feedback and bias resistors (they also contribute Johnson noise)
 R4    NET_VBIAS  PIN2_NODE  2.2k
-R7    NET_OPA_OUT  PIN2_NODE  130k
+R7    NET_OPA_OUT  PIN2_NODE  47k
 
 * ---------------------------------------------------------------------------
 * OUTPUT PATH
