@@ -483,7 +483,7 @@ elements += component("Device:R", "R3", "2.2k",
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "V_MID", "2": "VINV"})
 
-elements += component("Device:R", "R6", "5.6k",
+elements += component("Device:R", "R6", "47k",
     107, 52,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "SIG_OUT", "2": "VINV"})
@@ -586,21 +586,8 @@ elements += component("Device:C", "C_RFI2", "100p C0G",
 elements.append(wire(159, 51.65, 170.38, 51.65))
 elements.append(wire(170.38, 51.65, 170.38, 60.46))
 
-# XLR outputs: TS1.pin1/2 → below connector bodies → J3.pin2/3
-# TS1(196,63) pin1(XLR_HOT,L) stub_end=(188.38,63); pin2(XLR_COLD,L) stub_end=(188.38,65.54)
-# J3(213,67) pin2(XLR_HOT,L) stub_end=(205.38,67); pin3(XLR_COLD,L) stub_end=(205.38,69.54)
-# Routes offset at x=186/x=184 to avoid crossing each other at the shared stub column x=188.38
-# and to clear TP1 body right edge (~x=184)
-elements.append(wire(188.38, 63,    186,    63))       # XLR_HOT: left offset
-elements.append(wire(186,    63,    186,    73))       # down below connectors
-elements.append(wire(186,    73,    204,    73))       # right
-elements.append(wire(204,    73,    204,    67))       # up to J3.pin2 y-level
-elements.append(wire(204,    67,    205.38, 67))       # right to J3.pin2 stub_end
-
-elements.append(wire(188.38, 65.54, 184,    65.54))   # XLR_COLD: left offset
-elements.append(wire(184,    65.54, 184,    75))       # down
-elements.append(wire(184,    75,    205.38, 75))       # right
-elements.append(wire(205.38, 75,    205.38, 69.54))   # up to J3.pin3 stub_end
+# XLR outputs connect via net labels: TS1(XLR_HOT/COLD) → R_RFI1/2 → J3(XLR_HOT_F/COLD_F)
+# No explicit wires needed; net-label stubs on each component carry the signal topology.
 
 # ── BLOCK F: SCHMITT OSCILLATOR (x=15..67, y=108..160) ───────────────────────
 

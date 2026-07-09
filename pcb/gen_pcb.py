@@ -14,7 +14,7 @@ Routing is fully scripted (reproducible):
   - Power nets (V_OPA, V_MID, V_OSC, PHANTOM, V_OPA_RAW): 0.3mm width
   - Signal/clock nets: 0.2mm width
   - GND: B.Cu zone + vias at each SMD GND pad; no F.Cu GND star
-  - V_MID guard ring around VPLUS island (F.Cu zone, x=7..21, y=12..32)
+  - Capsule zone (y<17): B.Cu GND only, no F.Cu pour
 """
 
 import argparse
@@ -216,13 +216,15 @@ def route_all(board):
     # F.Cu GND zone connects all SMD GND pads directly — no per-pad vias needed.
     # Stitching vias tie F.Cu and B.Cu GND together at corners and mid-board.
     # Both zones use 0.3mm clearance from other nets.
+    # F.Cu GND zone starts at y=17: no copper above that line.
+    # The capsule zone (y<17) has B.Cu GND plane only; no F.Cu pour.
     add_zone(board, "GND", F,
-             [(2,0),(38,0),(38,93),(2,93)],
+             [(2,17),(38,17),(38,93),(2,93)],
              clearance_mm=0.3)
     add_zone(board, "GND", B,
              [(2,0),(38,0),(38,93),(2,93)],
              clearance_mm=0.3)
-    for vx, vy in [(3,2),(37,2),(3,60),(36,60),(3,91),(37,91)]:
+    for vx, vy in [(3,18),(36,18),(3,40),(36,40),(3,60),(36,60),(3,91),(37,91)]:
         via(board, "GND", vx, vy)
     # Extra via inside isolated Island 0 (CLKA L-shape cuts off C_OSC.2 from main zone).
     # Connects Island 0 F.Cu fill to B.Cu GND plane.
@@ -231,9 +233,13 @@ def route_all(board):
     # to <0.2mm between pad2 right (33.1) and V_OPA (33.85). Via at (33,45) stitches isolated fill
     # inside the C-shape to B.Cu GND plane.
     via(board, "GND", 33.0, 45.0)
-    # Island 2: U1/R7 area (x=15-30, y=24-30) — keepout carves out the left portion of this
-    # region; remaining GND fill around U1/R7 becomes an island. Stitch to B.Cu here.
-    via(board, "GND", 22.0, 27.0)
+    # Upper section (y<30.3): stitch at y=18 row alongside corner vias (3,18)/(36,18).
+    # x=18.5 > VPLUS keepout right edge (14.5); SIG_OUT starts at x=19.975 so the
+    # strip y=27.635..30.3 connects leftward and is not isolated.
+    via(board, "GND", 18.5, 18.0)
+    # V_OSC F.Cu horizontal at y=30.3 (x=10.475..30) splits lower GND pour from upper.
+    # Stitch mid-board lower section (y>30.3).
+    via(board, "GND", 18.5, 40.0)
 
     # ════════════════════════════════════════════════════════════════════════
     # HV NETS  (0.4mm)
@@ -283,46 +289,23 @@ def route_all(board):
           (36.5,    78.0625),
           (37.2,    78.0625),
           (37.2,    9.0    ),
-          (30.4625, 9.0    ),
-          (30.4625, 8.0    ))
+          (30.4625, 9.0    ))
 
     # ── HV_MID: R_GBIAS1-pad1 → R_GBIAS2-pad1 ──────────────────────────────
-    # Both left pads at x=30.5375; simple vertical stub between them
+    # R_GBIAS1 pad1 at (27.5375,9); R_GBIAS2 pad1 at (27.5,14): near-vertical
     route(board, "HV_MID", F, HV,
-          (27.5375, 8.0),
-          (27.5375, 12.0),
-          (30.5375, 12.0))
+          (27.5375, 9.0 ),
+          (27.5375, 14.0),
+          (27.5,    14.0))
 
-    # ── Guard ring: HV_MID rectangle around CAP_FP / J2 / R_GBIAS area ───────
-    # Closed rectangle (x=8.0..36, y=1..16.5) on F.Cu inside the keepout.
-    # MH1/MH2 are NPTH (no copper); drill radius 1.35mm.
-    # Left  x=8.0: gap 0.45mm to MH1 NPTH drill right edge (x=7.35).
-    # Right x=36:  gap 0.45mm to MH2 NPTH drill right edge (x=35.35).
-    # Right side (x=36) crosses HV_FILT track (y=9) on B.Cu.
-    # VPLUS via(12.95,15.5): bottom y=16.5 → top edge 16.3, via bottom 15.95 (+0.35mm).
-    route(board, "HV_MID", F, HV,      # top + right upper
-          (8.0, 1), (36, 1), (36, 8.2))
-    via(board, "HV_MID", 36.0, 8.2)   # F.Cu → B.Cu (above HV_FILT at y=9)
-    route(board, "HV_MID", B, HV,      # B.Cu crossing over HV_FILT
-          (36, 8.2), (36, 9.8))
-    via(board, "HV_MID", 36.0, 9.8)   # B.Cu → F.Cu (below HV_FILT)
-    route(board, "HV_MID", F, HV,      # right lower + bottom + left
-          (36, 9.8), (36, 16.5), (8.0, 16.5), (8.0, 1))
-    route(board, "HV_MID", F, HV,      # spur: ring top T-junction → R_GBIAS1 pad1
-          (27.5375, 1), (27.5375, 8))
-
-    # ── CAP_FP: R_GBIAS2-pad2 → J2-pad1 → C8-pad1 ───────────────────────
-    # R_GBIAS2 pad2 (CAP_FP) at (33.4625, 12); exit right then route left
+    # ── CAP_FP: R_GBIAS2-pad2 → C8-pad1 → J2-pad1 ───────────────────────
+    # R_GBIAS2 pad2 (CAP_FP) at (24.575,14); horizontal left to C8.pad1 (15.23,14)
     route(board, "CAP_FP", F, HV,
-          (33.4625, 12.0),
-          (33.4625, 14.0),
-          (20.0,    14.0),
-          (20.0,    6.5 ),
-          (11.05,   6.5 ),
-          (11.05,   14.0))
+          (24.575, 14.0),
+          (15.23,  14.0))
     route(board, "CAP_FP", F, HV,
-          (15.23, 6.5),
-          (15.23, 3.0))
+          (15.23,  14.0),
+          (15.23,   3.0))
 
     # ════════════════════════════════════════════════════════════════════════
     # POWER NETS  (0.3mm)
@@ -340,24 +323,20 @@ def route_all(board):
     # F.Cu right to x=28.5 (clears HV_FILT at x=29.3625 with 0.51mm gap); via to B.Cu
     route(board, "V_OPA_RAW", F, PWR, (12.0, 79.2), (28.5, 79.2))
     via(board, "V_OPA_RAW", 28.5, 79.2)
-    # B.Cu: up to y=46.9, then jog right to x=34 (clear of C5 SMD pads)
-    # C5 CP_Elec_4x5.4 at (30,43): pad2(V_MID) at (31.8,43) right=33.1; x=34 left=33.85 → gap 0.75mm ✓
-    # C5 pad1(GND) at (28.2,43) left=26.9; cutout right x=26.5 is at y=68.5+, no overlap ✓
-    # V_MID B.Cu (y=43, x=7-31.8): x=34 is right of V_MID right end → no crossing ✓
+    # B.Cu: up to U2 tap level y=46.9; C1 tapped via via on the vertical at y=54
     route(board, "V_OPA_RAW", B, PWR,
-          (28.5, 79.2), (28.5, 46.9),
-          (34.0, 46.9), (34.0, 38.0), (16.5, 38.0))
+          (28.5, 79.2), (28.5, 46.9))
     # Tap stub: jog LEFT from (28.5,46.9) to x=25 (clear of C5 courtyard), then down to via
     route(board, "V_OPA_RAW", B, PWR, (28.5, 46.9), (25.0, 46.9), (25.0, 45.5))
     via(board, "V_OPA_RAW", 25.0, 45.5)
     route(board, "V_OPA_RAW", F, PWR, (25.0, 45.5), (21.05, 45.5))
-    # Tap for C1-pad1 (V_OPA_RAW) at (17.52,38.0): via at (16.5,38), F.Cu right to pad
-    via(board, "V_OPA_RAW", 16.5, 38.0)
-    route(board, "V_OPA_RAW", F, PWR, (16.5, 38.0), (17.52, 38.0))
+    # C1-pad1 (V_OPA_RAW) at (30.49,54): via on B.Cu vertical; 1.99mm F.Cu stub right
+    via(board, "V_OPA_RAW", 28.5, 54.0)
+    route(board, "V_OPA_RAW", F, PWR, (28.5, 54.0), (30.49, 54.0))
 
     # ── V_OPA: vertical bus at x=31, individual branches to each consumer ────
     # U2 pad1 (21.05,42.5) → bus at x=31, y=21.48..42.5
-    # Bus extends: C3(27,21.48), C2(28.52,38), R_ZEN(30,34.51), U1-pin7(19.975,26.365)
+    # Bus extends: C3(27.51,21), C2(28.52,38), R_ZEN(30,34.51), U1-pin7(19.975,26.365)
     # Separate: R4 branch up from U2, D1 branch left then down, C6 branch right then down
     # Main bus: UP from U2-pad1 to y=40.8 (clears C5 SMD pad top at ~42.2mm),
     # RIGHT to x=30.75 (clears V_OSC right end x=30.0 by 0.3mm; Z_OSC-pad2 x=31.65 by 0.45mm).
@@ -365,36 +344,33 @@ def route_all(board):
           (21.05, 42.5 ),
           (21.05, 40.8 ),
           (30.75,  40.8 ),
-          (30.75,  21.48),
-          (27.0,  21.48))
-    # C2 tap: jog to y=36 to avoid C2-pad2 GND at (29.48,38) which blocks a direct horizontal
+          (30.75,  21.0 ),
+          (27.51,  21.0 ))
+    # C2 tap: angle=180 puts pad1(V_OPA) at right (29.51,38); direct stub from bus
     route(board, "V_OPA", F, PWR,
-          (30.75,  36.0),
-          (28.52, 36.0),
-          (28.52, 38.0))
-    # R_ZEN tap at y=34.51
+          (30.75, 38.0),
+          (29.51, 38.0))
+    # R_ZEN tap at y=33.5 (pad1(V_OPA) at right x=30.12)
     route(board, "V_OPA", F, PWR,
-          (30.75, 34.51),
-          (30.0, 34.51))
-    # U1 pin7 tap: LEFT to x=18, UP to y=23.5, RIGHT to bus at x=30.75
+          (30.75, 33.5),
+          (30.12, 33.5))
+    # U1 pin7 tap: RIGHT to x=21.5 (clears pad8 right edge 20.95),
+    # UP to y=24.5 (clears R6.pad1 top 25.965; clears SIG_PROT via at (27,25.5)),
+    # RIGHT to bus at x=30.75.
     route(board, "V_OPA", F, PWR,
           (19.975, 26.365),
-          (18.0,   26.365),
-          (18.0,   23.5  ),
-          (30.75,   23.5  ))
-    # R4 pad1 (8.0,39.51): B.Cu via to avoid SIG_OUT at x=16.5 and V_OSC at x=10.475
-    # Via moved to (9.5,39.51); F.Cu stub to pad.
-    route(board, "V_OPA", F, PWR,
-          (21.05, 42.5 ),
-          (21.05, 39.51))
-    via(board, "V_OPA", 21.05, 39.51)
+          (21.5,   26.365),
+          (21.5,   24.5  ),
+          (30.75,  24.5  ))
+    # R4 pad1 (8.02,40.8): via at F.Cu main bus corner (21.05,40.8); B.Cu at same y
+    via(board, "V_OPA", 21.05, 40.8)
     route(board, "V_OPA", B, PWR,
-          (21.05, 39.51),
-          (9.5,   39.51))
-    via(board, "V_OPA", 9.5, 39.51)
+          (21.05, 40.8),
+          (9.5,   40.8))
+    via(board, "V_OPA", 9.5, 40.8)
     route(board, "V_OPA", F, PWR,
-          (9.5, 39.51),
-          (8.0, 39.51))
+          (9.5,  40.8),
+          (8.02, 40.8))
     # D1 pad1 (21.0625,51.05): B.Cu via. F.Cu area blocked by U2 pads (y=44/45.5),
     # V_OPA_RAW vertical (x=15.5, y=40-47), V_OSC (y=51.19), N2 (x=22).
     # Via at (19,44): B.Cu clears V_MID B.Cu (y=43, gap=0.55mm), TX_DRV B.Cu (x=5.0).
@@ -420,25 +396,15 @@ def route_all(board):
           (32.8,  57.0),
           (32.8,  60.0))
 
-    # ── V_MID: bus at x=7 (avoids VPLUS at x=9) ────────────────────────────
-    # R4 pad2 (8,38.49); R5 pad1 (8,48.51); C4 pad1 (4,44.775)
-    # R_BIAS pad2 (9,25.5375); R3 pad1 (12,21.51); C5 pad2 (31.8,43) via F.Cu branch
-    route(board, "V_MID", F, PWR,
-          (8.0, 38.49),
-          (7.0, 38.49),
-          (7.0, 48.51),
-          (8.0, 48.51))
+    # ── V_MID: bus at x=7 (left of R_BIAS1 VPLUS pad at x=9.925) ───────────
+    # R5 pad1 (7.0,48) on bus; C4 via stub; C5 via B.Cu branch
+    # R4 pad2 (7.0,41) on bus; R3 pad1 (7.0,29.7) on bus; R_BIAS1 pad2 (7.0,27.5) on bus
     route(board, "V_MID", F, PWR,
           (7.0, 44.775),
           (4.0, 44.775))
     route(board, "V_MID", F, PWR,
-          (7.0,  38.49),
-          (7.0,  25.5375),
-          (9.0,  25.5375))
-    route(board, "V_MID", F, PWR,
-          (9.0,  25.5375),
-          (9.0,  21.51  ),
-          (12.0, 21.51  ))
+          (7.0, 48.0),
+          (7.0, 27.5))
     # C5 pad2(V_MID) at (31.8,43): via at bus x=7, B.Cu trace, via below pad, F.Cu stub up to pad
     via(board, "V_MID", 7.0, 43.0)
     route(board, "V_MID", B, PWR,
@@ -451,17 +417,15 @@ def route_all(board):
           (31.8, 43.0))
 
     # ── V_OSC: R_ZEN-pad2 → Z_OSC-pad1 → U3-pad14 → C_U3-pad1 ─────────────
-    # R_ZEN pad2 (30.0,33.49); Z_OSC pad1 (28.35,29.0)
+    # R_ZEN pad2 (29.1,33.5) aligned to Z_OSC pad1 (29.1,28.5): straight vertical.
+    # Horizontal bus at y=30 taps off the vertical at (29.1,30).
     # U3 pad14 (10.475,51.19); C_U3 pad1 (13.52,52.0)
-    # Detour horizontal to y=30.3 (clears U1-pad4 GND at y=28.905, U1-pad5 at y=28.905)
     route(board, "V_OSC", F, PWR,
-          (30.0,   33.49),
-          (30.0,   30.3 ),
-          (28.35,  30.3 ),
-          (28.35,  29.0 ))
+          (29.1,   33.5 ),
+          (29.1,   28.5 ))
     route(board, "V_OSC", F, PWR,
-          (30.0,   30.3 ),
-          (10.475, 30.3 ),
+          (29.1,   30.0 ),
+          (10.475, 30.0 ),
           (10.475, 51.19))
     # C_U3 tap: go RIGHT from U3 pad14 to avoid U3 pads below y=51.19
     route(board, "V_OSC", F, PWR,
@@ -473,94 +437,77 @@ def route_all(board):
     # SIGNAL NETS  (0.2mm)
     # ════════════════════════════════════════════════════════════════════════
 
-    # ── VPLUS: R_BIAS-pad1 → U1-pin3 → C8-pad2 ───────────────────────────
-    # R_BIAS pad1 (9,28.4625); U1 pin3 (15.025,27.635); C8 pad2 (12.95,14.0)
-    # Direct route: up within R_BIAS pad1, then right to pin3 at y=27.635.
-    # Avoids old detour through y=30.5 which crossed V_OSC at y=29 at x=14.5.
-    # C8 pad2: use B.Cu to avoid crowded F.Cu (VINV at x=12-13.75, CAP_FP at x=11.05).
-    # Via at (13.5,27.635) LEFT of U1 pad3; F.Cu stub right to pad. SIG_OUT occupies
-    # y=27.635 from x=16.5 right — cannot use x>15.85 (pad edge+clearance).
+    # ── VPLUS: R_BIAS1-pad1 → U1-pin3 → C8-pad2 (all F.Cu, within keepout) ──
+    # R_BIAS1 pad1 (9.925,27.5); U1 pin3 (15.025,27.635); C8 pad2 (13.33,14.0)
+    # Entire path in keepout/capsule zone: no adjacent F.Cu GND copper.
     route(board, "VPLUS", F, SIG,
-          (9.0,   28.4625),
-          (9.0,   27.635 ),
-          (13.5,  27.635 ))
-    route(board, "VPLUS", F, SIG,
-          (13.5,   27.635),
+          (9.925,  27.5  ),
+          (9.925,  27.635),
           (15.025, 27.635))
-    via(board, "VPLUS", 13.5, 27.635)
-    route(board, "VPLUS", B, SIG,
-          (13.5,  27.635),
-          (12.95, 27.635),
-          (12.95, 15.5  ))
-    via(board, "VPLUS", 12.95, 15.5)
     route(board, "VPLUS", F, SIG,
-          (12.95, 15.5),
-          (12.95, 14.0))
+          (13.33, 14.0),
+          (13.33, 27.635))
 
-    # ── VINV: R3-pad2 → R6-pad2 → U1-pin2 ──────────────────────────────────
-    # R3 pad2 (12,20.49); R6 pad2 (18.01,20.0); U1 pin2 (15.025,26.365)
-    # R3 branch: jog RIGHT to x=13.75, avoids V_MID at y=21.51 (ends x=12) and V_OSC at y=29
-    route(board, "VINV", F, SIG,
-          (12.0,   20.49),
-          (13.75,  20.49),
-          (13.75,  26.365),
-          (15.025, 26.365))
-    # R6 branch: jog UP to y=19 (clear of SIG_OUT at y=20), LEFT to x=13.75, meet R3 branch
-    route(board, "VINV", F, SIG,
-          (18.01,  20.0 ),
-          (18.01,  19.0 ),
-          (13.75,  19.0 ),
-          (13.75,  20.49))
+    # ── VINV: three F.Cu stubs → vias → B.Cu backbone ───────────────────────
+    # R6.pad1(VINV) at (25,26.49): stub UP to via (25,25.5).
+    # U1.pad2 (15.025,26.365): stub RIGHT to via (16.6,26.365);
+    #   x=16.6 clears pad3(VPLUS) right edge (16.0) + via radius (0.3) + clearance (0.2) = 16.5.
+    # R3.pad2 (8.02,29.7): stub RIGHT 1mm to via (9.02,29.7).
+    # B.Cu L-route connects all three vias.
+    route(board, "VINV", F, SIG, (25.0,   26.49 ), (25.0,   25.5  ))
+    via(board, "VINV", 25.0, 25.5)
+    route(board, "VINV", F, SIG, (15.025, 26.365), (16.6,   26.365))
+    via(board, "VINV", 16.6, 26.365)
+    route(board, "VINV", F, SIG, (8.02,   29.7  ), (9.02,   29.7  ))
+    via(board, "VINV", 9.02, 29.7)
+    route(board, "VINV", B, SIG,
+          (25.0, 25.5  ),
+          (25.0, 26.365),
+          (16.6, 26.365),
+          (16.6, 29.7  ),
+          (9.02, 29.7  ))
 
-    # ── SIG_OUT: U1-pin6 → R6-pad1 (LEFT) and → R7-pad1 (RIGHT) ────────────
-    # U1 pin6 (19.975,27.635); R6 pad1 (16.99,20.0); R7 pad1 (27.0,27.51)
-    # Go LEFT at y=27.635 then down at x=16.5 (avoids pin7 V_OPA above at y=26.365)
-    route(board, "SIG_OUT", F, SIG,
-          (19.975, 27.635),
-          (16.5,   27.635),
-          (16.5,   20.0  ),
-          (16.99,  20.0  ))
+    # ── SIG_OUT: U1-pin6 → R7-pad1 (RIGHT), short stub down to R6-pad2 ──────
+    # U1 pin6 (19.975,27.635); R7 pad1 (27.0,27.51); R6 pad2(SIG_OUT) at (25,27.51)
+    # R6 at (25,27,−90°): pad2(SIG_OUT) at (25,27.51). Same net — no mask bridge.
     route(board, "SIG_OUT", F, SIG,
           (19.975, 27.635),
           (27.0,   27.635),
           (27.0,   27.51 ))
+    route(board, "SIG_OUT", F, SIG,
+          (25.0, 27.635),
+          (25.0, 27.51 ))
 
     # ── SIG_PROT: R7-pad2 → C_DC-pad1 ──────────────────────────────────────
-    # R7 pad2 (27.0,26.49); C_DC pad1 (18.525,34.0)
-    # Jog right to x=29 (clears V_OSC at y=29 and SIG_PROT at x=28.35+).
-    # Bypass C_DC-pad2 TX_DRV at (21.475,34): stop at x=22.8, jog to y=35.7,
-    # then left to x=18.525, then up to C_DC-pad1 — avoids 0mm gap with pad2.
-    # B.Cu detour: F.Cu crosses V_OSC (y=30.3 x=10.475-30) and V_OPA bus (x=31) block F.Cu paths.
-    # Go UP from R7-pad2 to (27,25.5), under via to B.Cu, across at y=25.5 then down to y=31,
-    # back to F.Cu via, then straight down to C_DC-pad1 (18.525,34). No bypass needed for
-    # C_DC-pad2 TX_DRV (21.475,34) since we arrive from above on x=18.525.
+    # R7 pad2 (27.0,26.49); C7 (C_DC) pad1 (27.0,33.55) — C7 at (27,35.025,−90°).
+    # Both pads at x=27: B.Cu straight vertical at x=27.
+    # Stub UP from pad2 to via (27,25.5); B.Cu down to (27,32.05); via → F.Cu stub to pad1.
     route(board, "SIG_PROT", F, SIG,
           (27.0, 26.49),
           (27.0, 25.5 ))
     via(board, "SIG_PROT", 27.0, 25.5)
     route(board, "SIG_PROT", B, SIG,
-          (27.0,   25.5),
-          (18.525, 25.5),
-          (18.525, 31.0))
-    via(board, "SIG_PROT", 18.525, 31.0)
+          (27.0, 25.5),
+          (27.0, 32.05))
+    via(board, "SIG_PROT", 27.0, 32.05)
     route(board, "SIG_PROT", F, SIG,
-          (18.525, 31.0),
-          (18.525, 34.0))
+          (27.0, 32.05),
+          (27.0, 33.55))
 
     # ── TX_DRV: C_DC-pad2 → T1A-pad1 ───────────────────────────────────────
-    # C_DC pad2 (21.475,34.0); T1A pad1 (8.0,62.0)
-    # Via moved to y=36.5 (1.65mm below C7 pad2 bottom); B.Cu horizontal at y=36.5.
-    # x=5.0 clears V_MID B.Cu (starts x=7) and CLKA_IN B.Cu (now starts x=7.0).
-    # Jog right to x=8 at y=62: keeps S1 pad inboard of MH column (x=5); B.Cu y=62 area clear.
+    # C7 pad2 (27.0,36.5); T1A pad1 (8.0,62.0)
+    # Stub LEFT from pad2 to via (24.0,36.5); clears pad left edge (~26.15) by 2.15mm.
+    # B.Cu horizontal at y=36.5 then down to T1A.
+    # x=5.0 clears V_MID B.Cu (starts x=7) and CLKA_IN B.Cu (starts x=7.0).
     route(board, "TX_DRV", F, SIG,
-          (21.475, 34.0),
-          (21.475, 36.5))
-    via(board, "TX_DRV", 21.475, 36.5)
+          (27.0, 36.5),
+          (24.0, 36.5))
+    via(board, "TX_DRV", 24.0, 36.5)
     route(board, "TX_DRV", B, SIG,
-          (21.475, 36.5),
-          (5.0,    36.5),
-          (5.0,    62.0),
-          (8.0,    62.0))
+          (24.0, 36.5),
+          (5.0,  36.5),
+          (5.0,  62.0),
+          (8.0,  62.0))
     # S3 (TP1.3) is floating — no GND connection to (18,62)
 
     # ── XLR_HOT: T1B-pad1 → R_RFI1-pad2 ────────────────────────────────
@@ -582,11 +529,11 @@ def route_all(board):
 
     # ── XLR_HOT_F: R_RFI1-pad1 → C_RFI1-pad1 + J3-pad2 ─────────────
     # R_RFI1 pad1 (10.0,86.53); T-junction at (10,87); C_RFI1 pad1 (12.47,87)
-    # GND: C_RFI1 pad2 (13.53,87) → short stub → via → B.Cu GND plane
+    # GND: C_RFI1 pad2 (13.53,87) → 1mm stub RIGHT → via; clears courtyard right edge (13.98)
     route(board, "XLR_HOT_F", F, SIG, (10.0, 86.53), (10.0, 87.0), (12.47, 87.0))
     route(board, "XLR_HOT_F", F, SIG, (10.0, 87.0), (10.0, 88.54), (20.0, 88.54), (20.0, 90.0))
-    route(board, "GND", F, SIG, (13.53, 87.0), (13.53, 87.7))
-    via(board, "GND", 13.53, 87.7)
+    route(board, "GND", F, SIG, (13.53, 87.0), (14.53, 87.0))
+    via(board, "GND", 14.53, 87.0)
 
     # ── XLR_COLD: T1B-pad2 → R_RFI2-pad2 ───────────────────────────────
     # T1B pad2 (22.0,82.0); R_RFI2 pad2 (22.0,85.47)
@@ -602,21 +549,21 @@ def route_all(board):
 
     # ── XLR_COLD_F: R_RFI2-pad1 → C_RFI2-pad1 + J3-pad3 ───────────
     # R_RFI2 pad1 (22.0,86.53); T-junction at (22,87); C_RFI2 pad1 (24.47,87)
-    # GND: C_RFI2 pad2 (25.53,87) → short stub → via → B.Cu GND plane
+    # GND: C_RFI2 pad2 (25.53,87) → 1mm stub RIGHT → via; clears courtyard right edge (25.98)
     route(board, "XLR_COLD_F", F, SIG, (22.0, 86.53), (22.0, 87.0), (24.47, 87.0))
     route(board, "XLR_COLD_F", F, SIG, (22.0, 87.0), (22.0, 89.0), (22.54, 89.0), (22.54, 90.0))
-    route(board, "GND", F, SIG, (25.53, 87.0), (25.53, 87.7))
-    via(board, "GND", 25.53, 87.7)
+    route(board, "GND", F, SIG, (25.53, 87.0), (26.53, 87.0))
+    via(board, "GND", 26.53, 87.0)
 
 
     # ── Dickson pump nodes ───────────────────────────────────────────────────
-    # N1: D1-pad3 (22.9375,52.0) → Cp1-pad1 (21.05,59.0)
+    # N1: D1-pad3 (22.9375,52.0) → Cp1-pad1 (21.05,55.5)
     # Jog LEFT to x=20 to avoid N2 which will use x=22 column
     route(board, "N1", F, SIG,
           (22.9375, 52.0),
           (20.0,    52.0),
-          (20.0,    59.0),
-          (21.05,   59.0))
+          (20.0,    55.5),
+          (21.05,   55.5))
 
     # N2: D1-pad2 (21.0625,52.95) → D2-pad1 (26.0625,48.05) and → Cp2-pad1 (24.05,64.0)
     # Use x=22 column (D1 pad1 V_OPA right edge at 21.66, x=22 left edge at 21.9 → 0.24mm gap)
@@ -632,13 +579,12 @@ def route_all(board):
     # Cp2 branch from junction at (24.05,53.7) — simple vertical
     route(board, "N2", F, SIG,
           (24.05, 53.7 ),
-          (24.05, 64.0 ))
+          (24.05, 60.5 ))
 
-    # N3: D2-pad3 (27.9375,49.0) → Cp3-pad1 (31.05,52.0)
+    # N3: D2-pad3 (27.9375,49.0) → Cp3-pad1 (30.05,49.0) — Cp3 at (31,49), direct horizontal
     route(board, "N3", F, SIG,
           (27.9375, 49.0),
-          (31.05,   49.0),
-          (31.05,   52.0))
+          (30.05,   49.0))
 
     # ── Clock nets (B.Cu — shielded under U3) ───────────────────────────────
     # CLKA_IN: U3-pad1 (5.525,51.19) → R_OSC-pad2 (16.0,55.49) → C_OSC-pad1 (18.0,59.48)
@@ -688,28 +634,26 @@ def route_all(board):
           (22.95, 60.15),
           (22.95, 57.5))
     via(board, "CLKA", 22.95, 57.5)
-    route(board, "CLKA", F, SIG, (22.95, 57.5), (22.95, 59.0))
+    route(board, "CLKA", F, SIG, (22.95, 57.5), (22.95, 55.5))
     # Seg C: x=17 avoids CLKA_IN via/pad at (16,55.49); y=47 above N2(y=48.05), VBOOST(y=49.95)
+    # Cp3 at (31,49): pad2(CLKA) at (31.95,49)
     route(board, "CLKA", F, SIG,
           (17.0,  56.51),
           (17.0,  47.0 ),
-          (32.95, 47.0 ),
-          (32.95, 52.0 ))
+          (31.95, 47.0 ),
+          (31.95, 49.0 ))
 
-    # CLKB: U3-pad4 (5.525,55.0) → Cp2-pad2 (25.95,64.0)
+    # CLKB: U3-pad4 (5.525,55.0) → Cp2-pad2 (22.15,64.0)
+    # Cp2 flipped 180°: pad2(CLKB) now at left (22.15,64) — no y=65.5 detour needed
     # y=60.3 horizontal: T1A pads top=61.25mm; gap=61.25-60.45=0.8mm ✓
     # x=6.875: U3 pad right edge=6.5mm; gap=6.875-0.15-6.5=0.225mm ✓
     #           T1A.2 left edge=7.25mm; gap=7.25-6.875-0.15=0.225mm ✓
-    # x=23 vertical: T1B pads now at y=82, below this route; no conflict
-    # y=65.5: gap to Cp2-pad1 N2(24.05,64) = 65.5-64-0.1-0.725=0.675mm ✓
     route(board, "CLKB", F, SIG,
           (5.525,  55.0),
           (6.875,  55.0),
           (6.875,  60.3),
-          (23.0,   60.3),
-          (23.0,   65.5),
-          (25.95,  65.5),
-          (25.95,  64.0))
+          (22.15,  60.3),
+          (22.15,  60.5))
 
 
 def fix_ref(board, ref, new_text=None, x_mm=None, y_mm=None, angle_deg=None, hide=False):
@@ -763,25 +707,30 @@ def main():
     # B.Cu GND plane is retained: THT pads (J2-GND) stay connected;
     # MH1/MH2 are NPTH (no copper) so the guard ring can fully enclose the zone.
     # Through-board stray capacitance is small (<1 pF, through 1.6 mm FR4).
+    # Keepout: only the VPLUS trace corridor (x=6..14.5, y=17..30).
+    # The y<17 portion is now redundant: F.Cu GND zone no longer extends above y=17.
     add_keepout(board, pcbnew.F_Cu,
-                [(6, 0), (36.5, 0), (36.5, 17), (14.5, 17), (14.5, 30), (6, 30)])
+                [(6, 17), (14.5, 17), (14.5, 30), (6, 30)])
 
     # J2: bare THT solder pads for capsule wires
     place_solder_pads(board, "J2", 15.23, 3, ["CAP_FP", "GND"], axis='x')
 
+    # angle=180: pad1(CAP_FP) at right (15.23,14); pad2(VPLUS) at left (13.33,14)
+    # pad1 aligns with J2-pad1 x=15.23; shortens CAP_FP HV trace vs old x=11.05
     place(board, "Capacitor_SMD", "C_0805_2012Metric",
-          "C8", "10n X7R", 12, 14, 0,
+          "C8", "10n X7R", 14.28, 14, 180,
           {"1": "CAP_FP", "2": "VPLUS"})
 
     # R_GBIAS1/2 in series: HV_FILT -> HV_MID -> CAP_FP (2x47M = 94M total)
     # Horizontal at x=32: pad1(left)=HV_MID, pad2(right)=HV_FILT/CAP_FP
     # pad1 at (30.5375,y), pad2 at (33.4625,y)
     place(board, "Resistor_SMD", "R_1206_3216Metric",
-          "R_GBIAS1", "47M 1206", 29, 8, 0,
+          "R_GBIAS1", "47M 1206", 29, 9, 0,
           {"1": "HV_MID", "2": "HV_FILT"})
 
+    # angle=180: pad1(HV_MID) at right (27.5,14); pad2(CAP_FP) at left (24.575,14)
     place(board, "Resistor_SMD", "R_1206_3216Metric",
-          "R_GBIAS2", "47M 1206", 32, 12, 0,
+          "R_GBIAS2", "47M 1206", 26.0375, 14, 180,
           {"1": "HV_MID", "2": "CAP_FP"})
 
     # ── OPA1641 amplifier zone (y=18..42) ────────────────────────────────────
@@ -795,19 +744,22 @@ def main():
             break
 
     # R_BIAS: VPLUS -> V_MID  (100M, establishes DC operating point for IN+)
+    # angle=180: pad1(VPLUS) at right (9.925,27.5); pad2(V_MID) at left (7.0,27.5) on bus
     place(board, "Resistor_SMD", "R_1206_3216Metric",
-          "R_BIAS1", "100M 1206", 9, 27, 90,
+          "R_BIAS1", "100M 1206", 8.4625, 27.5, 180,
           {"1": "VPLUS", "2": "V_MID"})
 
     # R3: V_MID -> VINV  (2.2k, sets IN- DC level = IN+ for balance)
+    # angle=0: pad1(V_MID) at left (7.0,29.7) on bus; pad2(VINV) at right (8.02,29.7)
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R3", "2.2k", 12, 21, 90,
+          "R3", "2.2k", 7.51, 29.7, 0,
           {"1": "V_MID", "2": "VINV"})
 
     # R6: SIG_OUT -> VINV  (47k feedback, sets gain = 1 + 47k/2.2k = 22.4x → -22 dBV/Pa)
+    # angle=-90: pad1(VINV) at (25,26.49) above; pad2(SIG_OUT) at (25,27.51) below
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R6", "47k", 17.5, 20, 0,
-          {"1": "SIG_OUT", "2": "VINV"})
+          "R6", "47k", 25, 27, -90,
+          {"1": "VINV", "2": "SIG_OUT"})
 
     # R7: SIG_OUT -> SIG_PROT  (100R output series protection)
     place(board, "Resistor_SMD", "R_0402_1005Metric",
@@ -816,12 +768,13 @@ def main():
 
     # C3: V_OPA -> GND  (100n, HF bypass within 5mm of U1 pin 7)
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C3", "100n 25V X7R", 27, 21, 90,
+          "C3", "100n 25V X7R", 27, 21, 180,
           {"1": "V_OPA", "2": "GND"})
 
     # C_DC: SIG_PROT -> TX_DRV  (4.7u DC block to transformer primary)
+    # angle=-90: pad1(SIG_PROT) at (27,33.55) above; pad2(TX_DRV) at (27,36.5) below
     place(board, "Capacitor_SMD", "C_1206_3216Metric",
-          "C7", "4.7u 50V X7R", 20, 34, 0,
+          "C7", "4.7u 50V X7R", 27, 35.025, -90,
           {"1": "SIG_PROT", "2": "TX_DRV"})
 
     # ── Power supply zone (y=36..58) ─────────────────────────────────────────
@@ -861,20 +814,22 @@ def main():
 
     # C1/C2: input and output bypass for U2
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C1", "100n 63V X7R", 18, 38, 0,
+          "C1", "100n 63V X7R", 31, 54, 0,
           {"1": "V_OPA_RAW", "2": "GND"})
 
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C2", "100n 25V X7R", 29, 38, 0,
+          "C2", "100n 25V X7R", 29, 38, 180,
           {"1": "V_OPA", "2": "GND"})
 
     # R4/R5: V_MID = V_OPA/2 = 12V divider
+    # angle=180: pad1(V_OPA) at right (8.02,40.8); pad2(V_MID) at left (7.0,40.8) on bus
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R4", "470k", 8, 39, 90,
+          "R4", "470k", 7.51, 40.8, 180,
           {"1": "V_OPA", "2": "V_MID"})
 
+    # angle=0: pad1(V_MID) at left (7.0,48) on bus; pad2(GND) at right (8.02,48) into GND pour
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R5", "470k", 8, 48, 90,
+          "R5", "470k", 7.51, 48, 0,
           {"1": "V_MID", "2": "GND"})
 
     # C4/C5: V_MID bypass (0603 SMD + SMD electrolytic)
@@ -897,11 +852,11 @@ def main():
     # Z_OSC shunt regulator: V_OPA -> R_ZEN -> V_OSC -> Z_OSC -> GND (15V supply for U3)
     # SOD-123 pad1=K, pad2=A; K=V_OSC (high side of zener), A=GND
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R_ZEN1", "6.8k", 30, 34, 90,
+          "R_ZEN1", "6.8k", 29.61, 33.5, 180,
           {"1": "V_OPA", "2": "V_OSC"})
 
     place(board, "Diode_SMD", "D_SOD-123",
-          "Z_OSC1", "15V MMSZ15", 30, 29, 0,
+          "Z_OSC1", "15V MMSZ15", 30.75, 28.5, 0,
           {"1": "V_OSC", "2": "GND"})
 
     # ── Boost section (y=48..66, above transformer cutout) ───────────────────
@@ -942,15 +897,16 @@ def main():
 
     # Cp1-3: pump capacitors 100n 100V (0805 PP film)
     place(board, "Capacitor_SMD", "C_0805_2012Metric",
-          "Cp1", "100n 100V X7R", 22, 59, 0,
+          "Cp1", "100n 100V X7R", 22, 55.5, 0,
           {"1": "N1", "2": "CLKA"})
 
+    # angle=180: pad1(N2) at right (24.05,60.5); pad2(CLKB) at left (22.15,60.5)
     place(board, "Capacitor_SMD", "C_0805_2012Metric",
-          "Cp2", "100n 100V X7R", 25, 64, 0,
+          "Cp2", "100n 100V X7R", 23.1, 60.5, 180,
           {"1": "N2", "2": "CLKB"})
 
     place(board, "Capacitor_SMD", "C_0805_2012Metric",
-          "Cp3", "100n 100V X7R", 32, 52, 0,
+          "Cp3", "100n 100V X7R", 31, 49, 0,
           {"1": "N3", "2": "CLKA"})
 
     # Transformer wire solder pads — bare THT holes
@@ -1002,8 +958,8 @@ def main():
     # ── Silk label fixes ──────────────────────────────────────────────────────
     # TP1: labels at y=64 (below pads at y=62, clear of cutout top at y=66.7)
     # TS1: labels at y=84 (below pads at y=82, above J3 at y=92)
-    for old, new, x, y in [("TP1.1","S1",10,64),("TP1.2","S2",15,64),("TP1.3","S3",20,64),
-                            ("TS1.1","P1",17,84),("TS1.2","P2",22,84)]:
+    for old, new, x, y in [("TP1.1","S1",8,64),("TP1.2","S2",13,64),("TP1.3","S3",18,64),
+                            ("TS1.1","P1",17,80),("TS1.2","P2",22,80)]:
         fix_ref(board, old, new_text=new, x_mm=x, y_mm=y)
 
     # J3: shorten + move below pads (pitch 2.54mm needs ≤2mm labels)
@@ -1019,7 +975,7 @@ def main():
     fix_ref(board, "R_OSC1", x_mm=16, y_mm=54.0, angle_deg=0)
 
     # D1: default silk lands left of component; move right of body (SOT-23 right edge ~x=23.8).
-    fix_ref(board, "D1", x_mm=25, y_mm=53)
+    fix_ref(board, "D1", x_mm=25, y_mm=52)
 
     # C10 (osc timing cap): place directly above component at (18,59); old
     # position (25,56.5) was 7mm away and appeared disconnected from component.
@@ -1028,11 +984,29 @@ def main():
     # Z_OSC1: default ref text at ~(30,27.5) sits over R7 pad2 at (27,27.8).
     # Shift slightly right; keep above pads (pad2 copper reaches y=28.35).
     fix_ref(board, "Z_OSC1", x_mm=31.5, y_mm=26.5)
+    # C3: angle=180 rotates silk; force horizontal above component (body top ~y=20.5)
+    fix_ref(board, "C3", x_mm=27.0, y_mm=20.0, angle_deg=0)
 
-    # C2/R_ZEN1: 0402s at (29,38) and (30,34) — default ref texts overlap.
-    # Separate by moving C2 left and R_ZEN1 right.
-    fix_ref(board, "C2",     x_mm=27, y_mm=38)
-    fix_ref(board, "R_ZEN1", x_mm=32, y_mm=34)
+    # R6/R7: angle rotates silk; force horizontal and place above component,
+    # above SIG_PROT via at (27,25.5) copper top ~y=25.0; both at y=24.5
+    fix_ref(board, "R6", x_mm=25.0, y_mm=24.5, angle_deg=0)
+    fix_ref(board, "R7", x_mm=27.0, y_mm=24.5, angle_deg=0)
+    # R4: angle=180 rotates silk; force horizontal and place above component
+    fix_ref(board, "R4", x_mm=7.51, y_mm=39.5, angle_deg=0)
+    # R3: place below component (center y=29.7, body bottom ~29.95)
+    fix_ref(board, "R3", x_mm=7.51, y_mm=31.2)
+    # R_BIAS1: angle=180 rotates silk; force horizontal and place above component
+    # (body top at y=26.7, 1206 half-height=0.8mm)
+    fix_ref(board, "R_BIAS1", x_mm=8.4625, y_mm=25.5, angle_deg=0)
+
+    # C2: move left, clear of R_ZEN1 area
+    fix_ref(board, "C2",     x_mm=31, y_mm=38, angle_deg=0)
+    # R_ZEN1: angle=180 rotates silk; force horizontal above component (body top ~y=32.77)
+    fix_ref(board, "R_ZEN1", x_mm=31.0, y_mm=32.2, angle_deg=0)
+
+    # Cp1/Cp2: silk below body
+    fix_ref(board, "Cp1", x_mm=25.0, y_mm=55.5, angle_deg=0)
+    fix_ref(board, "Cp2", x_mm=23.1, y_mm=62.0, angle_deg=0)
 
     # DZ1: right silk line at x=32.94..33.06 — move label to x=35 to clear it
     fix_ref(board, "DZ1", x_mm=35, y_mm=65.5)
@@ -1042,8 +1016,8 @@ def main():
     # C4: rotated 90°, default ref near board left edge (x=2); move above top pad
     fix_ref(board, "C4", x_mm=4, y_mm=41)
 
-    # R_GBIAS1: default silk at y=6.18 overlaps MH2 GND pad; shift left to x=26
-    fix_ref(board, "R_GBIAS1", x_mm=26, y_mm=6.2)
+    # R_GBIAS1: place below component (body bottom y=9.8), matching R_GBIAS2 style
+    fix_ref(board, "R_GBIAS1", x_mm=29, y_mm=10.83, angle_deg=0)
 
     # R1/R2: rotated 90°, align silk to same x=14 so labels form a vertical straight line
     fix_ref(board, "R1", x_mm=14, y_mm=80)
