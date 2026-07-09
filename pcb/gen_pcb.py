@@ -406,7 +406,7 @@ def route_all(board):
 
     # ── V_MID: bus at x=7 (avoids VPLUS at x=9) ────────────────────────────
     # R4 pad2 (8,38.49); R5 pad1 (8,48.51); C4 pad1 (4,44.775)
-    # R_BIAS pad2 (9,25.5375); R3 pad1 (12,21.51); C5 pad2 (31.8,43) via F.Cu branch
+    # R_BIAS pad2 (9,25.5375); R3 pad1 (9,21.51); C5 pad2 (31.8,43) via F.Cu branch
     route(board, "V_MID", F, PWR,
           (8.0, 38.49),
           (7.0, 38.49),
@@ -421,8 +421,7 @@ def route_all(board):
           (9.0,  25.5375))
     route(board, "V_MID", F, PWR,
           (9.0,  25.5375),
-          (9.0,  21.51  ),
-          (12.0, 21.51  ))
+          (9.0,  21.51  ))
     # C5 pad2(V_MID) at (31.8,43): via at bus x=7, B.Cu trace, via below pad, F.Cu stub up to pad
     via(board, "V_MID", 7.0, 43.0)
     route(board, "V_MID", B, PWR,
@@ -457,44 +456,32 @@ def route_all(board):
     # SIGNAL NETS  (0.2mm)
     # ════════════════════════════════════════════════════════════════════════
 
-    # ── VPLUS: R_BIAS-pad1 → U1-pin3 → C8-pad2 ───────────────────────────
+    # ── VPLUS: R_BIAS-pad1 → U1-pin3 → C8-pad2 (all F.Cu, within keepout) ───
     # R_BIAS pad1 (9,28.4625); U1 pin3 (15.025,27.635); C8 pad2 (12.95,14.0)
-    # Direct route: up within R_BIAS pad1, then right to pin3 at y=27.635.
-    # Avoids old detour through y=30.5 which crossed V_OSC at y=29 at x=14.5.
-    # C8 pad2: use B.Cu to avoid crowded F.Cu (VINV at x=12-13.75, CAP_FP at x=11.05).
-    # Via at (13.5,27.635) LEFT of U1 pad3; F.Cu stub right to pad. SIG_OUT occupies
-    # y=27.635 from x=16.5 right — cannot use x>15.85 (pad edge+clearance).
+    # VINV moved to B.Cu frees x=12.95 on F.Cu. Entire path in keepout/capsule
+    # zone (no F.Cu GND pour), so no adjacent GND copper on the high-Z node.
     route(board, "VPLUS", F, SIG,
-          (9.0,   28.4625),
-          (9.0,   27.635 ),
-          (13.5,  27.635 ))
+          (9.0,    28.4625),
+          (9.0,    27.635 ),
+          (15.025, 27.635 ))
     route(board, "VPLUS", F, SIG,
-          (13.5,   27.635),
-          (15.025, 27.635))
-    via(board, "VPLUS", 13.5, 27.635)
-    route(board, "VPLUS", B, SIG,
-          (13.5,  27.635),
-          (12.95, 27.635),
-          (12.95, 15.5  ))
-    via(board, "VPLUS", 12.95, 15.5)
-    route(board, "VPLUS", F, SIG,
-          (12.95, 15.5),
-          (12.95, 14.0))
+          (12.95, 14.0),
+          (12.95, 27.635))
 
     # ── VINV: R3-pad2 → R6-pad2 → U1-pin2 ──────────────────────────────────
-    # R3 pad2 (12,20.49); R6 pad2 (18.01,20.0); U1 pin2 (15.025,26.365)
-    # R3 branch: jog RIGHT to x=13.75, avoids V_MID at y=21.51 (ends x=12) and V_OSC at y=29
-    route(board, "VINV", F, SIG,
-          (12.0,   20.49),
-          (13.75,  20.49),
-          (13.75,  26.365),
-          (15.025, 26.365))
-    # R6 branch: jog UP to y=19 (clear of SIG_OUT at y=20), LEFT to x=13.75, meet R3 branch
+    # R3 now at (9,21): pad2 (9,20.49). Stub 1mm above pad, then B.Cu via to x=13.75.
+    # R6 branch stays on F.Cu; both join at (13.75,19.0) and descend to U1.pin2.
+    route(board, "VINV", F, SIG, (9.0, 20.49), (9.0, 19.5))
+    via(board, "VINV", 9.0, 19.5)
+    route(board, "VINV", B, SIG, (9.0, 19.5), (13.75, 19.5))
+    via(board, "VINV", 13.75, 19.5)
+    route(board, "VINV", F, SIG, (13.75, 19.5), (13.75, 19.0))
     route(board, "VINV", F, SIG,
           (18.01,  20.0 ),
           (18.01,  19.0 ),
           (13.75,  19.0 ),
-          (13.75,  20.49))
+          (13.75,  26.365),
+          (15.025, 26.365))
 
     # ── SIG_OUT: U1-pin6 → R6-pad1 (LEFT) and → R7-pad1 (RIGHT) ────────────
     # U1 pin6 (19.975,27.635); R6 pad1 (16.99,20.0); R7 pad1 (27.0,27.51)
@@ -787,7 +774,7 @@ def main():
 
     # R3: V_MID -> VINV  (2.2k, sets IN- DC level = IN+ for balance)
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R3", "2.2k", 12, 21, 90,
+          "R3", "2.2k", 9, 21, 90,
           {"1": "V_MID", "2": "VINV"})
 
     # R6: SIG_OUT -> VINV  (47k feedback, sets gain = 1 + 47k/2.2k = 22.4x → -22 dBV/Pa)
