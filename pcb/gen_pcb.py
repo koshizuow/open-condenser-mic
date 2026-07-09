@@ -295,13 +295,13 @@ def route_all(board):
           (27.5,    14.0))
 
     # ── CAP_FP: R_GBIAS2-pad2 → C8-pad1 → J2-pad1 ───────────────────────
-    # R_GBIAS2 pad2 (CAP_FP) at (24.575,14); horizontal left to C8.pad1 (15.23,14)
+    # R_GBIAS2 pad2 (CAP_FP) at (24.575,14); horizontal left to C8.pad1 (14.76,14)
     route(board, "CAP_FP", F, HV,
           (24.575, 14.0),
-          (15.23,  14.0))
+          (14.76,  14.0))
     route(board, "CAP_FP", F, HV,
-          (15.23,  14.0),
-          (15.23,   3.0))
+          (14.76,  14.0),
+          (14.76,   3.0))
 
     # ════════════════════════════════════════════════════════════════════════
     # POWER NETS  (0.3mm)
@@ -435,13 +435,16 @@ def route_all(board):
     # ════════════════════════════════════════════════════════════════════════
 
     # ── VPLUS: R_BIAS1-pad1 → U1-pin3 → C8-pad2 (all F.Cu, within keepout) ──
-    # R_BIAS1 pad1 (9.925,27.5); U1 pin3 (15.025,27.635); C8 pad2 (13.33,14.0)
+    # R_BIAS1 pad1 (9.925,27.5); U1 pin3 (15.025,27.635); C8 pad2 (13.80,14.0)
+    # Jog left to x=13.33 before running vertical: clears U1 pad1 at (15.025,25.095)
+    # (x=13.80 vertical fails clearance; x=13.33 gives 1.3mm gap to U1 pad1 copper)
     # Entire path in keepout/capsule zone: no adjacent F.Cu GND copper.
     route(board, "VPLUS", F, SIG,
           (9.925,  27.5  ),
           (9.925,  27.635),
           (15.025, 27.635))
     route(board, "VPLUS", F, SIG,
+          (13.80, 14.0),
           (13.33, 14.0),
           (13.33, 27.635))
 
@@ -728,10 +731,10 @@ def main():
     # J2: bare THT solder pads for capsule wires
     place_solder_pads(board, "J2", 15.23, 3, ["CAP_FP", "GND"], axis='x')
 
-    # angle=180: pad1(CAP_FP) at right (15.23,14); pad2(VPLUS) at left (13.33,14)
-    # pad1 aligns with J2-pad1 x=15.23; shortens CAP_FP HV trace vs old x=11.05
-    place(board, "Capacitor_SMD", "C_0805_2012Metric",
-          "C8", "10n X7R", 14.28, 14, 180,
+    # angle=180: pad1(CAP_FP) at right (14.76,14); pad2(VPLUS) at left (13.80,14)
+    # 0402 pad offset ±0.48mm; pad1 at x=14.76 slightly left of J2-pad1 x=15.23
+    place(board, "Capacitor_SMD", "C_0402_1005Metric",
+          "C8", "1n 100V C0G", 14.28, 14, 180,
           {"1": "CAP_FP", "2": "VPLUS"})
 
     # R_GBIAS1/2 in series: HV_FILT -> HV_MID -> CAP_FP (2x47M = 94M total)

@@ -448,9 +448,9 @@ elements += component("Connector_Generic:Conn_01x02", "J2", "CAPSULE",
     footprint="Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
     pins={"1": "CAP_FP", "2": "GND"})
 
-elements += component("Device:C", "C8", "10n X7R 0805",
+elements += component("Device:C", "C8", "1n 100V C0G 0402",
     50, 70,
-    footprint="Capacitor_SMD:C_0805_2012Metric",
+    footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "CAP_FP", "2": "VPLUS"})
 
 elements += component("Device:R", "R_BIAS1", "100M 1206",

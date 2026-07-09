@@ -85,7 +85,7 @@ LCSC = {
 
     # Standard capacitors (0603/0805/1206)
     ("10u 25V X5R",   "C_0603_1608Metric"):        "C344022",   # GRM188R61E106KA73D muRata
-    ("10n X7R",       "C_0805_2012Metric"):        "C1710",     # CL21B103KBANNNC Samsung (was C0G)
+    ("1n 100V C0G",   "C_0402_1005Metric"):        "C694157",   # TDK C1005C0G2A102JT000E 100V C0G — C8 has ~56V DC bias; 1nF gives f=1.6Hz with R_BIAS1
     ("4.7u 50V X7R",  "C_1206_3216Metric"):        "C51205",    # CL31B475KBHNNNE Samsung
 
     # 100V capacitors
