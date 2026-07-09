@@ -483,6 +483,20 @@ elements += component("Device:R", "R3", "2.2k",
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "V_MID", "2": "VINV"})
 
+# Presence-peak network: Rs (6.2k) + C (12nF) in series, parallel with R3.
+# At DC: C blocks → Z = R3 = 2.2k (gain unchanged).
+# At HF: C shorts → Z = R3‖Rs = 1.61k → +2.6 dB above f_c = 1/(2π×6.2k×12nF) ≈ 2.1 kHz.
+# Placed at x=77, left of R3, clear of VPLUS wire (y=76.35) and all Block B components.
+elements += component("Device:R", "R_PRES1", "6.2k",
+    77, 90,
+    footprint="Resistor_SMD:R_0402_1005Metric",
+    pins={"1": "V_MID", "2": "RS_MID"})
+
+elements += component("Device:C", "C_PRES1", "12n 25V X7R",
+    77, 108,
+    footprint="Capacitor_SMD:C_0402_1005Metric",
+    pins={"1": "RS_MID", "2": "VINV"})
+
 elements += component("Device:R", "R6", "47k",
     107, 52,
     footprint="Resistor_SMD:R_0402_1005Metric",

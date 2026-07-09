@@ -467,6 +467,22 @@ def route_all(board):
           (16.6, 29.7  ),
           (9.02, 29.7  ))
 
+    # ── Presence peak: V_MID tap + RS_MID link + VINV branch ─────────────────
+    # V_MID bus at x=7; V_OSC blocks F.Cu at x=10.475, so tap via B.Cu
+    via(board, "V_MID", 7.0, 33.0)
+    route(board, "V_MID", B, PWR, (7.0, 33.0), (14.0, 33.0))
+    via(board, "V_MID", 14.0, 33.0)
+    route(board, "V_MID", F, PWR, (14.0, 33.0), (15.49, 33.0))
+    # RS_MID: R_PRES1.pad2 → C_PRES1.pad1 direct stub
+    route(board, "RS_MID", F, SIG, (16.51, 33.0), (18.49, 33.0))
+    # VINV: F.Cu stub right, via, B.Cu L-route up to VINV backbone corner (16.6,29.7)
+    route(board, "VINV", F, SIG, (19.51, 33.0), (20.51, 33.0))
+    via(board, "VINV", 20.51, 33.0)
+    route(board, "VINV", B, SIG,
+          (20.51, 33.0),
+          (16.6,  33.0),
+          (16.6,  29.7))
+
     # ── SIG_OUT: U1-pin6 → R7-pad1 (RIGHT), short stub down to R6-pad2 ──────
     # U1 pin6 (19.975,27.635); R7 pad1 (27.0,27.51); R6 pad2(SIG_OUT) at (25,27.51)
     # R6 at (25,27,−90°): pad2(SIG_OUT) at (25,27.51). Same net — no mask bridge.
@@ -755,6 +771,18 @@ def main():
           "R3", "2.2k", 7.51, 29.7, 0,
           {"1": "V_MID", "2": "VINV"})
 
+    # Presence-peak network: Rs (6.2k) + C (12nF) in series, parallel with R3
+    # At DC: C blocks → Z = R3 = 2.2k, gain = 22.4x (0 dB reference)
+    # At HF: C shorts → Z = R3‖Rs = 1.61k, gain = 30.2x (+2.6 dB)
+    # Corner f = 1/(2π·6.2k·12nF) ≈ 2.1 kHz — targets M149-style presence peak
+    # R_PRES1 at x=16 clears V_OSC F.Cu at x=10.475 (y=30..51); C_PRES1 at x=19
+    place(board, "Resistor_SMD", "R_0402_1005Metric",
+          "R_PRES1", "6.2k", 16, 33, 0,
+          {"1": "V_MID", "2": "RS_MID"})
+    place(board, "Capacitor_SMD", "C_0402_1005Metric",
+          "C_PRES1", "12n 25V X7R", 19, 33, 0,
+          {"1": "RS_MID", "2": "VINV"})
+
     # R6: SIG_OUT -> VINV  (47k feedback, sets gain = 1 + 47k/2.2k = 22.4x → -22 dBV/Pa)
     # angle=-90: pad1(VINV) at (25,26.49) above; pad2(SIG_OUT) at (25,27.51) below
     place(board, "Resistor_SMD", "R_0402_1005Metric",
@@ -995,6 +1023,9 @@ def main():
     fix_ref(board, "R4", x_mm=7.51, y_mm=39.5, angle_deg=0)
     # R3: place below component (center y=29.7, body bottom ~29.95)
     fix_ref(board, "R3", x_mm=7.51, y_mm=31.2)
+    # R_PRES1 above, C_PRES1 below — staggered to avoid silk_overlap
+    fix_ref(board, "R_PRES1", x_mm=16.0, y_mm=31.5, angle_deg=0)
+    fix_ref(board, "C_PRES1", x_mm=19.0, y_mm=34.5, angle_deg=0)
     # R_BIAS1: angle=180 rotates silk; force horizontal and place above component
     # (body top at y=26.7, 1206 half-height=0.8mm)
     fix_ref(board, "R_BIAS1", x_mm=8.4625, y_mm=25.5, angle_deg=0)

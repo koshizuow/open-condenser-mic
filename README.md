@@ -38,7 +38,16 @@ Charge pump settles to 67.97 V within ~1 ms. HV_FILT (LC-filtered polarization r
 
 ![Frequency response](img/freq_response.png)
 
-Behavioral model, gain normalized to 1 kHz. Flat within ±1 dB from ~200 Hz to ~20 kHz. High-pass rolloff from output DC block (C_DC = 4.7 µF) and R_GBIAS (94 MΩ) × capsule capacitance (55 pF); high-frequency rolloff from op-amp GBW. Response above 20 kHz is outside the audio band.
+Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within ±1 dB from ~200 Hz to ~20 kHz; high-pass rolloff from output DC block (C_DC = 4.7 µF) and R_GBIAS (94 MΩ) × capsule capacitance (55 pF). The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
+
+#### Optional presence-peak network (R_PRES1, C_PRES1)
+
+R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, parallel with R3 (2.2 kΩ), are footprinted on the board but **DNP by default**. If the capsule you use has a relatively flat frequency response and you'd like to add some presence lift, populate these two parts. The corner frequency and boost level can be tuned by adjusting their values:
+
+- **Corner frequency**: f_c = 1 / (2π × R_PRES1 × C_PRES1) ≈ 2.1 kHz at the default values
+- **HF shelf**: set by R_PRES1 ∥ R3; default +2.6 dB
+
+`gen_bom.py` defaults to the flat build (`bom_flat.csv` / `cpl_flat.csv`, R_PRES1/C_PRES1 DNP). Pass `--presence` to generate the presence-peak build (`bom_presence.csv` / `cpl_presence.csv`). Both sets are packaged in every CI artifact.
 
 ### Input-Referred Noise Spectrum (`amp_noise_opa1641.sp`)
 
