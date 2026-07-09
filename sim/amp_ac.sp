@@ -59,7 +59,7 @@ R_oout  NET_OPA_IDEAL  NET_OPA_OUT  50
 
 * Feedback: output to IN-
 R4    NET_VBIAS  PIN2_NODE  2.2k     ; R3 in schematic: gain resistor, keep small for low noise
-R7    NET_OPA_OUT  PIN2_NODE  5.6k   ; R6 in schematic: feedback, changed 130k→5.6k for -38 dBV/Pa target
+R7    NET_OPA_OUT  PIN2_NODE  47k    ; R6 in schematic: feedback, 47k for 22.4x gain → -22 dBV/Pa (transformer saturation character)
 
 * ---------------------------------------------------------------------------
 * OUTPUT: R7 (series protection) + C_DC (DC block, 4.7µF) + NTE10/3 Transformer

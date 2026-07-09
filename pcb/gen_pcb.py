@@ -792,9 +792,9 @@ def main():
           "R3", "2.2k", 12, 21, 90,
           {"1": "V_MID", "2": "VINV"})
 
-    # R6: SIG_OUT -> VINV  (5.6k feedback, sets gain = 1 + 5.6k/2.2k = 3.5x → -38 dBV/Pa)
+    # R6: SIG_OUT -> VINV  (47k feedback, sets gain = 1 + 47k/2.2k = 22.4x → -22 dBV/Pa)
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R6", "5.6k", 17.5, 20, 0,
+          "R6", "47k", 17.5, 20, 0,
           {"1": "SIG_OUT", "2": "VINV"})
 
     # R7: SIG_OUT -> SIG_PROT  (100R output series protection)
