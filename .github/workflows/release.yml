@@ -52,6 +52,8 @@ jobs:
             release-assets/fabrication-outputs/gerbers.zip \
             release-assets/fabrication-outputs/bom.csv \
             release-assets/fabrication-outputs/cpl.csv \
+            release-assets/fabrication-outputs/bom_flat.csv \
+            release-assets/fabrication-outputs/cpl_flat.csv \
             release-assets/open-condenser-mic-kicad-project.zip \
             release-assets/drc-erc-reports/drc-report.rpt \
             release-assets/drc-erc-reports/erc-report.rpt

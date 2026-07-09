@@ -35,6 +35,7 @@ jobs:
           python3 pcb/gen_schematic.py
           python3 pcb/gen_pcb.py
           python3 pcb/gen_bom.py
+          python3 pcb/gen_bom.py --flat --suffix _flat
 
       - name: Verify KiCad outputs exist
         run: |
@@ -43,6 +44,8 @@ jobs:
           ls pcb/open-condenser-mic.kicad_sch
           ls pcb/bom.csv
           ls pcb/cpl.csv
+          ls pcb/bom_flat.csv
+          ls pcb/cpl_flat.csv
 
       - name: PCB DRC report (all severities)
         if: always()
@@ -101,7 +104,7 @@ jobs:
           kicad-cli pcb export drill --output fab/gerbers/ pcb/open-condenser-mic.kicad_pcb
           (cd fab/gerbers && zip -j ../gerbers.zip *)
           rm -rf fab/gerbers
-          cp pcb/bom.csv pcb/cpl.csv fab/
+          cp pcb/bom.csv pcb/cpl.csv pcb/bom_flat.csv pcb/cpl_flat.csv fab/
 
       - name: Run SPICE simulations
         working-directory: sim

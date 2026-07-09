@@ -202,9 +202,19 @@ def plot_noise_spectrum():
     print(f"Written: {out}")
 
 
+# Presence peak: Rs (6.2k) + C (12nF) in series, parallel with R4 (gain resistor = R3 in schematic)
+# Corner f = 1/(2π × 6.2k × 12n) ≈ 2.1 kHz; HF boost = +2.6 dB (R3‖Rs = 2.2k‖6.2k = 1.61k)
+PRESENCE_PEAK_LINES = """\
+* Presence-peak network (R_PRES1 + C_PRES1, in series, parallel with R4)
+R_PRES1  NET_VBIAS  RS_MID  6.2k
+C_PRES1  RS_MID  PIN2_NODE  12n
+"""
+
+
 # ─── 3. AC FREQUENCY RESPONSE (amp_ac.sp) ────────────────────────────────────
 
-def plot_freq_response():
+def _run_ac(content_modifier=None):
+    """Run amp_ac.sp, optionally modifying SPICE content, return (freq, db_norm)."""
     data_path = os.path.join(SIM_DIR, "_ac.dat")
     ctrl = f"""
 .control
@@ -212,26 +222,35 @@ run
 let xlr_db = db(v(xlr_diff))
 wrdata {data_path} xlr_db
 .endc"""
-    content = inject_control(os.path.join(SIM_DIR, "amp_ac.sp"), ctrl)
+    with open(os.path.join(SIM_DIR, "amp_ac.sp")) as f:
+        base = f.read()
+    if content_modifier:
+        base = content_modifier(base)
+    content = base.replace(".end", ctrl + "\n.end")
     run_ngspice_stdout(content, "ac", is_content=True)
-
     d = parse_wrdata(data_path)
     if os.path.exists(data_path):
         os.remove(data_path)
-
-    # wrdata format: freq xlr_db  (single variable → no repeated scale col)
     freq = d[:, 0]
     db_xlr = d[:, 1]
-
-    # Normalize to 1 kHz
     ref_idx = np.argmin(np.abs(freq - 1000))
-    db_norm = db_xlr - db_xlr[ref_idx]
+    return freq, db_xlr - db_xlr[ref_idx]
 
-    # Show 20 Hz – 200 kHz
-    mask = (freq >= 20) & (freq <= 200000)
+
+def plot_freq_response():
+    freq_base, db_base = _run_ac()
+    freq_peak, db_peak = _run_ac(
+        lambda s: s.replace(".end", PRESENCE_PEAK_LINES + ".end")
+    )
+
+    mask = (freq_base >= 20) & (freq_base <= 200000)
 
     fig, ax = plt.subplots(figsize=(7, 4))
-    ax.semilogx(freq[mask], db_norm[mask], color=C1, lw=1.5)
+    mask_peak = (freq_peak >= 20) & (freq_peak <= 200000)
+    ax.semilogx(freq_base[mask], db_base[mask], color=C1, lw=1.5,
+                label="Baseline (R_PRES1/C_PRES1 DNP)")
+    ax.semilogx(freq_peak[mask_peak], db_peak[mask_peak], color=C2, lw=1.5,
+                label="With presence peak (Rs=6.2k, C=12nF, f_c≈2.1 kHz)")
     ax.axhline(-3, color="#aaaaaa", lw=0.8, ls="--", label="−3 dB")
     ax.axvline(20000, color="#cccccc", lw=0.8, ls=":", label="20 kHz")
     ax.set_xlabel("Frequency (Hz)")

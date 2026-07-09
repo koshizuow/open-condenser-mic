@@ -21,19 +21,29 @@ except ImportError:
 
 def _parse_args():
     p = argparse.ArgumentParser(description="Generate BOM and CPL from KiCad PCB file.")
-    p.add_argument("--name", default="open-condenser-mic", help="Project name (default: open-condenser-mic)")
+    p.add_argument("--name", default="open-condenser-mic",
+                   help="Project name (default: open-condenser-mic)")
+    p.add_argument("--flat", action="store_true",
+                   help="Flat-response build: mark R_PRES1/C_PRES1 DNP (omit presence-peak network). "
+                        "Recommended for K87/C12-type capsules that already have a natural presence peak.")
+    p.add_argument("--suffix", default="",
+                   help="Append suffix to output filenames, e.g. '_flat' → bom_flat.csv (default: '')")
     return p.parse_args()
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _args = _parse_args()
 PCB = os.path.join(_SCRIPT_DIR, f"{_args.name}.kicad_pcb")
-BOM_OUT = os.path.join(_SCRIPT_DIR, "bom.csv")
-CPL_OUT = os.path.join(_SCRIPT_DIR, "cpl.csv")
+BOM_OUT = os.path.join(_SCRIPT_DIR, f"bom{_args.suffix}.csv")
+CPL_OUT = os.path.join(_SCRIPT_DIR, f"cpl{_args.suffix}.csv")
 
 # ── DNP: hand-solder or no component ─────────────────────────────────────────
 # Matched by reference OR by footprint library prefix (more robust — fix_ref
 # changes GetReference() so original ref strings like "TP1.1" are gone).
-DNP_REFS = set()  # all SMD parts now; C5/C6 moved to SMD
+DNP_REFS = set()  # populated by --flat; all SMD parts in standard BOM
+
+# Presence-peak network: DNP in flat-response build (--flat flag)
+if _args.flat:
+    DNP_REFS.update({"R_PRES1", "C_PRES1"})
 
 # Skip any footprint whose library name starts with one of these prefixes
 DNP_LIB_PREFIXES = (
@@ -57,6 +67,7 @@ LCSC = {
     ("68V BZT52C68","D_SOD-123"):                  "C242416",   # MMSZ5266BT1G onsemi 68V 500mW SOD-123; C7427990 has no 3D model in JLCPCB viewer
 
     # Standard resistors (0402)
+    ("6.2k",      "R_0402_1005Metric"):            "",          # R_PRES1 (DNP) — verify LCSC before ordering
     ("2.2k",      "R_0402_1005Metric"):            "C25879",
     ("6.8k",      "R_0402_1005Metric"):            "C144738",   # YAGEO AC0402FR-076K8L ±1% 757pcs; C93940 out of stock; C26022 maps to 4.7kΩ 0805 in JLCPCB
     ("47k",       "R_0402_1005Metric"):            "C25792",    # UNI-ROYAL 0402WGF4702TCE ±1% BASIC; C25900 maps to 4.7kΩ in JLCPCB
@@ -71,6 +82,7 @@ LCSC = {
     ("47M 1206",  "R_1206_3216Metric"):            "C163361",   # RC1206JR-0747ML YAGEO 200V ±5% — R_GBIAS1/2
 
     # Standard capacitors (0402)
+    ("12n 25V C0G",   "C_0402_1005Metric"):        "",          # C_PRES1 (DNP) — verify LCSC before ordering
     ("100n 25V X7R",  "C_0402_1005Metric"):        "C77014",    # GRM155R71E104KE14D Murata; C307331 out of stock
     ("100n 63V X7R",  "C_0402_1005Metric"):        "C162178",   # GRM155R62A104KE14D muRata 100V X5R
     ("100p C0G",      "C_0402_1005Metric"):        "C445763",   # TDK C1005C0G1H101JT000F 100pF 50V C0G; C1554 maps to 20pF in JLCPCB
@@ -127,19 +139,17 @@ def main():
     board = pcbnew.LoadBoard(PCB)
     fps = list(board.GetFootprints())
 
-    # Collect all non-DNP SMT footprints
+    # Collect SMT footprints, split into assembled vs DNP
     components = []
+    dnp_components = []
     for fp in fps:
         ref = fp.GetReference()
         fp_id = fp.GetFPIDAsString()
         lib_name = fp_id.split(":")[0] if ":" in fp_id else ""
 
-        if ref in DNP_REFS:
-            continue
         if lib_name.startswith(DNP_LIB_PREFIXES):
             continue
         if fp.GetAttributes() & pcbnew.FP_THROUGH_HOLE:
-            # THT not in DNP set — warn and skip
             print(f"  [SKIP THT] {ref}")
             continue
 
@@ -150,42 +160,59 @@ def main():
         y_mm  = pos.y / 1e6
         rot   = fp.GetOrientationDegrees()
         layer = "Top" if fp.GetLayer() == pcbnew.F_Cu else "Bottom"
+        lcsc  = LCSC.get((val, fp_nm), "")
 
-        lcsc_key = (val, fp_nm)
-        lcsc = LCSC.get(lcsc_key, "")
-
-        components.append({
-            "ref":    ref,
-            "val":    val,
-            "fp":     fp_nm,
-            "x":      round(x_mm, 4),
-            "y":      round(y_mm, 4),
-            "rot":    jlcpcb_rotation(ref, rot, fp_id),
-            "layer":  layer,
-            "lcsc":   lcsc,
-        })
+        record = {
+            "ref":   ref,
+            "val":   val,
+            "fp":    fp_nm,
+            "x":     round(x_mm, 4),
+            "y":     round(y_mm, 4),
+            "rot":   jlcpcb_rotation(ref, rot, fp_id),
+            "layer": layer,
+            "lcsc":  lcsc,
+        }
+        if ref in DNP_REFS:
+            dnp_components.append(record)
+        else:
+            components.append(record)
 
     # ── BOM: group by (value, footprint) ─────────────────────────────────────
     from collections import defaultdict
+
+    def _bom_note(val, lcsc):
+        if lcsc:
+            return ""
+        if any(x in val for x in ["M ", "100V", "mH"]):
+            return "LIKELY CUSTOMER-SUPPLIED — verify availability"
+        return "LCSC# needed"
+
     groups = defaultdict(list)
     for c in components:
         groups[(c["val"], c["fp"])].append(c)
+
+    dnp_groups = defaultdict(list)
+    for c in dnp_components:
+        dnp_groups[(c["val"], c["fp"])].append(c)
 
     with open(BOM_OUT, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["Comment", "Designator", "Footprint", "Qty", "LCSC Part#", "Note"])
         for (val, fp_nm), items in sorted(groups.items(), key=lambda x: x[0]):
-            refs  = ",".join(sorted(c["ref"] for c in items))
-            lcsc  = items[0]["lcsc"]
-            note  = ""
-            if not lcsc:
-                if any(x in val for x in ["M ", "100V", "mH"]):
-                    note = "LIKELY CUSTOMER-SUPPLIED — verify availability"
-                else:
-                    note = "LCSC# needed"
-            w.writerow([val, refs, fp_nm, len(items), lcsc, note])
+            refs = ",".join(sorted(c["ref"] for c in items))
+            lcsc = items[0]["lcsc"]
+            w.writerow([val, refs, fp_nm, len(items), lcsc, _bom_note(val, lcsc)])
+        if dnp_groups:
+            w.writerow([])
+            w.writerow(["# DNP (Do Not Populate) — optional presence-peak network"])
+            w.writerow(["# Omit for K87/C12-type capsules (natural presence peak); populate for flat capsules"])
+            for (val, fp_nm), items in sorted(dnp_groups.items(), key=lambda x: x[0]):
+                refs = ",".join(sorted(c["ref"] for c in items))
+                lcsc = items[0]["lcsc"]
+                w.writerow([val, refs, fp_nm, len(items), lcsc, "DNP — " + _bom_note(val, lcsc)])
 
-    print(f"BOM written: {BOM_OUT}  ({len(groups)} line items, {len(components)} parts)")
+    print(f"BOM written: {BOM_OUT}  ({len(groups)} line items, {len(components)} parts"
+          + (f", {len(dnp_components)} DNP" if dnp_components else "") + ")")
 
     # ── CPL ──────────────────────────────────────────────────────────────────
     with open(CPL_OUT, "w", newline="") as f:

@@ -38,7 +38,18 @@ Charge pump settles to 67.97 V within ~1 ms. HV_FILT (LC-filtered polarization r
 
 ![Frequency response](img/freq_response.png)
 
-Behavioral model, gain normalized to 1 kHz. Flat within ±1 dB from ~200 Hz to ~20 kHz. High-pass rolloff from output DC block (C_DC = 4.7 µF) and R_GBIAS (94 MΩ) × capsule capacitance (55 pF); high-frequency rolloff from op-amp GBW. Response above 20 kHz is outside the audio band.
+Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within ±1 dB from ~200 Hz to ~20 kHz; high-pass rolloff from output DC block (C_DC = 4.7 µF) and R_GBIAS (94 MΩ) × capsule capacitance (55 pF). The **orange curve** shows the optional presence-peak network (R_PRES1 + C_PRES1 populated): +2.6 dB shelving above f_c ≈ 2.1 kHz, with the shelf set by R_PRES1 (6.2 kΩ) ∥ R3 (2.2 kΩ) = 1.61 kΩ.
+
+#### Optional presence-peak network (R_PRES1, C_PRES1)
+
+R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF C0G) are footprinted on the board and shipped in the standard BOM, but they are **DNP (Do Not Populate) by default for K87/C12-type capsules** — these capsules already have a natural 3–10 dB presence peak in their polar/frequency response; adding an electronic peak would over-brighten the sound.
+
+| Capsule type | Recommendation |
+|---|---|
+| K87/C12-style (bright, with natural presence peak) | Leave R_PRES1/C_PRES1 unpopulated (use the flat BOM) |
+| Flat / neutral capsule (e.g. 得勝/Takstar CK-01 style) | Populate R_PRES1/C_PRES1 for +2.6 dB air above 2.1 kHz |
+
+The flat-response BOM (`bom_flat.csv` / `cpl_flat.csv`) excludes these two parts and is produced alongside the standard BOM in every CI run.
 
 ### Input-Referred Noise Spectrum (`amp_noise_opa1641.sp`)
 
