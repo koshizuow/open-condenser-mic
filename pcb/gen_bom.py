@@ -110,7 +110,8 @@ ROT_OFFSET = {
 }
 
 ROT_OFFSET_REF = {
-    "Z_OSC1": 180,
+    "Z_OSC1": 180,   # JLCPCB model anode on left at 0°; need 180° so cathode→pad1=V_OSC
+    "Z_REG1": 180,   # same SOD-123 convention; KiCad 180° → JLCPCB 0° puts cathode at right (pad1=V_BASE_REG)
 }
 
 
