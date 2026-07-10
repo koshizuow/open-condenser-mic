@@ -35,17 +35,14 @@ jobs:
           python3 pcb/gen_schematic.py
           python3 pcb/gen_pcb.py
           python3 pcb/gen_bom.py
-          python3 pcb/gen_bom.py --presence
 
       - name: Verify KiCad outputs exist
         run: |
           ls pcb/open-condenser-mic.kicad_pro
           ls pcb/open-condenser-mic.kicad_pcb
           ls pcb/open-condenser-mic.kicad_sch
-          ls pcb/bom_flat.csv
-          ls pcb/cpl_flat.csv
-          ls pcb/bom_presence.csv
-          ls pcb/cpl_presence.csv
+          ls pcb/bom.csv
+          ls pcb/cpl.csv
 
       - name: PCB DRC report (all severities)
         if: always()
@@ -114,7 +111,7 @@ jobs:
           kicad-cli pcb export drill --output fab/gerbers/ pcb/open-condenser-mic.kicad_pcb
           (cd fab/gerbers && zip -j ../gerbers.zip *)
           rm -rf fab/gerbers
-          cp pcb/bom_flat.csv pcb/cpl_flat.csv pcb/bom_presence.csv pcb/cpl_presence.csv fab/
+          cp pcb/bom.csv pcb/cpl.csv fab/
 
       - name: Run SPICE simulations
         working-directory: sim
@@ -138,6 +135,18 @@ jobs:
         with:
           name: fabrication-outputs
           path: fab/
+
+      - name: Upload BOM variants
+        uses: actions/upload-artifact@v7
+        with:
+          name: bom-variants
+          path: |
+            pcb/bom-hi-gain.csv
+            pcb/cpl-hi-gain.csv
+            pcb/bom-presence.csv
+            pcb/cpl-presence.csv
+            pcb/bom-hi-gain-presence.csv
+            pcb/cpl-hi-gain-presence.csv
 
       - name: Upload schematic PDF
         uses: actions/upload-artifact@v7

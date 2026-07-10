@@ -806,10 +806,10 @@ def main():
           "C_PRES1", "12n 25V X7R", 19, 33, 0,
           {"1": "RS_MID", "2": "VINV"})
 
-    # R6: SIG_OUT -> VINV  (47k feedback, sets gain = 1 + 47k/2.2k = 22.4x → -22 dBV/Pa)
+    # R6: SIG_OUT -> VINV  (5.6k default, gain = 1 + 5.6k/2.2k = 3.55x → -38 dBV/Pa)
     # angle=-90: pad1(VINV) at (25,26.49) above; pad2(SIG_OUT) at (25,27.51) below
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R6", "47k", 25, 27, -90,
+          "R6", "5.6k", 25, 27, -90,
           {"1": "VINV", "2": "SIG_OUT"})
 
     # R7: SIG_OUT -> SIG_PROT  (100R output series protection)

@@ -4,9 +4,11 @@
 Usage:
     python3 pcb/gen_bom.py [--name PROJECT_NAME]
 
-Outputs:
-    pcb/bom.csv  — grouped BOM (Designator, Qty, Value, Footprint, LCSC#)
-    pcb/cpl.csv  — CPL for SMT assembly (Designator, Mid X, Mid Y, Layer, Rotation)
+Outputs (written to pcb/):
+    bom.csv / cpl.csv                       — default build (R6=5.6k, presence DNP)
+    bom-hi-gain.csv / cpl-hi-gain.csv       — R6=47k, presence DNP
+    bom-presence.csv / cpl-presence.csv     — R6=5.6k, presence populated
+    bom-hi-gain-presence.csv / ...          — R6=47k, presence populated
 """
 
 import argparse
@@ -20,36 +22,33 @@ except ImportError:
     sys.exit("pcbnew not found — run inside KiCad Python or with KiCad's Python")
 
 def _parse_args():
-    p = argparse.ArgumentParser(description="Generate BOM and CPL from KiCad PCB file.")
+    p = argparse.ArgumentParser(description="Generate BOM and CPL variants from KiCad PCB file.")
     p.add_argument("--name", default="open-condenser-mic",
                    help="Project name (default: open-condenser-mic)")
-    p.add_argument("--presence", action="store_true",
-                   help="Presence-peak build: populate R_PRES1/C_PRES1 (adds +2.6 dB shelf above ~2.1 kHz). "
-                        "Default is flat-response (DNP). Omit this flag to keep the presence-peak network unpopulated.")
     return p.parse_args()
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _args = _parse_args()
 PCB = os.path.join(_SCRIPT_DIR, f"{_args.name}.kicad_pcb")
-_suffix = "_presence" if _args.presence else "_flat"
-BOM_OUT = os.path.join(_SCRIPT_DIR, f"bom{_suffix}.csv")
-CPL_OUT = os.path.join(_SCRIPT_DIR, f"cpl{_suffix}.csv")
 
-# ── DNP: hand-solder or no component ─────────────────────────────────────────
-# Matched by reference OR by footprint library prefix (more robust — fix_ref
-# changes GetReference() so original ref strings like "TP1.1" are gone).
-# Presence-peak network (R_PRES1/C_PRES1): DNP by default; use --presence to populate
-DNP_REFS = set() if _args.presence else {"R_PRES1", "C_PRES1"}
+# ── Build variants ────────────────────────────────────────────────────────────
+# Each variant overrides R6 value/LCSC and controls the presence-peak DNP set.
+# The default (no suffix) is the standard build shipped in fabrication-outputs.
+VARIANTS = {
+    "":                  {"r6_val": "5.6k",  "r6_lcsc": "C25908", "presence": False},
+    "-hi-gain":          {"r6_val": "47k",   "r6_lcsc": "C25792", "presence": False},
+    "-presence":         {"r6_val": "5.6k",  "r6_lcsc": "C25908", "presence": True},
+    "-hi-gain-presence": {"r6_val": "47k",   "r6_lcsc": "C25792", "presence": True},
+}
 
-# Skip any footprint whose library name starts with one of these prefixes
+# ── DNP: skip footprint library prefixes (test points, mounting holes) ───────
 DNP_LIB_PREFIXES = (
-    "TestPoint",       # bare THT solder pads (J2, J3, TP1, TS1)
-    "MountingHole",    # board and transformer mounting holes
+    "TestPoint",
+    "MountingHole",
 )
 
 # ── LCSC part number lookup ───────────────────────────────────────────────────
 # Key: (value_normalised, footprint_id)
-# Leave blank ("") if unknown / needs manual lookup.
 # !! Verify all numbers against current LCSC catalog before ordering !!
 LCSC = {
     # ICs
@@ -64,12 +63,13 @@ LCSC = {
     ("24V BZT52C24","D_SOD-123"):                  "C173422",   # MDD BZT52C24 24V 500mW SOD-123; zener reference for V_OPA emitter follower
 
     # Standard resistors (0402)
-    ("6.2k",      "R_0402_1005Metric"):            "C25915",    # UNI-ROYAL 0402WGF6201TCE ±1%; matches 2.2k/47k series
+    ("5.6k",      "R_0402_1005Metric"):            "C25908",    # UNI-ROYAL 0402WGF5601TCE ±1% — R6 default (flat/hi-SPL)
+    ("6.2k",      "R_0402_1005Metric"):            "C25915",    # UNI-ROYAL 0402WGF6201TCE ±1%
     ("2.2k",      "R_0402_1005Metric"):            "C25879",
     ("6.8k",      "R_0402_1005Metric"):            "C144738",   # YAGEO AC0402FR-076K8L ±1% 757pcs; C93940 out of stock; C26022 maps to 4.7kΩ 0805 in JLCPCB
-    ("47k",       "R_0402_1005Metric"):            "C25792",    # UNI-ROYAL 0402WGF4702TCE ±1% BASIC; C25900 maps to 4.7kΩ in JLCPCB
+    ("47k",       "R_0402_1005Metric"):            "C25792",    # UNI-ROYAL 0402WGF4702TCE ±1% BASIC — R6 hi-gain variant; C25900 maps to 4.7kΩ in JLCPCB
     ("100R",      "R_0402_1005Metric"):            "C25076",
-("470k",      "R_0402_1005Metric"):            "C137976",   # YAGEO RC0402FR-07470KL ±1%; C25905 maps to 5.1kΩ in JLCPCB
+    ("470k",      "R_0402_1005Metric"):            "C137976",   # YAGEO RC0402FR-07470KL ±1%; C25905 maps to 5.1kΩ in JLCPCB
 
     # Precision resistors (0603) — R1/R2 matched pair
     ("6.8k 0.1%", "R_0603_1608Metric"):            "C2941290",  # ARG03BTC6801 Viking 0.1%
@@ -91,35 +91,30 @@ LCSC = {
 
     # 100V capacitors
     ("100n 100V X7R", "C_0805_2012Metric"):        "C28233",    # CL21B104KCFNNNE Samsung BASIC — Cp1/2/3
-    ("470n 100V X7R", "C_0805_2012Metric"):        "C596323",    # CC0805KKX7R0BB474 YAGEO 81k stock — C9, Cres1
+    ("470n 100V X7R", "C_0805_2012Metric"):        "C596323",   # CC0805KKX7R0BB474 YAGEO 81k stock — C9, Cres1
 
     # SMD electrolytic
-    ("10u 25V",       "CP_Elec_4x5.4"):             "C3343",    # Honor Elec RVT1E100M0405 D4x5.4mm 2000hrs — C5/C6
+    ("10u 25V",       "CP_Elec_4x5.4"):            "C3343",     # Honor Elec RVT1E100M0405 D4x5.4mm 2000hrs — C5/C6
 
     # Inductor
-    ("10mH FNR5040S", "L_Changjiang_FNR5040S"):     "C167995",  # cjiang FNR5040S103MT shielded 5x5mm
+    ("10mH FNR5040S", "L_Changjiang_FNR5040S"):    "C167995",   # cjiang FNR5040S103MT shielded 5x5mm
 }
 
 # ── KiCad → JLCPCB rotation correction ───────────────────────────────────────
-# KiCad CCW positive; JLCPCB CW positive → negate.
-# Some footprints need an additional offset; add here if placement is wrong.
-# Format: footprint_id -> extra_offset_deg (applied AFTER negation)
 ROT_OFFSET = {
-    "SOIC-8_3.9x4.9mm_P1.27mm":   0,    # JLCPCB model pin1 at top-left (same as KiCad); no offset needed
-    "SOIC-14_3.9x8.7mm_P1.27mm":  270,  # JLCPCB model horizontal, pin1 at lower-left; need portrait + pin1 top-left
-    "SOT-89-3":                    0,    # U2 — not yet verified in viewer
-    "SOT-23":                      180,  # JLCPCB model pin1 at bottom-right; KiCad pad1 at top-left
-    "D_SOD-123":                   0,    # DZ1 correct at 0 (KiCad 90° → JLCPCB 270° puts cathode at bottom=VBOOST)
+    "SOIC-8_3.9x4.9mm_P1.27mm":   0,
+    "SOIC-14_3.9x8.7mm_P1.27mm":  270,
+    "SOT-89-3":                    0,
+    "SOT-23":                      180,
+    "D_SOD-123":                   0,
 }
 
-# Per-reference overrides (take priority over ROT_OFFSET footprint table)
 ROT_OFFSET_REF = {
-    "Z_OSC1": 180,  # JLCPCB model anode(+) on left; need 180° so anode→pad2=GND, cathode→pad1=V_OSC
+    "Z_OSC1": 180,
 }
 
 
 def normalise_fp(fp_id: str) -> str:
-    """Strip library prefix, keep only footprint name."""
     return fp_id.split(":")[-1] if ":" in fp_id else fp_id
 
 
@@ -129,17 +124,21 @@ def jlcpcb_rotation(ref: str, kicad_deg: float, fp_id: str) -> float:
     return (-kicad_deg + offset) % 360
 
 
-def main():
-    if not os.path.exists(PCB):
-        sys.exit(f"PCB not found: {PCB}\nRun gen_pcb.py first.")
+def _bom_note(val, lcsc):
+    if lcsc:
+        return ""
+    if any(x in val for x in ["M ", "100V", "mH"]):
+        return "LIKELY CUSTOMER-SUPPLIED — verify availability"
+    return "LCSC# needed"
 
-    board = pcbnew.LoadBoard(PCB)
-    fps = list(board.GetFootprints())
 
-    # Collect SMT footprints, split into assembled vs DNP
+def write_variant(board, suffix, r6_val, r6_lcsc, presence):
+    """Write bom{suffix}.csv and cpl{suffix}.csv for one build variant."""
+    dnp_refs = set() if presence else {"R_PRES1", "C_PRES1"}
+
     components = []
     dnp_components = []
-    for fp in fps:
+    for fp in board.GetFootprints():
         ref = fp.GetReference()
         fp_id = fp.GetFPIDAsString()
         lib_name = fp_id.split(":")[0] if ":" in fp_id else ""
@@ -147,43 +146,29 @@ def main():
         if lib_name.startswith(DNP_LIB_PREFIXES):
             continue
         if fp.GetAttributes() & pcbnew.FP_THROUGH_HOLE:
-            print(f"  [SKIP THT] {ref}")
             continue
 
-        val   = fp.GetValue()
+        val   = r6_val if ref == "R6" else fp.GetValue()
         fp_nm = normalise_fp(fp_id)
         pos   = fp.GetPosition()
-        x_mm  = pos.x / 1e6
-        y_mm  = pos.y / 1e6
-        rot   = fp.GetOrientationDegrees()
-        layer = "Top" if fp.GetLayer() == pcbnew.F_Cu else "Bottom"
-        lcsc  = LCSC.get((val, fp_nm), "")
+        lcsc  = r6_lcsc if ref == "R6" else LCSC.get((val, fp_nm), "")
 
         record = {
             "ref":   ref,
             "val":   val,
             "fp":    fp_nm,
-            "x":     round(x_mm, 4),
-            "y":     round(y_mm, 4),
-            "rot":   jlcpcb_rotation(ref, rot, fp_id),
-            "layer": layer,
+            "x":     round(pos.x / 1e6, 4),
+            "y":     round(pos.y / 1e6, 4),
+            "rot":   jlcpcb_rotation(ref, fp.GetOrientationDegrees(), fp_id),
+            "layer": "Top" if fp.GetLayer() == pcbnew.F_Cu else "Bottom",
             "lcsc":  lcsc,
         }
-        if ref in DNP_REFS:
+        if ref in dnp_refs:
             dnp_components.append(record)
         else:
             components.append(record)
 
-    # ── BOM: group by (value, footprint) ─────────────────────────────────────
     from collections import defaultdict
-
-    def _bom_note(val, lcsc):
-        if lcsc:
-            return ""
-        if any(x in val for x in ["M ", "100V", "mH"]):
-            return "LIKELY CUSTOMER-SUPPLIED — verify availability"
-        return "LCSC# needed"
-
     groups = defaultdict(list)
     for c in components:
         groups[(c["val"], c["fp"])].append(c)
@@ -192,7 +177,10 @@ def main():
     for c in dnp_components:
         dnp_groups[(c["val"], c["fp"])].append(c)
 
-    with open(BOM_OUT, "w", newline="") as f:
+    bom_out = os.path.join(_SCRIPT_DIR, f"bom{suffix}.csv")
+    cpl_out = os.path.join(_SCRIPT_DIR, f"cpl{suffix}.csv")
+
+    with open(bom_out, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["Comment", "Designator", "Footprint", "Qty", "LCSC Part#", "Note"])
         for (val, fp_nm), items in sorted(groups.items(), key=lambda x: x[0]):
@@ -208,27 +196,34 @@ def main():
                 lcsc = items[0]["lcsc"]
                 w.writerow([val, refs, fp_nm, len(items), lcsc, "DNP — " + _bom_note(val, lcsc)])
 
-    print(f"BOM written: {BOM_OUT}  ({len(groups)} line items, {len(components)} parts"
-          + (f", {len(dnp_components)} DNP" if dnp_components else "") + ")")
-
-    # ── CPL ──────────────────────────────────────────────────────────────────
-    with open(CPL_OUT, "w", newline="") as f:
+    with open(cpl_out, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["Designator", "Mid X(mm)", "Mid Y(mm)", "Layer", "Rotation"])
         for c in sorted(components, key=lambda x: x["ref"]):
             w.writerow([c["ref"], c["x"], c["y"], c["layer"], c["rot"]])
 
-    print(f"CPL written: {CPL_OUT}  ({len(components)} placements)")
+    label = f"[{suffix.lstrip('-') or 'default'}]"
+    print(f"  {label:25s}  BOM: {len(groups)} items ({len(components)} parts"
+          + (f", {len(dnp_components)} DNP" if dnp_components else "") + ")"
+          + f"  CPL: {len(components)} placements")
 
-    # ── Flag missing LCSC numbers ─────────────────────────────────────────────
     missing = [(val, fp, items[0]["lcsc"])
                for (val, fp), items in groups.items() if not items[0]["lcsc"]]
     if missing:
-        print(f"\n{'─'*60}")
-        print(f"  {len(missing)} line items without LCSC# (fill in LCSC dict):")
+        print(f"    !! {len(missing)} missing LCSC#:")
         for val, fp, _ in missing:
             refs = ",".join(sorted(c["ref"] for c in groups[(val, fp)]))
-            print(f"    {refs:25s}  {val:20s}  {fp}")
+            print(f"       {refs:20s}  {val:20s}  {fp}")
+
+
+def main():
+    if not os.path.exists(PCB):
+        sys.exit(f"PCB not found: {PCB}\nRun gen_pcb.py first.")
+
+    board = pcbnew.LoadBoard(PCB)
+    print(f"Generating BOM/CPL variants from {os.path.basename(PCB)}:")
+    for suffix, v in VARIANTS.items():
+        write_variant(board, suffix, v["r6_val"], v["r6_lcsc"], v["presence"])
 
 
 if __name__ == "__main__":
