@@ -308,7 +308,7 @@ def route_all(board):
     # ════════════════════════════════════════════════════════════════════════
 
 
-    # ── V_OPA_RAW: R1-pad2 → R2-pad2 → U2-pad3 → C1-pad1 ──────────────────
+    # ── V_OPA_RAW: R1-pad2 → R2-pad2 → C1-pad1 → R_REG1-pad1 → Q1-C ────────
     # R1(12,80) rot=90: pad1(XLR_HOT)=(12,80.825), pad2(V_OPA_RAW)=(12,79.175)
     # R2(12,83) rot=90: pad1(XLR_COLD)=(12,83.825), pad2(V_OPA_RAW)=(12,82.175)
     # Bypass R1.pad1 (XLR_HOT at y=80.825) on RIGHT side at x=13.0
@@ -319,30 +319,38 @@ def route_all(board):
     # F.Cu right to x=28.5 (clears HV_FILT at x=29.3625 with 0.51mm gap); via to B.Cu
     route(board, "V_OPA_RAW", F, PWR, (12.0, 79.2), (28.5, 79.2))
     via(board, "V_OPA_RAW", 28.5, 79.2)
-    # B.Cu: up to U2 tap level y=46.9; C1 tapped via via on the vertical at y=54
+    # B.Cu: up to R_REG1 tap level y=46.9; C1 tapped via via on the vertical at y=54
     route(board, "V_OPA_RAW", B, PWR,
           (28.5, 79.2), (28.5, 46.9))
     # Tap stub: jog LEFT from (28.5,46.9) to x=25 (clear of C5 courtyard), then down to via
     route(board, "V_OPA_RAW", B, PWR, (28.5, 46.9), (25.0, 46.9), (25.0, 45.5))
     via(board, "V_OPA_RAW", 25.0, 45.5)
-    route(board, "V_OPA_RAW", F, PWR, (25.0, 45.5), (21.05, 45.5))
+    # F.Cu: UP from via to Q1.C(23.9375,44); jog LEFT then DOWN to R_REG1.pad1(24.99,46.5)
+    # Jog LEFT from junction (25.0,44.0) to (24.0,44.0) then down: avoids routing between
+    # R_REG1 pads (pad2 at 26.01) and clears V_BASE_REG at x=25.7 with >0.2mm gap.
+    route(board, "V_OPA_RAW", F, PWR, (25.0, 45.5), (25.0, 44.0))
+    route(board, "V_OPA_RAW", F, PWR, (25.0, 44.0), (23.9375, 44.0))
+    route(board, "V_OPA_RAW", F, PWR, (25.0, 44.0), (24.0, 44.0))
+    route(board, "V_OPA_RAW", F, PWR, (24.0, 44.0), (24.0, 46.3))
+    route(board, "V_OPA_RAW", F, PWR, (24.0, 46.3), (24.49, 46.3))
     # C1-pad1 (V_OPA_RAW) at (30.49,54): via on B.Cu vertical; 1.99mm F.Cu stub right
     via(board, "V_OPA_RAW", 28.5, 54.0)
     route(board, "V_OPA_RAW", F, PWR, (28.5, 54.0), (30.49, 54.0))
 
     # ── V_OPA: vertical bus at x=30.75, individual branches to each consumer ────
-    # U2 pad1 (21.05,42.5) → bus at x=30.75, y=24.5..42.5
+    # Q1.E (22.0625,44.95) → LEFT to x=20 → UP to y=40.8 → RIGHT to bus at x=30.75
     # Bus extends: C2(28.52,38), R_ZEN(30,34.51), U1-pin7(19.975,26.365)
     # C3 bypass taps at (22.5,26.365) directly off pin7 horizontal stub (minimum loop area)
-    # Separate: R4 branch up from U2, D1 branch left then down, C6 branch right then down
-    # Main bus: UP from U2-pad1 to y=40.8 (clears C5 SMD pad top at ~42.2mm),
+    # Separate: R4 branch from corner (20,40.8), D1 branch from (20,42.5), C6 branch right then down
+    # Main bus: LEFT from Q1.E to x=20, UP to y=40.8 (clears C5 SMD pad top at ~42.2mm),
     # RIGHT to x=30.75 (clears V_OSC right end x=30.0 by 0.3mm; Z_OSC-pad2 x=31.65 by 0.45mm),
     # UP to y=24.5 (T-junction with U1 pin7 tap).
     route(board, "V_OPA", F, PWR,
-          (21.05, 42.5 ),
-          (21.05, 40.8 ),
-          (30.75,  40.8 ),
-          (30.75,  24.5 ))
+          (22.0625, 44.95),
+          (20.0,    44.95),
+          (20.0,    40.8 ),
+          (30.75,   40.8 ),
+          (30.75,   24.5 ))
     # C2 tap: angle=180 puts pad1(V_OPA) at right (29.51,38); direct stub from bus
     route(board, "V_OPA", F, PWR,
           (30.75, 38.0),
@@ -359,31 +367,29 @@ def route_all(board):
           (22.5,   26.365),
           (22.5,   24.5  ),
           (30.75,  24.5  ))
-    # R4 pad1 (8.02,40.8): via at F.Cu main bus corner (21.05,40.8); B.Cu at same y
-    via(board, "V_OPA", 21.05, 40.8)
+    # R4 pad1 (8.02,40.8): via at F.Cu main bus corner (20.0,40.8); B.Cu at same y
+    via(board, "V_OPA", 20.0, 40.8)
     route(board, "V_OPA", B, PWR,
-          (21.05, 40.8),
-          (9.5,   40.8))
+          (20.0, 40.8),
+          (9.5,  40.8))
     via(board, "V_OPA", 9.5, 40.8)
     route(board, "V_OPA", F, PWR,
           (9.5,  40.8),
           (8.02, 40.8))
-    # D1 pad1 (21.0625,51.05): B.Cu via. F.Cu area blocked by U2 pads (y=44/45.5),
-    # V_OPA_RAW vertical (x=15.5, y=40-47), V_OSC (y=51.19), N2 (x=22).
+    # D1 pad1 (21.0625,51.05): B.Cu via at x=19 beside D1 pad (left side), short F.Cu stub right.
     # Via at (19,44): B.Cu clears V_MID B.Cu (y=43, gap=0.55mm), TX_DRV B.Cu (x=5.0).
-    # Via at (21.0625,49): 1mm above D1 silk outline top (~y=50.5), clears pin-1 indicator.
+    # Via moved from (21.0625,49) to (19,51.05): eliminates conflict with Z_REG1.K at (21.65,48).
     route(board, "V_OPA", F, PWR,
-          (21.05, 42.5),
-          (19.0,  42.5),
-          (19.0,  44.0))
+          (20.0, 42.5),
+          (19.0, 42.5),
+          (19.0, 44.0))
     via(board, "V_OPA", 19.0, 44.0)
     route(board, "V_OPA", B, PWR,
-          (19.0,    44.0 ),
-          (19.0,    49.0 ),
-          (21.0625, 49.0 ))
-    via(board, "V_OPA", 21.0625, 49.0)
+          (19.0, 44.0),
+          (19.0, 51.05))
+    via(board, "V_OPA", 19.0, 51.05)
     route(board, "V_OPA", F, PWR,
-          (21.0625, 49.0 ),
+          (19.0,    51.05),
           (21.0625, 51.05))
     # C6 pad2(V_OPA) at (32.8,60.0): branch from bus at (30.75,40.8), right to x=34, down to pad2
     route(board, "V_OPA", F, PWR,
@@ -392,6 +398,23 @@ def route_all(board):
           (34.0,  57.0),
           (32.8,  57.0),
           (32.8,  60.0))
+
+    # ── V_BASE_REG: Q1.B(22.0625,43.05) → R_REG1.pad2(26.01,46.3) → Z_REG1.K(21.65,48) ──
+    # F.Cu horizontal from x=20.7 to x=25.7 spans Q1.B in both directions.
+    # Left x=20.7: clears V_OPA vertical (right=20.15, gap=0.40mm) and Q1.E left=21.3245 (gap=0.47mm).
+    # Right x=25.7: clears V_OPA_RAW via at (25.0,45.5) right edge=25.3 (gap=0.25mm).
+    # CLKA F.Cu at y=47 (x=17-32) blocks F.Cu verticals → B.Cu dive via pair at (20.7,44)/(22.7,48).
+    route(board, "V_BASE_REG", F, PWR, (20.7, 43.05), (25.7, 43.05))
+    # Right branch: down to R_REG1.pad2(26.01,46.3); stops at y=46.3 (CLKA top=46.9, gap=0.28mm)
+    route(board, "V_BASE_REG", F, PWR, (25.7, 43.05), (25.7, 46.3))
+    route(board, "V_BASE_REG", F, PWR, (25.7, 46.3), (25.51, 46.3))
+    # Z_REG1 branch: go left+down to via at (20.7,44) [clears V_MID B.Cu at y=43 by 0.85mm],
+    # B.Cu passes under CLKA, via at (22.7,48) clears Z_REG1.K pad right edge=22.1 by 0.3mm.
+    route(board, "V_BASE_REG", F, PWR, (20.7, 43.05), (20.7, 44.0))
+    via(board, "V_BASE_REG", 20.7, 44.0)
+    route(board, "V_BASE_REG", B, PWR, (20.7, 44.0), (20.7, 48.0), (22.7, 48.0))
+    via(board, "V_BASE_REG", 22.7, 48.0)
+    route(board, "V_BASE_REG", F, PWR, (22.7, 48.0), (21.65, 48.0))
 
     # ── V_MID: bus at x=7 (left of R_BIAS1 VPLUS pad at x=9.925) ───────────
     # R5 pad1 (7.0,48) on bus; C4 via stub; C5 via B.Cu branch
@@ -838,12 +861,26 @@ def main():
           "C_RFI2", "100p C0G", 25, 87, 0,
           {"1": "XLR_COLD_F", "2": "GND"})
 
-    # U2: 78L24 linear regulator SOT-89  (OUT=pad1, GND=pad2, IN=pad3)
-    place(board, "Package_TO_SOT_SMD", "SOT-89-3",
-          "U2", "L78L24", 23, 44, 0,
-          {"1": "V_OPA", "2": "GND", "3": "V_OPA_RAW"})
+    # Low-Iq V_OPA supply: R_REG1 + Z_REG1 (24V) + Q1 NPN emitter follower
+    # SOT-23 pad1=B, pad2=E, pad3=C (MMBT5551 pinout)
+    place(board, "Package_TO_SOT_SMD", "SOT-23",
+          "Q1", "MMBT5551", 23, 44, 0,
+          {"1": "V_BASE_REG", "2": "V_OPA", "3": "V_OPA_RAW"})
 
-    # C1/C2: input and output bypass for U2
+    # SOD-123 angle=180: pad1(K/V_BASE_REG) at (21.65,48), pad2(A/GND) at (18.35,48)
+    # y=48 clears CLKA F.Cu bus at y=47 (K-pad top=47.4, gap=0.3mm).
+    # V_OPA via moved to (19,51.05) so no longer near K-pad; x=20 now clear.
+    place(board, "Diode_SMD", "D_SOD-123",
+          "Z_REG1", "24V BZT52C24", 20, 48, 180,
+          {"1": "V_BASE_REG", "2": "GND"})
+
+    # 0402 angle=0: pad1(V_OPA_RAW) at (24.49,46.3), pad2(V_BASE_REG) at (25.51,46.3)
+    # x=25.0 → courtyard right=26.08 < C5 left=26.605; y=46.3 clears CLKA top (46.9) by 0.28mm.
+    place(board, "Resistor_SMD", "R_0402_1005Metric",
+          "R_REG1", "2.2k", 25.0, 46.3, 0,
+          {"1": "V_OPA_RAW", "2": "V_BASE_REG"})
+
+    # C1/C2: V_OPA_RAW and V_OPA bypass caps (still valid with emitter-follower supply)
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
           "C1", "100n 63V X7R", 31, 54, 0,
           {"1": "V_OPA_RAW", "2": "GND"})
@@ -1008,6 +1045,17 @@ def main():
 
     # D1: default silk lands left of component; move right of body (SOT-23 right edge ~x=23.8).
     fix_ref(board, "D1", x_mm=25, y_mm=52)
+    # D2: SOT-23 at (27,49); label below body (bottom edge ~y=50.75)
+    fix_ref(board, "D2", x_mm=27.0, y_mm=51.5, angle_deg=0)
+    # Cp3: 0805 at (31,49); label below body (bottom edge ~y=50.3)
+    fix_ref(board, "Cp3", x_mm=31.0, y_mm=51.0, angle_deg=0)
+
+    # Q1: SOT-23 at (23,44); place label above body (top edge ~y=42.3)
+    fix_ref(board, "Q1", x_mm=23.0, y_mm=41.2, angle_deg=0)
+    # Z_REG1: SOD-123 at (20,48,180); label left of body (left edge ~x=17.6)
+    fix_ref(board, "Z_REG1", x_mm=15.0, y_mm=48.0, angle_deg=0)
+    # R_REG1: 0402 at (25.5,46.3); label right of body (right edge ~x=26.5)
+    fix_ref(board, "R_REG1", x_mm=29.0, y_mm=46.3, angle_deg=0)
 
     # C10 (osc timing cap): place directly above component at (18,59); old
     # position (25,56.5) was 7mm away and appeared disconnected from component.
