@@ -54,13 +54,14 @@ DNP_LIB_PREFIXES = (
 LCSC = {
     # ICs
     ("OPA1641",   "SOIC-8_3.9x4.9mm_P1.27mm"):   "C2057597",  # TI OPA1641AIDR SOIC-8; C328784 maps to wrong part in JLCPCB
-    ("L78L24",    "SOT-89-3"):                     "C130141",   # ST L78L24ACUTR; C112410 unavailable
+    ("MMBT5551",  "SOT-23"):                       "C2145",     # MMBT5551 NPN 160V hFE≥75 Basic; emitter follower for V_OPA rail
     ("CD40106B",  "SOIC-14_3.9x8.7mm_P1.27mm"):   "C38184",    # TI CD40106BM96; C5993 low stock
 
     # Diodes
     ("BAT54S",    "SOT-23"):                       "C83935",    # Semtech BAT54S SOT-23; C8541 maps to SS8550 PNP TH in JLCPCB
     ("15V MMSZ15","D_SOD-123"):                    "C27754",    # MMSZ15T1G onsemi 15V zener SOD-123; C460671 maps to wrong part in JLCPCB
     ("68V BZT52C68","D_SOD-123"):                  "C242416",   # MMSZ5266BT1G onsemi 68V 500mW SOD-123; C7427990 has no 3D model in JLCPCB viewer
+    ("24V BZT52C24","D_SOD-123"):                  "C173422",   # MDD BZT52C24 24V 500mW SOD-123; zener reference for V_OPA emitter follower
 
     # Standard resistors (0402)
     ("6.2k",      "R_0402_1005Metric"):            "C25915",    # UNI-ROYAL 0402WGF6201TCE ±1%; matches 2.2k/47k series
