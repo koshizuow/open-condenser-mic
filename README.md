@@ -49,7 +49,14 @@ R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, parallel with R3 (2.2 kΩ), are
 - **Corner frequency**: f_c = 1 / (2π × R_PRES1 × C_PRES1) ≈ 2.1 kHz at the default values
 - **HF shelf**: set by R_PRES1 ∥ R3; default +2.6 dB
 
-`gen_bom.py` defaults to the flat build (`bom_flat.csv` / `cpl_flat.csv`, R_PRES1/C_PRES1 DNP). Pass `--presence` to generate the presence-peak build (`bom_presence.csv` / `cpl_presence.csv`). Both sets are packaged in every CI artifact.
+`gen_bom.py` generates four BOM/CPL pairs in one run. The default build (`bom.csv` / `cpl.csv`, R6=5.6 kΩ, R_PRES1/C_PRES1 DNP) is packaged in the `fabrication-outputs` CI artifact. The three variant pairs (`-hi-gain`, `-presence`, `-hi-gain-presence`) are packaged in the `bom-variants` artifact.
+
+| File suffix | R6 | Presence network | Notes |
+|---|---|---|---|
+| *(none)* | 5.6 kΩ | DNP | Default — more headroom, flat response |
+| `-hi-gain` | 47 kΩ | DNP | Higher output level, transformer coloring |
+| `-presence` | 5.6 kΩ | populated | Flat gain + +2.6 dB shelf above 2.1 kHz |
+| `-hi-gain-presence` | 47 kΩ | populated | High-gain + presence lift |
 
 ### Input-Referred Noise Spectrum (`amp_noise_opa1641.sp`)
 
@@ -164,8 +171,10 @@ kicad-cli sch erc --severity-error --exit-code-violations pcb/open-condenser-mic
 
 ```bash
 python pcb/gen_bom.py        # reads pcb/open-condenser-mic.kicad_pcb; --name to match custom project name
-# → pcb/bom.csv   (grouped BOM with LCSC part numbers)
-# → pcb/cpl.csv   (pick-and-place: Designator, X, Y, Layer, Rotation)
+# → pcb/bom.csv / cpl.csv                       (default: R6=5.6k, presence DNP)
+# → pcb/bom-hi-gain.csv / cpl-hi-gain.csv       (R6=47k, presence DNP)
+# → pcb/bom-presence.csv / cpl-presence.csv     (R6=5.6k, presence populated)
+# → pcb/bom-hi-gain-presence.csv / cpl-hi-gain-presence.csv
 ```
 
 ## Running Simulations

@@ -512,7 +512,7 @@ elements += component("Device:C", "C_PRES1", "12n 25V X7R",
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "RS_MID", "2": "VINV"})
 
-elements += component("Device:R", "R6", "47k",
+elements += component("Device:R", "R6", "5.6k",
     107, 52,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "SIG_OUT", "2": "VINV"})
