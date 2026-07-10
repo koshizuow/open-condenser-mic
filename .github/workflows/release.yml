@@ -27,6 +27,12 @@ jobs:
           name: fabrication-outputs
           path: release-assets/fabrication-outputs
 
+      - name: Download BOM variants
+        uses: actions/download-artifact@v8
+        with:
+          name: bom-variants
+          path: release-assets/bom-variants
+
       - name: Download KiCad project files
         uses: actions/download-artifact@v8
         with:
@@ -56,10 +62,14 @@ jobs:
             --title "${{ inputs.version }}" \
             --generate-notes \
             release-assets/fabrication-outputs/gerbers.zip \
-            release-assets/fabrication-outputs/bom_flat.csv \
-            release-assets/fabrication-outputs/cpl_flat.csv \
-            release-assets/fabrication-outputs/bom_presence.csv \
-            release-assets/fabrication-outputs/cpl_presence.csv \
+            release-assets/fabrication-outputs/bom.csv \
+            release-assets/fabrication-outputs/cpl.csv \
+            release-assets/bom-variants/bom-hi-gain.csv \
+            release-assets/bom-variants/cpl-hi-gain.csv \
+            release-assets/bom-variants/bom-presence.csv \
+            release-assets/bom-variants/cpl-presence.csv \
+            release-assets/bom-variants/bom-hi-gain-presence.csv \
+            release-assets/bom-variants/cpl-hi-gain-presence.csv \
             release-assets/schematic/schematic.pdf \
             release-assets/open-condenser-mic-kicad-project.zip \
             release-assets/drc-erc-reports/drc-report.rpt \
