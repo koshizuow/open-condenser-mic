@@ -281,7 +281,7 @@ STUB_LEN = 2.54  # 100 mil wire stub — keeps same-column stubs from overlappin
 # GND on a D-direction pin → power:GND pointing downward (angle 0).
 # V_OPA on a U-direction pin → power:+24V pointing upward (angle 0).
 _POWER_SYMBOL_NETS = {
-    "GND": {"D": ("power:GND", 0)},
+    "GND": {"D": ("power:GND", 0), "R": ("power:GND", 0)},
     # V_OPA is drawn as an explicit bus spine + local wires (see Block A / Block D wires)
 }
 
@@ -359,12 +359,18 @@ elements = []
 elements += component("Device:R", "R1", "6.8k 0.1%",
     22, 12,
     footprint="Resistor_SMD:R_0603_1608Metric",
-    pins={"1": "XLR_HOT", "2": "V_OPA_RAW"})
+    pins={"1": "~XLR_HOT", "2": "V_OPA_RAW"})
 
 elements += component("Device:R", "R2", "6.8k 0.1%",
     22, 37,
     footprint="Resistor_SMD:R_0603_1608Metric",
-    pins={"1": "~V_OPA_RAW", "2": "XLR_COLD"})
+    pins={"1": "~V_OPA_RAW", "2": "~XLR_COLD"})
+# XLR_HOT/COLD: L-shape left from vertical stubs
+# R1.pin1 stub_end=(22,5.65); R2.pin2 stub_end=(22,43.35)
+elements.append(wire(22, 5.65, 12, 5.65))
+elements.append(label("XLR_HOT", 12, 5.65, 180))
+elements.append(wire(22, 43.35, 12, 43.35))
+elements.append(label("XLR_COLD", 12, 43.35, 180))
 
 elements += component("Device:C", "C1", "100n 63V X7R",
     35, 20,
@@ -382,34 +388,36 @@ elements += component("Device:D_Zener", "Z_REG1", "24V BZT52C24",
     72, 25,
     footprint="Diode_SMD:D_SOD-123",
     pins={"1": "~V_BASE_REG", "2": "GND"},
-    ref_at=(-3.5, 5.5), val_at=(-3.5, 8))
+    ref_at=(-6, 5.5), val_at=(-6, 8))
 
 # Q1: NPN emitter follower — C=V_OPA_RAW, B=V_BASE_REG (24V zener), E=V_OPA (23.3V out)
 elements += component("Device:Q_NPN", "Q1", "MMBT5551",
     85, 20,
     footprint="Package_TO_SOT_SMD:SOT-23",
-    pins={"C": "~V_OPA_RAW", "B": "V_BASE_REG", "E": "~V_OPA"},
+    pins={"C": "~V_OPA_RAW", "B": "~V_BASE_REG", "E": "~V_OPA"},
     ref_at=(2.54, 10), val_at=(2.54, 12.5))
 
 # V_BASE_REG bus: R_REG1.pin2 stub_end (55,19.35) ─── Q1.B stub_end (77.38,20), all snap to y=59.69
 #                 vertical branch at x=65.65 down to Z_REG1.pin1 stub_end (65.65,25)
-elements.append(wire(55, 19.35, 77.38, 19.35))
+elements.append(label("V_BASE_REG", 55, 19.35, 180)) # label at bus left endpoint
+elements.append(wire(55, 19.35, 65.65, 19.35))     # V_BASE_REG bus seg1
+elements.append(wire(65.65, 19.35, 77.38, 19.35))  # V_BASE_REG bus seg2
 elements.append(wire(65.65, 19.35, 65.65, 25))
 elements.append(junction(65.65, 19.35))
 
 elements += component("Device:C", "C2", "100n 25V X7R",
-    74, 12,
+    99, 14.61,
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "~V_OPA", "2": "GND"},
-    ref_at=(-8, -2.54), val_at=(-8, 1.27))
+    val_at=(2.54, -5.08))
 
 elements += component("Device:C_Polarized", "C5", "10u 25V",
-    95, 50,
+    60, 63,
     footprint="Capacitor_SMD:CP_Elec_4x5.4",
-    pins={"1": "V_MID", "2": "GND"})
+    pins={"1": "~V_MID", "2": "GND"})
 
 elements += component("Device:C_Polarized", "C6", "10u 25V",
-    74, 63,
+    95, 50,
     footprint="Capacitor_SMD:CP_Elec_4x5.4",
     pins={"1": "~V_OPA", "2": "GND"})
 
@@ -419,38 +427,46 @@ elements += component("Device:C_Polarized", "C6", "10u 25V",
 elements += component("Device:R", "R_ZEN1", "6.8k",
     105, 20,
     footprint="Resistor_SMD:R_0402_1005Metric",
-    pins={"1": "~V_OPA", "2": "~V_OSC"})
+    pins={"1": "~V_OPA", "2": "~V_OSC"},
+    ref_at=(2.54, -5))
 
 elements += component("Device:D_Zener", "Z_OSC1", "15V MMSZ15VT1G",
-    120, 20,
+    125, 20,
     footprint="Diode_SMD:D_SOD-123",
-    pins={"1": "V_OSC", "2": "GND"})
+    pins={"1": "~V_OSC", "2": "GND"},
+    val_at=(2.54, -5.08))
 
 # V_OPA spine at x=92: C2 tip (top), R_ZEN1 stub branch, Q1.E stub, R4 tip, C6 tip (bottom)
 # Q1 at (85,20): E tip=(87.54,25.08), stub_end=(87.54,27.62) → wire right to spine
 # R_ZEN1.pin1 stub_end=(105,13.65) → wire left to spine at y=13.65
-elements.append(wire(92, 8.19, 92, 59.19))           # V_OPA spine
-elements.append(label("V_OPA", 92, 8.19, 270))        # one label identifies spine net
-elements.append(wire(74, 8.19, 92, 8.19))             # C2.pin1 tip → spine top
+elements.append(wire(92, 6.99, 92, 8.26))             # label stub: V_OPA label → junction
+elements.append(label("V_OPA", 92, 6.99, 270))        # supply-side label above junction
+elements.append(junction(92, 8.26))                   # T: label stub + spine down + C2 right
+elements.append(wire(92, 8.26, 99, 8.26))             # C2.pin1 stub_end ← junction
+elements.append(wire(92, 8.26, 92, 13.65))            # V_OPA spine seg1: junction → R_ZEN1 branch
+elements.append(wire(92, 13.65, 92, 27.62))           # V_OPA spine seg2: R_ZEN1 → Q1.E junction
+elements.append(wire(92, 27.62, 92, 43.65))           # V_OPA spine seg3: Q1.E → R4 junction (spine ends here)
 elements.append(wire(87.54, 27.62, 92, 27.62))        # Q1.E stub_end → spine
-elements.append(wire(72, 46.19, 92, 46.19))           # R4.pin1 tip → spine
-elements.append(wire(74, 59.19, 92, 59.19))           # C6.pin1 tip → spine bottom
+elements.append(wire(72, 43.65, 92, 43.65))           # R4.pin1 stub_end → spine (V_OPA)
+elements.append(wire(92, 43.65, 95, 43.65))           # C6.pin1 stub_end ← spine (V_OPA); C6 at (95,50)
 elements.append(wire(92, 13.65, 105, 13.65))          # spine → R_ZEN1.pin1 stub_end
 elements.append(junction(92, 13.65))                  # T: spine + R_ZEN1 branch
 elements.append(junction(92, 27.62))                  # T: spine + Q1.E branch
-elements.append(junction(92, 46.19))                  # T: spine + R4 branch
+elements.append(junction(92, 43.65))                  # T: spine end + R4 branch + C6 branch
 
-# V_OPA extension to D1 (Block G pump): spine can't go straight down (R3 at x=92,y=84 is in the way)
-# Route: extend spine-bottom wire left to x=65, then down to y=113, right to D1.pin1 stub_end (77.84,113)
+# V_OPA extension to D1 (Block G pump): physical wire from R4 node (72,43.65) down x=65 to D1.
 # D1(88,113) pin1(A,L) tip=(80.38,113), stub_end=(77.84,113)
-elements.append(wire(65, 59.19, 74, 59.19))           # extend left from C6 tap point
-elements.append(wire(65, 59.19, 65, 113))             # down to D1 level (x=65 clears R3/PRES area)
+elements.append(wire(65, 43.65, 72, 43.65))           # extension meets R4 node
+elements.append(junction(72, 43.65))                  # T: R4 stub + spine wire + extension
+elements.append(wire(65, 43.65, 65, 113))             # down to D1 level (x=65 clears R3/PRES area)
 elements.append(wire(65, 113, 77.84, 113))            # right to D1.pin1 stub_end
 
 # V_OSC explicit wire: R_ZEN1.pin2 stub (105,26.35) → Z_OSC1.pin1 stub (113.65,20)
 elements.append(wire(105, 26.35, 113.65, 26.35))
 elements.append(wire(113.65, 26.35, 113.65, 20))
-elements.append(junction(113.65, 20))                 # T: V_OSC wire + Z_OSC1.pin1 stub
+elements.append(junction(113.65, 20))                 # T: V_OSC wire + V_OSC bus up + Z_OSC1 stub
+elements.append(label("V_OSC", 113.65, 20, 180))     # label at junction, text extends left
+elements.append(wire(113.65, 20, 118.65, 20))         # junction → Z_OSC1.pin1 stub_end
 
 # V_OPA_RAW: R1.pin2 stub_end ↔ R2.pin1 stub_end
 # R1(22,12) pin2(D) stub_end=(22,18.35); R2(22,37) pin1(U) stub_end=(22,30.65)
@@ -490,9 +506,13 @@ elements += component("Device:C", "C4", "10u 25V X5R",
     footprint="Capacitor_SMD:C_0603_1608Metric",
     pins={"1": "~V_MID", "2": "GND"})
 
-# T8a: V_MID bus — C4 and R3 wired explicitly; C5 keeps label (spine at x=92 blocks direct path)
-# C4(87,63).pin1 stub_end=(87,56.65) — same grid y as R4.pin2 stub_end(72,56.35) after _G snap
-elements.append(wire(72, 56.35, 87, 56.35))          # R4.pin2 stub_end → C4.pin1 stub_end
+# T8a: V_MID bus — C5, C4, and R3 all wired explicitly
+# C5(60,63).pin1 stub_end=(60,56.65) and C4(87,63).pin1 stub_end=(87,56.65) snap to same grid y as
+# R4.pin2 stub_end(72,56.35) → one horizontal bus at sch_y=96.52
+elements.append(wire(60, 56.65, 72, 56.35))          # C5.pin1 stub_end → V_MID bus (R4.pin2 stub_end)
+elements.append(wire(72, 56.35, 80, 56.35))          # V_MID horiz seg1: R4.pin2 → R3 branch junction
+elements.append(wire(80, 56.35, 87, 56.35))          # V_MID horiz seg2: junction → C4.pin1 stub_end
+elements.append(junction(72, 56.35))                 # 4-way: C5 wire + R4.pin2 stub + bus right + vert down
 # R3(92,84).pin1 stub_end=(92,77.65) — route via x=80 vertical (spine at x=92 ends at y=59.19)
 elements.append(wire(80, 56.35, 80, 77.65))          # V_MID bus at x=80 (clear of spine)
 elements.append(wire(80, 77.65, 92, 77.65))          # right to R3.pin1 stub_end
@@ -529,35 +549,43 @@ elements += component("Device:R", "R_GBIAS2", "47M 1206",
 elements.append(wire(30, 66.35, 30, 78.65))
 
 elements += component("Connector_Generic:Conn_01x02", "J2", "CAPSULE",
-    50, 52,
+    50, 44,
     footprint="Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
-    pins={"1": "~CAP_FP", "2": "GND"})
+    pins={"1": "~CAP_FP", "2": "~V_MID"})
 
 elements += component("Device:C", "C8", "1n 100V C0G 0402",
     50, 70,
     footprint="Capacitor_SMD:C_0402_1005Metric",
-    pins={"1": "~CAP_FP", "2": "~VPLUS"})
+    pins={"1": "~CAP_FP", "2": "~VPLUS"},
+    val_at=(2.54, 3.81))
 
 elements += component("Device:R", "R_BIAS1", "100M 1206",
     50, 83,
     footprint="Resistor_SMD:R_1206_3216Metric",
     pins={"1": "~VPLUS", "2": "~V_MID"})
 
-# CAP_FP bus at x=44: R_GBIAS2.pin2 → J2.pin1 → C8.pin1
-# R_GBIAS2(30,85) pin2 tip=(30,88.81) stub D→(30,91.35)
-# J2(50,52) pin1 tip=(44.92,52) stub L→(42.38,52)
-# C8(50,70) pin1 tip=(50,66.19) stub U→(50,63.65)
-elements.append(wire(44, 52, 44, 91.35))         # vertical CAP_FP bus at x=44 (extended)
-elements.append(wire(42.38, 52, 44, 52))          # J2.pin1 stub_end → bus top
-elements.append(wire(50, 63.65, 44, 63.65))      # C8.pin1 stub_end → bus mid
-elements.append(wire(30, 91.35, 44, 91.35))      # R_GBIAS2.pin2 stub_end → bus bot
-elements.append(junction(44, 63.65))             # T: bus + C8 branch
+# CAP_FP bus at x=36: all connections approach from left of J2 stubs (stub_end x=42.38)
+# J2(50,44) pin1 stub L→(42.38,44); C8(50,70) pin1 stub U→(50,63.65); R_GBIAS2(30,85) pin2 stub D→(30,91.35)
+elements.append(label("CAP_FP", 36, 44, 180))     # label at bus top, aligned with bus edge
+elements.append(wire(36, 44, 36, 63.65))          # CAP_FP bus top segment
+elements.append(wire(36, 63.65, 36, 91.35))       # CAP_FP bus bot segment
+elements.append(wire(42.38, 44, 36, 44))          # J2.pin1 stub_end → bus (natural leftward extension)
+elements.append(wire(50, 63.65, 36, 63.65))       # C8.pin1 stub_end → bus
+elements.append(wire(30, 91.35, 36, 91.35))       # R_GBIAS2.pin2 stub_end → bus
+elements.append(junction(36, 63.65))              # T: bus + C8 branch
+# J2.pin2 (~V_MID): stub_end=(42.38,46.54) → left → down at x=38 → right to V_MID bus at (53,83)
+elements.append(wire(42.38, 46.54, 38, 46.54))
+elements.append(wire(38, 46.54, 38, 83))
+elements.append(wire(38, 83, 53, 83))
+elements.append(junction(53, 83))
 
 # VPLUS node: C8.pin2 → R_BIAS1.pin1 meeting at junction (50,76.35)=sch(132.08,116.84)
 # C8(50,70) pin2 tip=(50,73.81) stub→(50,76.35); R_BIAS1(50,83) pin1 tip=(50,79.19) stub→(50,76.35)
 # Both stubs meet at the same junction; then horizontal bus right to U1.IN+
-elements.append(wire(50, 73.81, 50, 79.19))      # C8.pin2 tip → R_BIAS1.pin1 tip (shared VPLUS node)
+elements.append(wire(50, 73.81, 50, 76.35))      # VPLUS seg1: C8.pin2 tip → junction
+elements.append(wire(50, 76.35, 50, 79.19))      # VPLUS seg2: junction → R_BIAS1.pin1 tip
 elements.append(wire(50, 76.35, 111.84, 76.35))  # horizontal to U1.IN+ column
+elements.append(label("VPLUS", 111.84, 76.35, 270))  # label at L-corner, rotated 90°
 elements.append(wire(111.84, 76.35, 111.84, 64.46))  # up to U1.IN+ stub_end
 elements.append(junction(50, 76.35))             # T: vertical VPLUS + horizontal
 
@@ -578,12 +606,14 @@ elements += component("Device:R", "R_PRES1", "6.2k",
     pins={"1": "~V_MID", "2": "~RS_MID"})
 
 elements += component("Device:C", "C_PRES1", "12n 25V X7R",
-    77, 108,
+    77, 110,
     footprint="Capacitor_SMD:C_0402_1005Metric",
-    pins={"1": "~RS_MID", "2": "~VINV"})
+    pins={"1": "~RS_MID", "2": "~VINV"},
+    val_at=(2.54, -5.08))
 
-# RS_MID: R_PRES1.pin2 stub_end(77,96.35) → C_PRES1.pin1 stub_end(77,101.65)
-elements.append(wire(77, 96.35, 77, 101.65))
+# RS_MID: R_PRES1.pin2 stub_end(77,96.35) → C_PRES1.pin1 stub_end(77,103.65)
+# C_PRES1 moved to y=110 so pin2 tip snaps away from D1.pin1 stub_end (both were at sch 160.02,152.4)
+elements.append(wire(77, 96.35, 77, 103.65))
 
 elements += component("Device:R", "R6", "5.6k",
     107, 52,
@@ -594,7 +624,7 @@ elements += component("Device:R", "R6", "5.6k",
 elements += component("Amplifier_Operational:OPA1641", "U1", "OPA1641",
     122, 67,
     footprint="Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
-    pins={"3": "VPLUS", "2": "~VINV", "6": "SIG_OUT", "7": "~V_OPA", "4": "GND"},
+    pins={"3": "~VPLUS", "2": "~VINV", "6": "SIG_OUT", "7": "~V_OPA", "4": "GND"},
     ref_at=(10, 4), val_at=(10, 6.5))
 
 elements += component("Device:C", "C3", "100n 25V X7R",
@@ -610,16 +640,19 @@ elements += component("Device:R", "R7", "100R",
 elements += component("Device:C", "C7", "4.7u 50V X7R 1206",
     159, 58,
     footprint="Capacitor_SMD:C_1206_3216Metric",
-    pins={"1": "SIG_PROT", "2": "~TX_DRV"})
+    pins={"1": "~SIG_PROT", "2": "~TX_DRV"},
+    val_at=(0, -6))
 
 # VINV node: R6.pin2 → vertical bus → R3.pin2 branch + U1.IN− branch
 # R6(107,52) pin2 tip=(107,55.81) stub D→(107,58.35)
 # R3(92,84) pin2 tip=(92,87.81) stub D→(92,90.35)   [VINV,D → NOT GND, keeps stub]
 # U1(122,67) IN− tip=(114.38,69.54) stub L→(111.84,69.54)
-elements.append(wire(107, 58.35, 107, 114.35))   # vertical VINV bus (extended to C_PRES1.pin2)
+elements.append(wire(107, 58.35, 107, 69.54))    # VINV bus seg1: R6.pin2 → U1.IN− junction
+elements.append(wire(107, 69.54, 107, 90.35))    # VINV bus seg2: U1.IN− → R3 junction
+elements.append(wire(107, 90.35, 107, 116.35))   # VINV bus seg3: R3 → C_PRES1.pin2
 elements.append(wire(92, 90.35, 107, 90.35))     # R3.pin2 stub_end → right to bus
 elements.append(wire(107, 69.54, 111.84, 69.54)) # bus → U1.IN− stub_end
-elements.append(wire(77, 114.35, 107, 114.35))   # C_PRES1.pin2 stub_end → bus bottom
+elements.append(wire(77, 116.35, 107, 116.35))   # C_PRES1.pin2 stub_end → bus bottom
 elements.append(junction(107, 69.54))            # T: bus + U1.IN− branch
 elements.append(junction(107, 90.35))            # T: bus + R3 branch
 
@@ -627,31 +660,38 @@ elements.append(junction(107, 90.35))            # T: bus + R3 branch
 # U1(122,67) OUT tip=(129.62,67) stub R→(132.16,67)
 # R6(107,52) pin1 tip=(107,48.19) stub U→(107,45.65)
 # R7(143,64) pin1 tip=(143,60.19) stub U→(143,57.65)
-elements.append(wire(132.16, 67, 132.16, 45.65)) # U1.OUT stub up to R6.pin1 level
-elements.append(wire(132.16, 45.65, 107, 45.65)) # left to R6.pin1 stub_end (feedback)
-elements.append(wire(132.16, 67, 143, 67))        # right toward R7
-elements.append(wire(143, 67, 143, 60.19))        # up to R7.pin1 tip
-elements.append(junction(132.16, 67))             # T: feedback up + output right
+elements.append(wire(132.16, 67, 132.16, 57.65))    # U1.OUT stub up to R7-branch junction
+elements.append(wire(132.16, 57.65, 132.16, 45.65)) # continue up to R6.pin1 level
+elements.append(wire(132.16, 45.65, 107, 45.65))    # left to R6.pin1 stub_end (feedback)
+elements.append(wire(132.16, 57.65, 143, 57.65))    # right to R7.pin1 stub_end (SIG_OUT)
+elements.append(junction(132.16, 57.65))             # T: feedback up + R7 branch right
 
-# SIG_PROT: R7.pin2 → around C7 right side → C7.pin1
-# R7(143,64) pin2 tip=(143,67.81) stub D→(143,70.35)
-# C7(159,58) pin1 tip=(159,54.19) stub U→(159,51.65)
-elements.append(wire(143, 70.35, 162, 70.35))    # right of C7
-elements.append(wire(162, 70.35, 162, 54.19))    # up
-elements.append(wire(162, 54.19, 159, 54.19))    # left to C7.pin1 tip
+# SIG_PROT: R7.pin2 stub_end → up between R7 and C7 → C7.pin1 stub_end
+# R7(143,64) pin2 stub D→(143,70.35); C7(159,58) pin1 stub U→(159,51.65)
+elements.append(label("SIG_PROT", 143, 70.35, 0))   # label at R7.pin2 stub_end
+elements.append(wire(143, 70.35, 155, 70.35))        # right to turn between R7 and C7
+elements.append(wire(155, 70.35, 155, 51.65))        # up to C7.pin1 level
+elements.append(wire(155, 51.65, 159, 51.65))        # right to C7.pin1 stub_end
 
-# V_OPA local: C3.pin1 stub_end (113,76.65) → up → U1.V+ tip (119.46,59.38)
-# Visually shows that U1.V+ and C3 (bypass) share the same V_OPA supply
-elements.append(wire(113, 76.65, 113, 59.38))    # vertical up from C3 stub_end
-elements.append(wire(113, 59.38, 119.46, 59.38)) # horizontal to U1.V+ tip
+# V_OPA local: junction at U1.V+ stub_end; short stub up to V_OPA label; C3 branches left
+elements.append(wire(119.46, 56.84, 119.46, 54.30)) # short stub up from junction to label
+elements.append(label("V_OPA", 119.46, 54.30, 270))  # consumer-side label above junction
+elements.append(wire(119.46, 56.84, 113, 56.84))  # junction → left to C3 branch
+elements.append(wire(113, 56.84, 113, 76.65))     # down to C3.pin1 stub_end
+elements.append(junction(119.46, 56.84))           # T: U1.V+ stub + label stub + C3 branch
 
 # ── BLOCK E: TRANSFORMER + XLR OUTPUT (x=178..230, y=55..78) ─────────────────
 
 elements += component("Connector_Generic:Conn_01x03", "TP1", "NTE10/3_PRI",
     178, 63,
     footprint="Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
-    pins={"1": "TX_DRV", "2": "GND"})
+    pins={"1": "~TX_DRV", "2": "~GND"},
+    val_at=(2.54, -5))
 elements.append(no_connect(172.92, 65.54))  # S3 pin tip: far end of secondary winding, leave floating
+# TP1.pin2 GND: L-shape down from stub_end, then GND power symbol
+# stub_end=(170.38,63) → down to y=68 → GND symbol
+elements.append(wire(170.38, 63, 170.38, 68))
+elements.append(power_sym("power:GND", 170.38, 68, 0))
 
 elements += component("Connector_Generic:Conn_01x02", "TS1", "NTE10/3_SEC",
     196, 63,
@@ -659,9 +699,14 @@ elements += component("Connector_Generic:Conn_01x02", "TS1", "NTE10/3_SEC",
     pins={"1": "~XLR_HOT", "2": "~XLR_COLD"})
 
 elements += component("Connector_Generic:Conn_01x03", "J3", "XLR_OUT",
-    237, 67,
+    247, 67,
     footprint="",
-    pins={"1": "GND", "2": "XLR_HOT_F", "3": "XLR_COLD_F"})
+    pins={"1": "~GND", "2": "~XLR_HOT_F", "3": "~XLR_COLD_F"})
+# J3.pin1 GND: L-shape UP from stub_end (239.38,64.46) → left → GND symbol
+# Going up avoids pin2/pin3 stubs which are below pin1 at the same x
+elements.append(wire(239.38, 64.46, 239.38, 57))
+elements.append(wire(239.38, 57, 235, 57))
+elements.append(power_sym("power:GND", 235, 57, 0))
 
 # RFI filter: 100R series + 100pF C0G shunt on each XLR leg (fc ~16 MHz)
 # Placed between TS1 and J3 so signal flow reads left-to-right: TS1→R_RFI→C_RFI→J3
@@ -671,7 +716,7 @@ elements += component("Device:R", "R_RFI1", "100R",
     pins={"1": "~XLR_HOT", "2": "~XLR_HOT_F"})
 
 elements += component("Device:C", "C_RFI1", "100p C0G",
-    222, 58,
+    222, 54,
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "~XLR_HOT_F", "2": "GND"})
 
@@ -687,41 +732,57 @@ elements += component("Device:C", "C_RFI2", "100p C0G",
 
 # TX_DRV: C7.pin2 stub_end (159,64.35) → TP1.pin1 stub_end (170.38,60.46)
 # C7(159,58) pin2(D) stub_end=(159,64.35); TP1(178,63) pin1(L) stub_end=(170.38,60.46)
-elements.append(wire(159, 64.35, 170.38, 64.35))
-elements.append(wire(170.38, 64.35, 170.38, 60.46))
+# Route via x=164 to avoid crossing TP1.pin2 GND stub_end at (170.38,63)
+# Label at L-corner (164,60.46): text extends left, clear of TP1 pin area
+elements.append(wire(159, 64.35, 164, 64.35))
+elements.append(wire(164, 64.35, 164, 60.46))
+elements.append(wire(164, 60.46, 170.38, 60.46))
+elements.append(label("TX_DRV", 164, 60.46, 180))
 
 # T9b: XLR explicit wires — HOT leg
 # TS1(196,63).pin1 L-stub_end=(188.38,63) → R_RFI1(210,58).pin1 U-stub_end=(210,51.65)
 # Route: up from TS1 stub_end to R_RFI1 stub level, then horizontal right.
 elements.append(wire(188.38, 63, 188.38, 51.65))     # TS1.pin1 stub_end up to R_RFI1 row
-elements.append(wire(188.38, 51.65, 210, 51.65))     # to R_RFI1.pin1 stub_end
+elements.append(wire(188.38, 51.65, 196, 51.65))     # to T-junction
+elements.append(wire(196, 51.65, 210, 51.65))         # T-junction → R_RFI1.pin1 stub_end
+elements.append(junction(196, 51.65))                 # at segment endpoint (not interior)
+elements.append(wire(196, 51.65, 196, 44.45))         # stub up
+elements.append(label("XLR_HOT", 196, 44.45, 270))   # flag points up
 # XLR_HOT_F bus at x=216 (avoids C_RFI1.pin2 GND stub_end at (222,64.35) same y as R_RFI1.pin2)
-# R_RFI1.pin2 D-stub_end=(210,64.35), C_RFI1.pin1 U-stub_end=(222,51.65), J3.pin2 L-stub_end=(229.38,67)
+# R_RFI1.pin2 D-stub_end=(210,64.35), C_RFI1.pin1 U-stub_end=(222,51.65), J3.pin2 L-stub_end=(239.38,67)
 elements.append(wire(210, 64.35, 216, 64.35))         # R_RFI1.pin2 stub_end → bus
-elements.append(wire(216, 64.35, 216, 51.65))         # bus up to C_RFI1.pin1 level
-elements.append(wire(216, 51.65, 222, 51.65))         # to C_RFI1.pin1 stub_end
+elements.append(wire(216, 64.35, 216, 47.65))         # bus up to C_RFI1.pin1 level
+elements.append(wire(216, 47.65, 222, 47.65))         # to C_RFI1.pin1 stub_end
 elements.append(wire(216, 64.35, 216, 67))            # bus down to J3.pin2 level
-elements.append(wire(216, 67, 229.38, 67))            # to J3.pin2 stub_end
+elements.append(wire(216, 67, 239.38, 67))            # to J3.pin2 stub_end
 elements.append(junction(216, 64.35))                 # T: R_RFI1 tap + bus up + bus down
+elements.append(label("XLR_HOT_F", 216, 67, 180))    # label at approach left endpoint (L-corner)
 
 # T9b: XLR explicit wires — COLD leg
 # TS1(196,63).pin2 L-stub_end=(188.38,65.54) → R_RFI2(210,76).pin1 U-stub_end=(210,69.65)
 elements.append(wire(188.38, 65.54, 188.38, 69.65))  # TS1.pin2 stub_end down to R_RFI2 row
-elements.append(wire(188.38, 69.65, 210, 69.65))     # to R_RFI2.pin1 stub_end
+elements.append(wire(188.38, 69.65, 203, 69.65))     # to T-junction
+elements.append(wire(203, 69.65, 210, 69.65))         # T-junction → R_RFI2.pin1 stub_end
+elements.append(junction(203, 69.65))                 # at segment endpoint (not interior)
+elements.append(wire(203, 69.65, 203, 44.45))         # stub up (crosses HOT wire without junction = no short)
+elements.append(label("XLR_COLD", 203, 44.45, 270))  # aligned with XLR_HOT label height
 # XLR_COLD_F bus at x=216
-# R_RFI2.pin2 D-stub_end=(210,82.35), C_RFI2.pin1 U-stub_end=(222,69.65), J3.pin3 L-stub_end=(229.38,69.54)
-# (222,69.65) and (229.38,69.54) snap to same schematic grid row — wire passes through C_RFI2.pin1
+# R_RFI2.pin2 D-stub_end=(210,82.35), C_RFI2.pin1 U-stub_end=(222,69.65), J3.pin3 L-stub_end=(239.38,69.54)
+# Split into two segments so junction is at an endpoint, not interior — interior junction causes KiCad ERC
+# to flag the label at J3.pin3 stub_end as dangling even when the wire endpoint is correct.
 elements.append(wire(210, 82.35, 216, 82.35))         # R_RFI2.pin2 stub_end → bus
 elements.append(wire(216, 82.35, 216, 69.65))         # bus up to C_RFI2/J3 level
-elements.append(wire(216, 69.65, 229.38, 69.54))      # through C_RFI2.pin1 stub_end → J3.pin3
-elements.append(junction(222, 69.65))                 # T: C_RFI2.pin1 stub_end taps mid-wire
+elements.append(wire(216, 69.65, 222, 69.65))         # bus → C_RFI2.pin1 stub_end
+elements.append(wire(222, 69.54, 239.38, 69.54))      # approach: C_RFI2 → J3.pin3 (separate segment)
+elements.append(junction(222, 69.65))                 # 3-way: bus end + C_RFI2 stub + approach start
+elements.append(label("XLR_COLD_F", 222, 69.54, 180)) # label at approach left endpoint (junction)
 
 # ── BLOCK F: SCHMITT OSCILLATOR (x=15..67, y=108..160) ───────────────────────
 
 elements += component("4xxx:40106", "U3", "CD40106B",
     28, 118, unit=1,
     footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
-    pins={"1": "CLKA_IN", "2": "CLKA"})
+    pins={"1": "~CLKA_IN", "2": "CLKA"})
 
 elements += component("4xxx:40106", "U3", "CD40106B",
     52, 118, unit=2,
@@ -762,6 +823,7 @@ elements.append(wire(44, 99.65, 40, 99.65))     # connect to R_OSC1.pin1 stub_en
 # CLKA_IN feedback: R_OSC1.pin2 stub (40,112.35) → left → down to U3A.pin1 stub (17.84,118)
 # horizontal at y=112.35 is above gate bodies (gates at y=118, body top ≈ y=114)
 elements.append(wire(40, 112.35, 17.84, 112.35))
+elements.append(label("CLKA_IN", 17.84, 112.35, 180))  # at L-corner before bend down
 elements.append(wire(17.84, 112.35, 17.84, 118))
 elements.append(junction(40, 112.35))
 
@@ -801,24 +863,28 @@ elements += component("Diode:BAT54S", "D2", "BAT54S",
 elements += component("Device:C", "Cp1", "100n 100V X7R",
     88, 133,
     footprint="Capacitor_SMD:C_0805_2012Metric",
-    pins={"1": "~N1", "2": "CLKA"})
+    pins={"1": "~N1", "2": "CLKA"},
+    val_at=(-1, -5.08))
 
 elements += component("Device:C", "Cp2", "100n 100V X7R",
     103, 133,
     footprint="Capacitor_SMD:C_0805_2012Metric",
-    pins={"1": "~N2", "2": "~CLKB"})
+    pins={"1": "~N2", "2": "~CLKB"},
+    val_at=(2.54, -5.08))
 
 elements += component("Device:C", "Cp3", "100n 100V X7R",
     118, 133,
     footprint="Capacitor_SMD:C_0805_2012Metric",
-    pins={"1": "~N3", "2": "~CLKA"})
+    pins={"1": "~N3", "2": "~CLKA"},
+    val_at=(6, -5.08))
 
 # N1: D1.pin3(COM,D) stub_end(88,120.62) → Cp1.pin1(N1,U) stub_end(88,126.65)
 elements.append(wire(88, 120.62, 88, 126.65))
 
 # N2: D1.pin2(K,R) stub_end(98.16,113) ↔ D2.pin1(A,L) stub_end(107.84,113)
 #     branch at x=103 down to Cp2.pin1(N2,U) stub_end(103,126.65)
-elements.append(wire(98.16, 113, 107.84, 113))
+elements.append(wire(98.16, 113, 103, 113))        # N2 horiz seg1: D1.pin2 → branch junction
+elements.append(wire(103, 113, 107.84, 113))       # N2 horiz seg2: junction → D2.pin1
 elements.append(wire(103, 113, 103, 126.65))
 elements.append(junction(103, 113))
 
@@ -837,7 +903,6 @@ elements.append(wire(88, 145, 118, 145))
 elements.append(wire(62.16, 118, 62.16, 155))
 elements.append(wire(62.16, 155, 103, 155))
 elements.append(wire(103, 155, 103, 139.35))
-elements.append(junction(103, 139.35))               # T: Cp2.pin2 stub + CLKB feed wire
 
 elements += component("Device:C", "Cres1", "470n 100V X7R",
     150, 113,
@@ -847,11 +912,14 @@ elements += component("Device:C", "Cres1", "470n 100V X7R",
 elements += component("Device:D_Zener", "DZ1", "68V BZT52C68",
     166, 128,
     footprint="Diode_SMD:D_SOD-123",
-    pins={"1": "~VBOOST", "2": "GND"})
+    pins={"1": "~VBOOST", "2": "GND"},
+    val_at=(2.54, -5.08))
 
 # VBOOST horizontal bus at y=106.65: D2 → Cres1 → DZ1 → L1
 # Cres1.stub_end=(150,106.65), L1.stub_end=(188,106.65) already at this y level
-elements.append(wire(128.16, 106.65, 188, 106.65)) # VBOOST horizontal bus
+elements.append(wire(128.16, 106.65, 150, 106.65))  # VBOOST bus seg1: D2 → Cres1 junction
+elements.append(wire(150, 106.65, 159.65, 106.65)) # VBOOST bus seg2: Cres1 → DZ1 junction
+elements.append(wire(159.65, 106.65, 188, 106.65)) # VBOOST bus seg3: DZ1 → L1
 elements.append(wire(128.16, 113, 128.16, 106.65))  # D2.pin2 stub_end → bus
 elements.append(wire(159.65, 128, 159.65, 106.65))  # DZ1.pin1 stub_end → bus
 elements.append(junction(150, 106.65))              # T: bus + Cres1 stub
