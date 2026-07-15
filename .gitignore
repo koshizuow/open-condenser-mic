@@ -4,6 +4,9 @@ fp-info-cache
 # KiCad automatic backups
 *-backups/
 
+# Generated documentation
+docs/schematic.pdf
+
 # KiCad generated outputs
 *.kicad_pcb
 *.kicad_sch
