@@ -75,8 +75,8 @@ LCSC = {
     ("6.8k 0.1%", "R_0603_1608Metric"):            "C2941290",  # ARG03BTC6801 Viking 0.1%
 
     # High-value resistors (1206)
-    ("100M 1206", "R_1206_3216Metric"):            "C5632242",  # FHF06JT-107 PSA 250mW ±5% — R_BIAS1
-    ("47M 1206",  "R_1206_3216Metric"):            "C163361",   # RC1206JR-0747ML YAGEO 200V ±5% — R_GBIAS1/2
+    ("100M 1206",     "R_1206_3216Metric"):          "C5632242",  # FHF06JT-107 PSA 250mW ±5% — R_BIAS1
+    ("100M 200V 1206","R_1206_3216Metric"):         "C59781",    # 1206W4F1006T5E UNI-ROYAL 200V ±1% — R_GBIAS1
 
     # Standard capacitors (0402)
     ("12n 25V X7R",   "C_0402_1005Metric"):        "C113786",   # YAGEO CC0402KRX7R8BB123; X7R fine — no DC bias, mV signal level
