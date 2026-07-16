@@ -64,24 +64,6 @@ R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, parallel with R3 (2.2 kΩ), are
 
 SPICE input-referred noise, computed by dividing total output noise by the signal transfer function at each frequency. The slope reflects the signal path's high-pass characteristic (coupling caps attenuate low-frequency signal more than noise), not a real frequency-dependent noise source. Midband (1–10 kHz) noise floor is dominated by R_GBIAS Johnson noise (~28 nV/√Hz at 94 MΩ) and OPA1641 voltage noise (2.5 nV/√Hz).
 
-## Measured Performance
-
-Tested in a 2.77-hour vocal live stream (singing + speech) in an untreated room with ambient road noise. Signal chain:  
-Microphone → SSL SiX (gain ~1 o'clock, compressor) → Yamaha AG06 (XLR in, −29 dB pad) → streaming software.
-
-| Parameter | Measured |
-|---|---|
-| Integrated loudness (EBU R128) | −19.5 LUFS |
-| Loudness range (LRA) | 14.3 LU |
-| True peak | −0.45 dBFS |
-| Noise floor (quiet passages) | −∞ (digital silence) |
-| RF interference / hum | None observed |
-| Session duration | 2.77 h, no anomalies |
-
-The noise floor registers as digital silence in quiet passages despite the untreated environment, indicating the design has sufficient self-noise margin for typical home streaming conditions.
-
-**Reference comparison:** Same signal chain, gain one notch higher (~2 o'clock), Sound Skulptor SK-49 (K47-style, transformer-coupled): −20.9 LUFS integrated. The OPA1641 mic achieves higher output sensitivity with less preamp gain.
-
 ## Hardware Requirements
 
 ### Customer-supplied (not in PCBA BOM)
