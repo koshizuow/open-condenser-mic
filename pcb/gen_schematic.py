@@ -915,11 +915,11 @@ elements.append(wire(159.65, 128, 159.65, 106.65))  # DZ1.pin1 stub_end → bus
 elements.append(junction(150, 106.65))              # T: bus + Cres1 stub
 elements.append(junction(159.65, 106.65))           # T: bus + DZ1 branch
 
-# ── BLOCK H: LC FILTER (x=183..215, y=108..140) ──────────────────────────────
+# ── BLOCK H: RC HV FILTER (x=183..215, y=108..140) ───────────────────────────
 
-elements += component("Device:L", "L1", "10mH FNR5040S",
+elements += component("Device:R", "R_HV", "1M 75V 0603",
     188, 113,
-    footprint="Inductor_SMD:L_Changjiang_FNR5040S",
+    footprint="Resistor_SMD:R_0603_1608Metric",
     pins={"1": "VBOOST", "2": "~HV_FILT"})
 
 elements += component("Device:C", "C9", "470n 100V X7R",
@@ -927,19 +927,19 @@ elements += component("Device:C", "C9", "470n 100V X7R",
     footprint="Capacitor_SMD:C_0805_2012Metric",
     pins={"1": "~HV_FILT", "2": "GND"})
 
-# HV_FILT local wire: L1.pin2 stub_end (188,119.35) → C9.pin1 stub_end (204,121.65)
+# HV_FILT local wire: R_HV.pin2 stub_end (188,119.35) → C9.pin1 stub_end (204,121.65)
 elements.append(wire(188, 119.35, 204, 119.35))  # horizontal
 elements.append(wire(204, 119.35, 204, 121.65))  # down to C9.pin1 stub_end
 
-# T11: HV_FILT long bus — R_GBIAS1(30,58).pin1 stub_end (30,51.65) to L1.pin2 stub_end (188,119.35)
+# T11: HV_FILT long bus — R_GBIAS1(30,58).pin1 stub_end (30,51.65) to R_HV.pin2 stub_end (188,119.35)
 # Route: up at x=30 to y=2 (one grid above V_OSC bus at y=3, clears V_OPA spine top at y=8.19),
-# right along y=2 to x=185 (avoids L1.pin1 tip at x=188,y=109.19 which would short VBOOST),
-# down to L1.pin2 level, right 3mm to stub_end.
+# right along y=2 to x=185 (avoids R_HV.pin1 tip at x=188,y=109.19 which would short VBOOST),
+# down to R_HV.pin2 level, right 3mm to stub_end.
 elements.append(wire(30, 51.65, 30, 2))           # R_GBIAS1.pin1 stub_end up to top margin
 elements.append(wire(30, 2, 185, 2))              # right along y=2 (one grid above V_OSC at y=3)
-elements.append(wire(185, 2, 185, 119.35))        # down at x=185 (clear of L1.pin1 at x=188)
-elements.append(wire(185, 119.35, 188, 119.35))   # right to L1.pin2 stub_end
-elements.append(junction(188, 119.35))            # T: new bus + existing C9 wire + L1.pin2 stub
+elements.append(wire(185, 2, 185, 119.35))        # down at x=185 (clear of R_HV.pin1 at x=188)
+elements.append(wire(185, 119.35, 188, 119.35))   # right to R_HV.pin2 stub_end
+elements.append(junction(188, 119.35))            # T: new bus + existing C9 wire + R_HV.pin2 stub
 
 # ── POWER FLAGS ───────────────────────────────────────────────────────────────
 

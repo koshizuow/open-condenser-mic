@@ -241,10 +241,10 @@ def route_all(board):
     # HV NETS  (0.4mm)
     # ════════════════════════════════════════════════════════════════════════
 
-    # ── VBOOST: D2-pad2 → Cres-pad1 → DZ1-pad1, also Cres-pad1 → L1-pad1 ──
+    # ── VBOOST: D2-pad2 → Cres-pad1 → DZ1-pad1, also Cres-pad1 → R_HV-pad1 ──
     # D2 pad2 (VBOOST) at (26.0625, 49.95)
     # Cres pad1 at (28.05, 67.0); Cres pad2 (GND) at (29.95, 67.0)
-    # DZ1 pad1 at (32.0, 67.15); L1 pad1 at (30.15, 78.5)
+    # DZ1 pad1 at (32.0, 67.15); R_HV pad1 at (31.175, 78.5)
     # Route D2-pad2 to horizontal bus at y=65.5 to stay clear of Cres pad2 at y=67
     # x=26.9: Cp2-pad2(25.95,64) right copper=26.3mm; gap=26.9-0.2-26.3=0.4mm
     route(board, "VBOOST", F, HV,
@@ -259,23 +259,23 @@ def route_all(board):
           (28.05, 65.5 ),
           (32.0,  65.5 ),
           (32.0,  67.15))
-    # Cres → L1: x=27.15 stays left of ZT2 hole (r=1.6mm) until y=75, then jog right to pad1
+    # Cres → R_HV: x=27.15 stays left of ZT2 hole (r=1.6mm) until y=75, then jog right to pad1
     # Track ends at y=75→78.5, never reaching V_OPA_RAW F.Cu at y=79.2 (no crossing)
-    # At (30.15,75): dist to ZT2(31,72)=3.12mm > 1.6+0.2+0.25=2.05mm hole clearance OK
+    # At (31.175,75): dist to ZT2(31,72)=3.02mm > 1.6+0.2+0.25=2.05mm hole clearance OK
     route(board, "VBOOST", F, HV,
           (28.05, 67.0),
           (27.15, 67.0),
           (27.15, 75.0),
-          (30.15, 75.0),
-          (30.15, 78.5))
+          (31.175, 75.0),
+          (31.175, 78.5))
 
-    # ── HV_FILT: L1-pad2 → C9-pad1 ───────────────────────────────────────
-    # L1 pad2 at (33.85, 78.5); C9 pad1 at (36.5, 78.0625) [rot=-90, pad1 at top]
+    # ── HV_FILT: R_HV-pad2 → C9-pad1 ────────────────────────────────────
+    # R_HV pad2 at (32.825, 78.5); C9 pad1 at (36.5, 78.0625) [rot=-90, pad1 at top]
     # Approach from left at y=78.5 then up to pad1 — never crosses pad2(GND) at y=79.94
     route(board, "HV_FILT", F, HV,
-          (33.85, 78.5),
-          (36.5,  78.5),
-          (36.5,  78.0625))
+          (32.825, 78.5),
+          (36.5,   78.5),
+          (36.5,   78.0625))
 
     # ── HV_FILT: C9-pad1 → R_GBIAS1-pad2  (long HV rail up right edge) ───
     # R_GBIAS1 pad2 (HV_FILT) at (30.4625,14); run x=37.2 to avoid everything
@@ -998,11 +998,10 @@ def main():
           "DZ1", "68V BZT52C68", 32, 65.5, 90,
           {"1": "VBOOST", "2": "GND"})
 
-    # L1: 10mH LC filter inductor (FNR5040S, 5x5mm, courtyard ±2.8×±2.75mm)
-    # L1 at cy=78.5: top edge at y=75.75 is 3.75mm below ZT2(31,72), clears courtyard r=3.455mm
-    # Pad1 at (30.15,78.5): left edge x=29.45, gap to V_OPA_RAW via right(28.8)=0.65mm OK
-    place(board, "Inductor_SMD", "L_Changjiang_FNR5040S",
-          "L1", "10mH FNR5040S", 32.0, 78.5, 0,
+    # R_HV: 1MΩ RC filter resistor (0603, 1.6×0.8mm, pad pitch 1.65mm)
+    # Center at (32.0,78.5); pad1(VBOOST) at (31.175,78.5), pad2(HV_FILT) at (32.825,78.5)
+    place(board, "Resistor_SMD", "R_0603_1608Metric",
+          "R_HV", "1M 75V 0603", 32.0, 78.5, 0,
           {"1": "VBOOST", "2": "HV_FILT"})
 
     # C9: rot=-90 puts pad1(HV_FILT) at TOP (y=78.06) so HV_FILT track approaches from above

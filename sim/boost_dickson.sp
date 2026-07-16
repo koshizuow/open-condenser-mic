@@ -7,10 +7,12 @@
 * Expected SS : V_BOOST = V_OPA + N*V_OSC - (N+1)*V_F
 *             = 24 + 3*15 - 4*0.2 = 68.2V  (before DZ1 clamp)
 * DZ1 clamp   : BZX55C68 (68V) -> clamped to ~68V
-* LC filter   : L1=10mH (DCR 8Ω), C_LC=470nF -> corner ~2.3kHz
-* Load        : R_GBIAS1+R_GBIAS2 = 94MOhm (capsule at DC ~0.7µA)
+* HV filter   : mode-selectable LC or RC (see .control block)
+*   LC default: L1=10mH (DCR 8Ω), C=470nF, fc≈2.3kHz, Q≈18
+*   RC alt    : R=1MΩ (C22935),   C=470nF, fc≈0.34Hz
+* Load        : R_GBIAS1 = 100MOhm (capsule at DC ~0.7µA)
 * ---------------------------------------------------------------------------
-.title Active Dickson Boost — Dickson/BAT54S
+.title Active Dickson Boost — LC vs RC HV filter comparison
 
 .include params.inc
 .include models/passives.lib
@@ -57,35 +59,74 @@ Cres  VBOOST  0  {Cres}  IC=60
 DZ1   0   VBOOST   BZX55C68
 
 * ---------------------------------------------------------------------------
-* LC HV FILTER (L1 10mH + DCR 8Ω, C_LC 470nF)
+* HV FILTER — parameterised; defaults to LC mode
+*   LC: R_HV=L1_DCR (8Ω),  L_HV=L1_val (10mH)
+*   RC: R_HV=1MΩ,           L_HV=1pH (≈wire)
+* alterparam switches between modes in the .control block below.
 * ---------------------------------------------------------------------------
-R_DCR  VBOOST   LNODE   {L1_DCR}
-L1     LNODE    HVFILT  {L1_val}
-C_LC   HVFILT   0       {C_LC}  IC=60
+.param R_HV    = {L1_DCR}
+.param L_HV    = {L1_val}
+* C_LC_IC: initial condition for HVFILT capacitor
+*   LC case: 60V (settles within ~5ms via resonance)
+*   RC case: 67V ≈ VBOOST_clamp − I_load×R_HV (minimises settling drift in 15ms window)
+.param C_LC_IC = 60
+
+R_HV  VBOOST   LNODE   {R_HV}
+L_HV  LNODE    HVFILT  {L_HV}
+C_LC  HVFILT   0       {C_LC}  IC={C_LC_IC}
 
 * ---------------------------------------------------------------------------
-* LOAD: R_GBIAS1 + R_GBIAS2 in series = 94MOhm (capsule DC load ~0.7µA)
+* LOAD: R_GBIAS1 = 100MOhm (capsule DC load ~0.7µA)
 * ---------------------------------------------------------------------------
 R_load  HVFILT  0  {R_GBIAS}
 
 * ---------------------------------------------------------------------------
-* TRANSIENT ANALYSIS
-* 15ms total; measure window 10-15ms (settled)
-* Max timestep 100ns resolves 100kHz clock and fast diode switching
+* CONTROL: run LC then RC, print ripple comparison
+* 15ms sim / 10-15ms measure window (LC settles in <5ms; IC=60 pre-charges
+* C_LC so RC ripple is measurable even though RC time constant is 470ms)
 * ---------------------------------------------------------------------------
-.tran 100n 15m 0 100n uic
+.control
+set filetype=ascii
 
-* ---------------------------------------------------------------------------
-* MEASUREMENTS
-* ---------------------------------------------------------------------------
-.measure tran VBOOST_avg  avg V(VBOOST)  from=10m to=15m
-.measure tran VBOOST_max  max V(VBOOST)  from=10m to=15m
-.measure tran VBOOST_min  min V(VBOOST)  from=10m to=15m
-.measure tran VBOOST_ripple  param='VBOOST_max - VBOOST_min'
+echo "========================================================"
+echo "  boost_dickson: LC vs RC HV filter comparison"
+echo "========================================================"
 
-.measure tran HV_avg  avg V(HVFILT)  from=10m to=15m
-.measure tran HV_max  max V(HVFILT)  from=10m to=15m
-.measure tran HV_min  min V(HVFILT)  from=10m to=15m
-.measure tran HV_ripple  param='HV_max - HV_min'
+* ── LC filter (default params: R_HV=8Ω, L_HV=10mH) ──────────
+echo ""
+echo "--- LC filter: L=10mH DCR=8Ω, C=470nF, fc≈2.3kHz, Q≈18 ---"
+reset
+tran 100n 15m 0 100n uic
+* write transient data for plot_all.py (read before reset clears vectors)
+wrdata _hv_tran.dat v(vboost) v(hvfilt)
+meas tran VBOOST_avg    avg V(VBOOST)  from=10m to=15m
+meas tran VBOOST_max    max V(VBOOST)  from=10m to=15m
+meas tran VBOOST_min    min V(VBOOST)  from=10m to=15m
+meas tran HV_avg_LC     avg V(HVFILT)  from=10m to=15m
+meas tran HV_max_LC     max V(HVFILT)  from=10m to=15m
+meas tran HV_min_LC     min V(HVFILT)  from=10m to=15m
+let VBOOST_ripple = VBOOST_max - VBOOST_min
+let LC_ripple     = HV_max_LC  - HV_min_LC
+echo "  VBOOST_avg    = $&VBOOST_avg V"
+echo "  VBOOST_ripple = $&VBOOST_ripple V p-p"
+echo "  HV_avg  (LC)  = $&HV_avg_LC V"
+echo "  HV_ripple(LC) = $&LC_ripple V p-p"
+
+* ── RC filter (R=1MΩ, L≈0, C=470nF, fc≈0.34Hz) ──────────────
+echo ""
+echo "--- RC filter: R=1MΩ (C22935), C=470nF, fc≈0.34Hz ---"
+alterparam R_HV = 1Meg
+alterparam L_HV = 1p
+* IC=67.3: ≈ SS (VBOOST_avg 67.97V − 0.67µA×1MΩ); avoids 470ms settling ramp masking ripple
+alterparam C_LC_IC = 67.3
+reset
+tran 100n 15m 0 100n uic
+meas tran HV_avg_RC     avg V(HVFILT)  from=10m to=15m
+meas tran HV_max_RC     max V(HVFILT)  from=10m to=15m
+meas tran HV_min_RC     min V(HVFILT)  from=10m to=15m
+let RC_ripple = HV_max_RC - HV_min_RC
+echo "  HV_avg  (RC)  = $&HV_avg_RC V"
+echo "  HV_ripple(RC) = $&RC_ripple V p-p"
+.endc
 
 .end
