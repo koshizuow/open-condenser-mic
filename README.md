@@ -108,6 +108,8 @@ Pad numbers run left to right as viewed from the **front** (component side). The
 | S2 (centre) | GND | **Blue** — centre tap (return) |
 | S3 (rightmost) | — (floating) | **Black** — far end of winding; leave unconnected |
 
+> **Full winding option:** swap S2 and S3 — connect **Black** (S3) to GND, leave **Blue** (S2) unconnected. This uses the complete secondary winding and reduces output level by ~10.5 dB relative to the default. Combine with the `-hi-gain` BOM variant (R6 = 47 kΩ) to partially compensate for the lower sensitivity.
+
 **TS1 — 2 pads below transformer cutout (primary, XLR output)**
 
 | Pad | Net | Wire colour |
