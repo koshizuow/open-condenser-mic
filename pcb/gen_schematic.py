@@ -533,7 +533,7 @@ elements.append(junction(77, 83))               # T: horizontal bus + R_PRES1.pi
 # ── BLOCK C: HV BIAS CHAIN + CAPSULE + AC COUPLING (x=20..58, y=48..95) ──────
 
 elements += component("Device:R", "R_GBIAS1", "100M 200V 1206",
-    30, 60,
+    30, 58,
     footprint="Resistor_SMD:R_1206_3216Metric",
     pins={"1": "~HV_FILT", "2": "CAP_FP"},
     ref_at=(-13, -2.54), val_at=(-13, 1.27))
@@ -554,12 +554,15 @@ elements += component("Device:R", "R_BIAS1", "100M 1206",
     footprint="Resistor_SMD:R_1206_3216Metric",
     pins={"1": "~VPLUS", "2": "~V_MID"})
 
-# CAP_FP bus at x=36: J2.pin1 + C8.pin1 physically connected; R_GBIAS.pin2 connects by label name.
-# J2(50,44) pin1 stub L→(42.38,44); C8(50,70) pin1 stub U→(50,63.65); R_GBIAS(30,60) pin2 stub D→(30,66.35)
-elements.append(label("CAP_FP", 36, 44, 180))     # label at bus top (shared net name with R_GBIAS.pin2)
-elements.append(wire(36, 44, 36, 63.65))          # CAP_FP bus (top to C8 stub_end level)
+# CAP_FP bus at x=36: J2.pin1 + C8.pin1 + R_GBIAS1.pin2 all physically wired.
+# J2(50,44) pin1 stub L→(42.38,44); C8(50,70) pin1 stub U→(50,63.65); R_GBIAS1(30,58) pin2 stub D→(30,64.35)
+# R_GBIAS1 at y=58 so pin2 stub end snaps to same schematic row as C8 stub end — direct rightward wire.
+elements.append(label("CAP_FP", 36, 44, 180))     # label at bus top
+elements.append(wire(36, 44, 36, 63.65))          # CAP_FP bus (top to C8/R_GBIAS1 level)
 elements.append(wire(42.38, 44, 36, 44))          # J2.pin1 stub_end → bus top
-elements.append(wire(50, 63.65, 36, 63.65))       # C8.pin1 stub_end → bus bottom
+elements.append(junction(36, 63.65))              # 3-way junction: bus bottom + C8 + R_GBIAS1 wires
+elements.append(wire(50, 63.65, 36, 63.65))       # C8.pin1 stub_end → junction
+elements.append(wire(30, 64.35, 36, 63.65))       # R_GBIAS1.pin2 stub_end → junction (same sch row)
 # J2.pin2 (~V_MID): stub_end=(42.38,46.54) → left → down at x=38 → right to V_MID bus at (53,83)
 elements.append(wire(42.38, 46.54, 38, 46.54))
 elements.append(wire(38, 46.54, 38, 83))
@@ -928,12 +931,11 @@ elements += component("Device:C", "C9", "470n 100V X7R",
 elements.append(wire(188, 119.35, 204, 119.35))  # horizontal
 elements.append(wire(204, 119.35, 204, 121.65))  # down to C9.pin1 stub_end
 
-# T11: HV_FILT long bus — R_GBIAS(30,60).pin1 stub_end (30,53.65) to L1.pin2 stub_end (188,119.35)
+# T11: HV_FILT long bus — R_GBIAS1(30,58).pin1 stub_end (30,51.65) to L1.pin2 stub_end (188,119.35)
 # Route: up at x=30 to y=2 (one grid above V_OSC bus at y=3, clears V_OPA spine top at y=8.19),
 # right along y=2 to x=185 (avoids L1.pin1 tip at x=188,y=109.19 which would short VBOOST),
 # down to L1.pin2 level, right 3mm to stub_end.
-# CAP_FP bus at x=36 blocks any horizontal at y=44-66; R_GBIAS pin2 at x=30,y=66 blocks going down from stub.
-elements.append(wire(30, 53.65, 30, 2))           # R_GBIAS.pin1 stub_end up to top margin
+elements.append(wire(30, 51.65, 30, 2))           # R_GBIAS1.pin1 stub_end up to top margin
 elements.append(wire(30, 2, 185, 2))              # right along y=2 (one grid above V_OSC at y=3)
 elements.append(wire(185, 2, 185, 119.35))        # down at x=185 (clear of L1.pin1 at x=188)
 elements.append(wire(185, 119.35, 188, 119.35))   # right to L1.pin2 stub_end

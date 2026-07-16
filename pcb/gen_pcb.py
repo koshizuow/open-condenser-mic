@@ -286,14 +286,15 @@ def route_all(board):
           (37.2,    14.0   ),
           (30.4625, 14.0   ))
 
-    # ── CAP_FP: R_GBIAS1-pad1 → C8-pad1 → J2-pad1 ────────────────────────
+    # ── CAP_FP: R_GBIAS1-pad1 → C8-pad1 → J2-pad2 ────────────────────────
     # R_GBIAS1 pad1 (CAP_FP) at (27.5375,14); straight left to C8.pad1 (14.76,14)
+    # J2-pad2 (CAP_FP) at (19.04,3): branch off horizontal at x=19.04, go up to pad.
     route(board, "CAP_FP", F, HV,
           (27.5375, 14.0),
           (14.76,   14.0))
     route(board, "CAP_FP", F, HV,
-          (14.76,   14.0),
-          (14.76,    3.0))
+          (19.04,   14.0),
+          (19.04,    3.0))
 
     # ════════════════════════════════════════════════════════════════════════
     # POWER NETS  (0.3mm)
@@ -417,6 +418,13 @@ def route_all(board):
     route(board, "V_MID", F, PWR,
           (7.0, 48.0),
           (7.0, 27.5))
+    # J2-pad1 (V_MID) at (15.23,3): down to y=12 (clears MH1 hole bottom at y≈6.4 with margin),
+    # then left to x=7, then straight down to bus top at (7.0,27.5).
+    route(board, "V_MID", F, PWR,
+          (15.23, 3.0),
+          (15.23, 12.0),
+          (7.0,   12.0),
+          (7.0,   27.5))
     # C5 pad2(V_MID) at (31.8,43): via at bus x=7, B.Cu trace, via below pad, F.Cu stub up to pad
     via(board, "V_MID", 7.0, 43.0)
     route(board, "V_MID", B, PWR,
@@ -735,16 +743,17 @@ def main():
     # F.Cu GND copper pour exclusion around all high-Z nodes.
     # L-shape covers CAP_FP trace network (J2/C8/R_GBIAS1, x=6..36.5, y=0..17)
     # and VPLUS trace + R_BIAS1 (x=6..14.5, y=17..30).
-    # B.Cu GND plane is retained: THT pads (J2-GND) stay connected;
-    # MH1/MH2 are NPTH (no copper) so the guard ring can fully enclose the zone.
+    # B.Cu GND plane is retained: MH1/MH2 are NPTH (no copper) so the guard ring
+    # can fully enclose the zone; J2 carries V_MID and CAP_FP (no GND pad).
     # Through-board stray capacitance is small (<1 pF, through 1.6 mm FR4).
     # Keepout: only the VPLUS trace corridor (x=6..14.5, y=17..30).
     # The y<17 portion is now redundant: F.Cu GND zone no longer extends above y=17.
     add_keepout(board, pcbnew.F_Cu,
                 [(6, 17), (14.5, 17), (14.5, 30), (6, 30)])
 
-    # J2: bare THT solder pads for capsule wires
-    place_solder_pads(board, "J2", 15.23, 3, ["CAP_FP", "GND"], axis='x')
+    # J2: bare THT solder pads; pad1(left)=V_MID at x=15.23, pad2(right)=CAP_FP at x=19.04
+    # pitch_mm=3.81 (150mil) gives extra separation for the high-Z FP node vs V_MID backplate.
+    place_solder_pads(board, "J2", 15.23, 3, ["V_MID", "CAP_FP"], axis='x', pitch_mm=3.81)
 
     # angle=180: pad1(CAP_FP) at right (14.76,14); pad2(VPLUS) at left (13.80,14)
     # 0402 pad offset ±0.48mm; pad1 at x=14.76 slightly left of J2-pad1 x=15.23
@@ -1021,8 +1030,8 @@ def main():
     for old, new, x in [("J3.1","1",17.46),("J3.2","2",20.0),("J3.3","3",22.54)]:
         fix_ref(board, old, new_text=new, x_mm=x, y_mm=92)
 
-    # J2: label front plate pad "FP" and body ground "GND"
-    for old, new, x in [("J2.1","FP",15.23),("J2.2","GND",17.77)]:
+    # J2: label V_MID pad "BP" (backplate) and capsule front plate pad "FP"
+    for old, new, x in [("J2.1","BP",15.23),("J2.2","FP",19.04)]:
         fix_ref(board, old, new_text=new, x_mm=x, y_mm=5)
 
     # R_OSC1: footprint at 90° rotates silk vertical — force horizontal (angle=0).
