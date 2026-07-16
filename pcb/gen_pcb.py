@@ -278,30 +278,22 @@ def route_all(board):
           (36.5,  78.0625))
 
     # ── HV_FILT: C9-pad1 → R_GBIAS1-pad2  (long HV rail up right edge) ───
-    # R_GBIAS1 pad2 (HV_FILT) at (33.4625, 8); run x=37 to avoid everything
+    # R_GBIAS1 pad2 (HV_FILT) at (30.4625,14); run x=37.2 to avoid everything
     # x=37.2: board edge gap 0.6mm ✓; MH2 pad right=36.7mm, trace left=37.0mm, gap=0.3mm ✓
-    # horizontal at y=9 (not y=8): dist to MH2(34,5)=4mm, gap=4-2.7-0.2=1.1mm ✓
     route(board, "HV_FILT", F, HV,
           (36.5,    78.0625),
           (37.2,    78.0625),
-          (37.2,    9.0    ),
-          (30.4625, 9.0    ))
+          (37.2,    14.0   ),
+          (30.4625, 14.0   ))
 
-    # ── HV_MID: R_GBIAS1-pad1 → R_GBIAS2-pad1 ──────────────────────────────
-    # R_GBIAS1 pad1 at (27.5375,9); R_GBIAS2 pad1 at (27.5,14): near-vertical
-    route(board, "HV_MID", F, HV,
-          (27.5375, 9.0 ),
+    # ── CAP_FP: R_GBIAS1-pad1 → C8-pad1 → J2-pad1 ────────────────────────
+    # R_GBIAS1 pad1 (CAP_FP) at (27.5375,14); straight left to C8.pad1 (14.76,14)
+    route(board, "CAP_FP", F, HV,
           (27.5375, 14.0),
-          (27.5,    14.0))
-
-    # ── CAP_FP: R_GBIAS2-pad2 → C8-pad1 → J2-pad1 ───────────────────────
-    # R_GBIAS2 pad2 (CAP_FP) at (24.575,14); horizontal left to C8.pad1 (14.76,14)
+          (14.76,   14.0))
     route(board, "CAP_FP", F, HV,
-          (24.575, 14.0),
-          (14.76,  14.0))
-    route(board, "CAP_FP", F, HV,
-          (14.76,  14.0),
-          (14.76,   3.0))
+          (14.76,   14.0),
+          (14.76,    3.0))
 
     # ════════════════════════════════════════════════════════════════════════
     # POWER NETS  (0.3mm)
@@ -741,7 +733,7 @@ def main():
 
     # ── Capsule input zone (y=5..20) ─────────────────────────────────────────
     # F.Cu GND copper pour exclusion around all high-Z nodes.
-    # L-shape covers CAP_FP trace network (J2/C8/R_GBIAS1/2, x=6..36.5, y=0..17)
+    # L-shape covers CAP_FP trace network (J2/C8/R_GBIAS1, x=6..36.5, y=0..17)
     # and VPLUS trace + R_BIAS1 (x=6..14.5, y=17..30).
     # B.Cu GND plane is retained: THT pads (J2-GND) stay connected;
     # MH1/MH2 are NPTH (no copper) so the guard ring can fully enclose the zone.
@@ -760,17 +752,11 @@ def main():
           "C8", "1n 100V C0G", 14.28, 14, 180,
           {"1": "CAP_FP", "2": "VPLUS"})
 
-    # R_GBIAS1/2 in series: HV_FILT -> HV_MID -> CAP_FP (2x47M = 94M total)
-    # Horizontal at x=32: pad1(left)=HV_MID, pad2(right)=HV_FILT/CAP_FP
-    # pad1 at (30.5375,y), pad2 at (33.4625,y)
+    # R_GBIAS1: single 100MΩ, HV_FILT → CAP_FP
+    # pad1(left)=CAP_FP at (27.5375,14); pad2(right)=HV_FILT at (30.4625,14)
     place(board, "Resistor_SMD", "R_1206_3216Metric",
-          "R_GBIAS1", "47M 1206", 29, 9, 0,
-          {"1": "HV_MID", "2": "HV_FILT"})
-
-    # angle=180: pad1(HV_MID) at right (27.5,14); pad2(CAP_FP) at left (24.575,14)
-    place(board, "Resistor_SMD", "R_1206_3216Metric",
-          "R_GBIAS2", "47M 1206", 26.0375, 14, 180,
-          {"1": "HV_MID", "2": "CAP_FP"})
+          "R_GBIAS1", "100M 200V 1206", 29, 14, 0,
+          {"1": "CAP_FP", "2": "HV_FILT"})
 
     # ── OPA1641 amplifier zone (y=18..42) ────────────────────────────────────
 
@@ -1103,8 +1089,7 @@ def main():
     # C4: rotated 90°, default ref near board left edge (x=2); move above top pad
     fix_ref(board, "C4", x_mm=4, y_mm=41)
 
-    # R_GBIAS1: place below component (body bottom y=9.8), matching R_GBIAS2 style
-    fix_ref(board, "R_GBIAS1", x_mm=29, y_mm=10.83, angle_deg=0)
+    fix_ref(board, "R_GBIAS1", x_mm=29, y_mm=15.83, angle_deg=0)
 
     # R1/R2: rotated 90°, align silk to same x=14 so labels form a vertical straight line
     fix_ref(board, "R1", x_mm=14, y_mm=80)
