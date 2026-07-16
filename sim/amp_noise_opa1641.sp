@@ -9,6 +9,7 @@
 .title OPA1641 Mic Noise Analysis
 
 .options TEMP=27
+.include params.inc
 .include models/passives.lib
 
 * ---------------------------------------------------------------------------
@@ -27,13 +28,13 @@ C3    NET_VBIAS  0  10u  IC=12
 * Signal source = 0 (measuring noise, not signal)
 * ---------------------------------------------------------------------------
 Vcap  CAP_HOT  CAP_BOT  AC 0  DC 0
-Cc    CAP_BOT  0  55p
+Cc    CAP_BOT  0  {Cc}
 Rconn CAP_HOT  PIN3_NODE  1
 
 * High-Z bias network
 * R_GBIAS = R_GBIAS1 + R_GBIAS2 = 47M + 47M = 94MΩ to HV rail (AC ground, decoupled)
 * R_BIAS1 = 100MΩ bootstrapped (VPLUS follows output) -> AC-invisible, omitted
-R_GBIAS  NET_HV  PIN3_NODE  94Meg
+R_GBIAS  NET_HV  PIN3_NODE  {R_GBIAS}
 Vhv   NET_HV  0  DC 68
 
 * ---------------------------------------------------------------------------
@@ -42,7 +43,7 @@ Vhv   NET_HV  0  DC 68
 * Current noise: ~0.8 fA/rtHz at IN+ and IN- (negligible vs resistor noise)
 * ---------------------------------------------------------------------------
 
-R_vn  PIN3_NODE  PIN3_VN  377
+R_vn  PIN3_NODE  PIN3_VN  {OPA_VN_REQ}
 
 * Current noise at IN+ (0.8fA/rtHz modeled as 320GΩ shunt)
 *   R_in_noise = 4kT / I_noise^2 = 4*1.38e-23*300 / (0.8e-15)^2 = 32e18 Ω
@@ -58,19 +59,19 @@ Ediff  VDIFF  0  PIN3_VN  PIN2_NODE  1
 R_gbw  VDIFF  VPOLE  1k
 C_gbw  VPOLE  0  1.447u   ; f_pole = 1/(2π*1k*1.447µ) = 110 Hz
 
-Eamp  NET_OPA_IDEAL  MIDPOINT_DC  VPOLE  0  100k
+Eamp  NET_OPA_IDEAL  MIDPOINT_DC  VPOLE  0  {OPA_OL_GAIN}
 Vmid  MIDPOINT_DC  0  DC 12
 R_oout  NET_OPA_IDEAL  NET_OPA_OUT  50
 
 * Feedback and bias resistors (they also contribute Johnson noise)
-R4    NET_VBIAS  PIN2_NODE  2.2k
-R7    NET_OPA_OUT  PIN2_NODE  47k
+R4    NET_VBIAS  PIN2_NODE  {R3}
+R7    NET_OPA_OUT  PIN2_NODE  {R6_hi_gain}
 
 * ---------------------------------------------------------------------------
 * OUTPUT PATH
 * ---------------------------------------------------------------------------
 R8    NET_OPA_OUT  OPA_OUT_R8  100
-C6    OPA_OUT_R8  XFMR_PRI_IN  4.7u
+C6    OPA_OUT_R8  XFMR_PRI_IN  {C_DC}
 X_XFMR  XFMR_PRI_IN  0  XLR_P2  XLR_P3  NTE10_3
 R_load   XLR_P2  XLR_P3  600
 R_cm1  XLR_P2  0  10Meg

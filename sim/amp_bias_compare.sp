@@ -6,6 +6,7 @@
 .title OPA1641 Bias Resistor Comparison
 
 .options TEMP=27
+.include params.inc
 .include models/passives.lib
 
 * ---------------------------------------------------------------------------
@@ -28,7 +29,7 @@ V_OPA NET_VOPA  0  DC 24
 * Vcap = 1 AC (normalized), in series with capsule capacitance Cc = 55pF
 * ---------------------------------------------------------------------------
 Vcap  CAP_HOT  CAP_BOT  AC 1  DC 0
-Cc    CAP_BOT  0         55p
+Cc    CAP_BOT  0         {Cc}
 
 * Capsule hot connects to CAP_FP node
 Rconn  CAP_HOT  CAP_FP  1    ; 1Ω wire resistance
@@ -43,14 +44,14 @@ R_GBIAS2  HV_MID  CAP_FP  47Meg
 * ---------------------------------------------------------------------------
 * INPUT COUPLING: C8 = 10nF (CAP_FP → VPLUS = OPA1641 IN+)
 * ---------------------------------------------------------------------------
-C8  CAP_FP  VPLUS  10n
+C8  CAP_FP  VPLUS  {C8}
 
 * ---------------------------------------------------------------------------
 * R_BIAS1: VPLUS → V_MID  (DC bias for IN+)
 * COMPARE: 100M (current) vs 500M (proposed)
 * Change RBIAS value here:
 * ---------------------------------------------------------------------------
-.param RBIAS = 100Meg
+.param RBIAS = {R_BIAS1}   ; default 100Meg; override on command line to compare
 R_BIAS1  VPLUS  NET_VMID  {RBIAS}
 
 * ---------------------------------------------------------------------------
@@ -65,14 +66,14 @@ Eamp    NET_OPA_IDEAL  0          VPOLE   0   100k
 R_oout  NET_OPA_IDEAL  SIG_OUT    50
 
 * Feedback: 130k (R7) from output to IN-; 2.2k (R3) from V_MID to IN-
-R_fb    SIG_OUT   VINV    130k
-R_in_m  NET_VMID  VINV    2.2k
+R_fb    SIG_OUT   VINV    {R6_default}  ; was 130k (stale); now tracks gen_params.py
+R_in_m  NET_VMID  VINV    {R3}
 
 * ---------------------------------------------------------------------------
 * OUTPUT
 * ---------------------------------------------------------------------------
 R8   SIG_OUT     OPA_R8     100
-C6   OPA_R8      XFMR_IN    4.7u   ; C_DC on PCB
+C6   OPA_R8      XFMR_IN    {C_DC}  ; C_DC on PCB
 
 X_XFMR  XFMR_IN  0  XLR_P2  XLR_P3  NTE10_3
 R_load   XLR_P2   XLR_P3  600
