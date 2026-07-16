@@ -288,13 +288,13 @@ def route_all(board):
 
     # ── CAP_FP: R_GBIAS1-pad1 → C8-pad1 → J2-pad2 ────────────────────────
     # R_GBIAS1 pad1 (CAP_FP) at (27.5375,14); straight left to C8.pad1 (14.76,14)
-    # J2-pad2 (CAP_FP) at (17.77,3): branch off horizontal at x=17.77, go up to pad.
+    # J2-pad2 (CAP_FP) at (19.04,3): branch off horizontal at x=19.04, go up to pad.
     route(board, "CAP_FP", F, HV,
           (27.5375, 14.0),
           (14.76,   14.0))
     route(board, "CAP_FP", F, HV,
-          (17.77,   14.0),
-          (17.77,    3.0))
+          (19.04,   14.0),
+          (19.04,    3.0))
 
     # ════════════════════════════════════════════════════════════════════════
     # POWER NETS  (0.3mm)
@@ -418,12 +418,12 @@ def route_all(board):
     route(board, "V_MID", F, PWR,
           (7.0, 48.0),
           (7.0, 27.5))
-    # J2-pad1 (V_MID) at (15.23,3): left along y=3, then down at x=8 (clears MH1 at (6,5)),
-    # then left to bus top at (7.0,27.5).  x=8 avoids crossing the CAP_FP vertical at x=17.77.
+    # J2-pad1 (V_MID) at (15.23,3): down to y=12 (clears MH1 hole bottom at y≈6.4 with margin),
+    # then left to x=7, then straight down to bus top at (7.0,27.5).
     route(board, "V_MID", F, PWR,
           (15.23, 3.0),
-          (8.0,   3.0),
-          (8.0,   27.5),
+          (15.23, 12.0),
+          (7.0,   12.0),
           (7.0,   27.5))
     # C5 pad2(V_MID) at (31.8,43): via at bus x=7, B.Cu trace, via below pad, F.Cu stub up to pad
     via(board, "V_MID", 7.0, 43.0)
@@ -751,8 +751,9 @@ def main():
     add_keepout(board, pcbnew.F_Cu,
                 [(6, 17), (14.5, 17), (14.5, 30), (6, 30)])
 
-    # J2: bare THT solder pads for capsule wires; pad1(left)=V_MID, pad2(right)=CAP_FP
-    place_solder_pads(board, "J2", 15.23, 3, ["V_MID", "CAP_FP"], axis='x')
+    # J2: bare THT solder pads; pad1(left)=V_MID at x=15.23, pad2(right)=CAP_FP at x=19.04
+    # pitch_mm=3.81 (150mil) gives extra separation for the high-Z FP node vs V_MID backplate.
+    place_solder_pads(board, "J2", 15.23, 3, ["V_MID", "CAP_FP"], axis='x', pitch_mm=3.81)
 
     # angle=180: pad1(CAP_FP) at right (14.76,14); pad2(VPLUS) at left (13.80,14)
     # 0402 pad offset ±0.48mm; pad1 at x=14.76 slightly left of J2-pad1 x=15.23
@@ -1029,8 +1030,8 @@ def main():
     for old, new, x in [("J3.1","1",17.46),("J3.2","2",20.0),("J3.3","3",22.54)]:
         fix_ref(board, old, new_text=new, x_mm=x, y_mm=92)
 
-    # J2: label V_MID pad "MID" and capsule front plate pad "FP"
-    for old, new, x in [("J2.1","MID",15.23),("J2.2","FP",17.77)]:
+    # J2: label V_MID pad "BP" (backplate) and capsule front plate pad "FP"
+    for old, new, x in [("J2.1","BP",15.23),("J2.2","FP",19.04)]:
         fix_ref(board, old, new_text=new, x_mm=x, y_mm=5)
 
     # R_OSC1: footprint at 90° rotates silk vertical — force horizontal (angle=0).
