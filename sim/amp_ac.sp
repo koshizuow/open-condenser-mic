@@ -7,6 +7,7 @@
 .title OPA1641 Mic AC Frequency Response
 
 .options TEMP=27
+.include params.inc
 .include models/passives.lib
 
 * ---------------------------------------------------------------------------
@@ -26,14 +27,14 @@ C3    NET_VBIAS  0  10u  IC=12
 * In series with Cc=55pF (capsule self-capacitance)
 * ---------------------------------------------------------------------------
 Vcap  CAP_HOT  CAP_BOT  AC 13.07m   DC 0
-Cc    CAP_BOT  0         55p
+Cc    CAP_BOT  0         {Cc}
 
 * ---------------------------------------------------------------------------
 * HIGH-Z INPUT NODE (Pin3)
 * R_GBIAS: 94MΩ (R_GBIAS1 + R_GBIAS2, 47M+47M) to HV rail (AC ground, decoupled)
 * R_BIAS1: 100MΩ bootstrapped (VPLUS = output-following) -> AC-invisible, omitted
 * ---------------------------------------------------------------------------
-R_GBIAS  0  PIN3_NODE  94Meg
+R_GBIAS  0  PIN3_NODE  {R_GBIAS}
 
 Rconn  CAP_HOT  PIN3_NODE  1   ; capsule hot wire to Pin3
 
@@ -51,21 +52,21 @@ C_gbw  VPOLE  0  1.447u   ; f_pole = 1/(2π*1k*1.447µ) ≈ 110Hz
 
 * Gain stage: 100k (to represent 100dB open-loop gain)
 * Output centered on VBIAS=12V (single supply midpoint)
-Eamp  NET_OPA_IDEAL  MIDPOINT_DC  VPOLE  0  100k
+Eamp  NET_OPA_IDEAL  MIDPOINT_DC  VPOLE  0  {OPA_OL_GAIN}
 Vmid  MIDPOINT_DC  0  DC 12    ; DC operating point for output
 
 * Output resistor (OPA1641 output impedance ~50Ω)
 R_oout  NET_OPA_IDEAL  NET_OPA_OUT  50
 
 * Feedback: output to IN-
-R4    NET_VBIAS  PIN2_NODE  2.2k     ; R3 in schematic: gain resistor, keep small for low noise
-R7    NET_OPA_OUT  PIN2_NODE  47k    ; R6 in schematic: feedback, 47k for 22.4x gain → -22 dBV/Pa (transformer saturation character)
+R4    NET_VBIAS  PIN2_NODE  {R3}          ; R3 in schematic: gain resistor
+R7    NET_OPA_OUT  PIN2_NODE  {R6_hi_gain} ; R6 in schematic: hi-gain variant (47k)
 
 * ---------------------------------------------------------------------------
 * OUTPUT: R7 (series protection) + C_DC (DC block, 4.7µF) + NTE10/3 Transformer
 * ---------------------------------------------------------------------------
 R8    NET_OPA_OUT  OPA_OUT_R8  100
-C6    OPA_OUT_R8  XFMR_PRI_IN  4.7u
+C6    OPA_OUT_R8  XFMR_PRI_IN  {C_DC}
 
 * NTE10/3 transformer (reversed: red-blue as primary, white-yellow as secondary)
 X_XFMR  XFMR_PRI_IN  0  XLR_P2  XLR_P3  NTE10_3

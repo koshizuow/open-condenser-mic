@@ -12,12 +12,13 @@
 * ---------------------------------------------------------------------------
 .title Active Dickson Boost — Dickson/BAT54S
 
+.include params.inc
 .include models/passives.lib
 
 * ---------------------------------------------------------------------------
 * SUPPLIES
 * ---------------------------------------------------------------------------
-VOPA   VOPA   0   DC 24
+VOPA   VOPA   0   DC {V_OPA}
 * V_OSC modeled as ideal 15V (Z_OSC shunt reg)
 * Clock sources drive the pump caps directly
 
@@ -26,8 +27,8 @@ VOPA   VOPA   0   DC 24
 * CLKA: low-to-high at t=0
 * CLKB: complement (high-to-low at t=0)
 * ---------------------------------------------------------------------------
-VCLKA  CLKA  0  PULSE(0 15 0 10n 10n 4.99u 10u)
-VCLKB  CLKB  0  PULSE(15 0 0 10n 10n 4.99u 10u)
+VCLKA  CLKA  0  PULSE(0 {V_OSC} 0 10n 10n 4.99u 10u)
+VCLKB  CLKB  0  PULSE({V_OSC} 0 0 10n 10n 4.99u 10u)
 
 * ---------------------------------------------------------------------------
 * 3-STAGE ACTIVE DICKSON MULTIPLIER
@@ -40,15 +41,15 @@ VCLKB  CLKB  0  PULSE(15 0 0 10n 10n 4.99u 10u)
 * On CLKB high: N2 is pumped up; D2/D4 conduct
 * ---------------------------------------------------------------------------
 D1   VOPA    N1      BAT54S
-Cp1  N1      CLKA    100n
+Cp1  N1      CLKA    {Cp}
 D2   N1      N2      BAT54S
-Cp2  N2      CLKB    100n
+Cp2  N2      CLKB    {Cp}
 D3   N2      N3      BAT54S
-Cp3  N3      CLKA    100n
+Cp3  N3      CLKA    {Cp}
 D4   N3      VBOOST  BAT54S
 
 * Reservoir cap (IC near expected SS to speed convergence)
-Cres  VBOOST  0  470n  IC=60
+Cres  VBOOST  0  {Cres}  IC=60
 
 * ---------------------------------------------------------------------------
 * DZ1: 68V zener clamp on V_BOOST (anode=GND, cathode=VBOOST)
@@ -58,14 +59,14 @@ DZ1   0   VBOOST   BZX55C68
 * ---------------------------------------------------------------------------
 * LC HV FILTER (L1 10mH + DCR 8Ω, C_LC 470nF)
 * ---------------------------------------------------------------------------
-R_DCR  VBOOST   LNODE   8
-L1     LNODE    HVFILT  10m
-C_LC   HVFILT   0       470n  IC=60
+R_DCR  VBOOST   LNODE   {L1_DCR}
+L1     LNODE    HVFILT  {L1_val}
+C_LC   HVFILT   0       {C_LC}  IC=60
 
 * ---------------------------------------------------------------------------
 * LOAD: R_GBIAS1 + R_GBIAS2 in series = 94MOhm (capsule DC load ~0.7µA)
 * ---------------------------------------------------------------------------
-R_load  HVFILT  0  94Meg
+R_load  HVFILT  0  {R_GBIAS}
 
 * ---------------------------------------------------------------------------
 * TRANSIENT ANALYSIS

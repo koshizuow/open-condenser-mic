@@ -113,6 +113,9 @@ jobs:
           rm -rf fab/gerbers
           cp pcb/bom.csv pcb/cpl.csv fab/
 
+      - name: Generate SPICE params
+        run: python3 pcb/gen_params.py
+
       - name: Run SPICE simulations
         working-directory: sim
         run: |
