@@ -192,10 +192,8 @@ def write_variant(board, suffix, r6_val, r6_lcsc, presence):
             w.writerow([])
             w.writerow(["# DNP (Do Not Populate) — optional presence-peak network"])
             w.writerow(["# Populate if using a flat-response capsule and presence lift is desired"])
-            for (val, fp_nm), items in sorted(dnp_groups.items(), key=lambda x: x[0]):
-                refs = ",".join(sorted(c["ref"] for c in items))
-                lcsc = items[0]["lcsc"]
-                w.writerow([val, refs, fp_nm, len(items), lcsc, "DNP — " + _bom_note(val, lcsc)])
+            # DNP parts intentionally omitted as data rows — JLCPCB rejects BOM entries
+            # that have no corresponding CPL position.
 
     with open(cpl_out, "w", newline="") as f:
         w = csv.writer(f)
