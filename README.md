@@ -6,15 +6,15 @@ A code-driven open true condenser microphone. PCB layout, schematic, BOM, and CP
 
 ## Overview
 
-This design uses a Dickson charge pump oscillator to generate a 68 V HV rail from 48 V phantom power, providing ~56 V capsule polarization (V_BOOST − 12 V midpoint), and feeds a transformer-coupled output stage built around a low-noise op-amp. The reference implementation uses the **OPA1641** (2.5 nV/√Hz, JFET input), chosen for its low voltage noise and LCSC availability. The circuit fits on a 36 × 93 mm 2-layer PCB.
+This design uses a Dickson charge pump oscillator to generate a 68 V HV rail from 48 V phantom power, providing ~55 V capsule polarization (HV_FILT − 12 V midpoint), and feeds a transformer-coupled output stage built around a low-noise op-amp. The reference implementation uses the **OPA1641** (2.5 nV/√Hz, JFET input), chosen for its low voltage noise and LCSC availability. The circuit fits on a 36 × 93 mm 2-layer PCB.
 
 **Key design points:**
 - Op-amp output stage; reference design uses OPA1641 (2.5 nV/√Hz voltage noise)
 - NTE10/3 audio transformer, 3:1 step-down, transformer-coupled output
 - CD40106B Schmitt-trigger oscillator + 3-stage active Dickson charge pump
-- 56 V capsule polarization (68 V HV rail, BZT52C68 zener clamp referenced to 12 V midpoint)
-- HV rail LC filter: 10 mH + 470 nF, corner ~2.3 kHz
-- Output sensitivity ~−38 dBV/Pa (R6 = 47 kΩ feedback, R3 = 2.2 kΩ, gain ≈ 22×)
+- 55 V capsule polarization (HV_FILT ≈ 67.3 V, BZT52C68-clamped, referenced to 12 V midpoint)
+- HV rail RC filter: 1 MΩ (R_HV) + 470 nF, corner ~0.34 Hz; no LC resonance
+- Output sensitivity ~−48 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); ~−38 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×)
 - RFI filter on XLR output: differential RC network (R_RFI1/R_RFI2 + C_RFI1/C_RFI2)
 - Phantom power draw: ~2.4–3 mA typical (IEC 61938 limit: 14 mA)
 - All SMD/THT components available from standard distributors (LCSC, Mouser, Digi-Key); capsule and transformer are customer-supplied
@@ -26,15 +26,16 @@ Run with ngspice from `sim/` (see [Running Simulations](#running-simulations)):
 | Parameter | Simulated | Notes |
 |---|---|---|
 | V_BOOST steady-state | 67.97 V | target 68.2 V, DZ1-clamped |
-| HV_FILT ripple | 10.7 µV p-p | L1=10 mH, C9=470 nF, 10–15 ms window |
-| LC filter corner | ~2.3 kHz | startup resonance; dissipates in seconds |
-| Capsule polarization | ~56 V | V_BOOST (68 V) − V_MID (12 V) at steady state |
+| HV_FILT DC | 67.30 V | 0.67 V drop across R_HV (1 MΩ × 0.67 µA load) |
+| HV_FILT ripple | ~47 nV p-p calc | RC at 100 kHz: −109 dB; LC ref sim: 10 µV p-p |
+| RC filter corner | ~0.34 Hz | R_HV=1 MΩ × C9=470 nF; no LC resonance |
+| Capsule polarization | ~55 V | HV_FILT (67.3 V) − V_MID (12 V) at steady state |
 
 ### HV Rail Startup (`boost_dickson.sp`)
 
 ![HV startup](img/hv_startup.png)
 
-Charge pump settles to 67.97 V within ~1 ms. HV_FILT (LC-filtered polarization rail) ripple is 10.7 µV p-p at steady state.
+Charge pump settles to ~68 V within ~1 ms. HV_FILT (RC-filtered, 1 MΩ + 470 nF) steady-state is 67.3 V (0.67 V drop across R_HV); theoretical ripple ~47 nV p-p at 100 kHz (−109 dB). Plot shows LC reference run (IC=60 V) for startup transient visibility.
 
 ### AC Frequency Response (`amp_ac.sp`)
 

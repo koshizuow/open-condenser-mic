@@ -97,6 +97,8 @@ echo ""
 echo "--- LC filter: L=10mH DCR=8Ω, C=470nF, fc≈2.3kHz, Q≈18 ---"
 reset
 tran 100n 15m 0 100n uic
+* write transient data for plot_all.py (read before reset clears vectors)
+wrdata _hv_tran.dat v(vboost) v(hvfilt)
 meas tran VBOOST_avg    avg V(VBOOST)  from=10m to=15m
 meas tran VBOOST_max    max V(VBOOST)  from=10m to=15m
 meas tran VBOOST_min    min V(VBOOST)  from=10m to=15m

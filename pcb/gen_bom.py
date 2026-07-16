@@ -96,8 +96,8 @@ LCSC = {
     # SMD electrolytic
     ("10u 25V",       "CP_Elec_4x5.4"):            "C3343",     # Honor Elec RVT1E100M0405 D4x5.4mm 2000hrs — C5/C6
 
-    # Inductor
-    ("10mH FNR5040S", "L_Changjiang_FNR5040S"):    "C167995",   # cjiang FNR5040S103MT shielded 5x5mm
+    # HV filter resistor (0603)
+    ("1M 75V 0603",   "R_0603_1608Metric"):         "C22935",    # UNI-ROYAL 0603WAF1004T5E 1MΩ 75V ±1% Basic
 }
 
 # ── KiCad → JLCPCB rotation correction ───────────────────────────────────────

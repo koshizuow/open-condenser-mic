@@ -122,15 +122,11 @@ def parse_wrdata(path):
 # ─── 1. HV STARTUP (boost_dickson.sp) ────────────────────────────────────────
 
 def plot_hv_startup():
+    # boost_dickson.sp has its own .control block (LC vs RC comparison) that writes
+    # _hv_tran.dat with v(vboost)/v(hvfilt) from the LC run (shows startup transient).
     # wrdata format: time v(vboost) time v(hvfilt)  (scale repeated per vector)
     data_path = os.path.join(SIM_DIR, "_hv_tran.dat")
-    ctrl = f"""
-.control
-run
-wrdata {data_path} v(vboost) v(hvfilt)
-.endc"""
-    content = inject_control(os.path.join(SIM_DIR, "boost_dickson.sp"), ctrl)
-    output = run_ngspice_stdout(content, "hv", is_content=True)
+    output = run_ngspice_stdout(os.path.join(SIM_DIR, "boost_dickson.sp"), "hv")
     measures = parse_measure(output)
 
     d = parse_wrdata(data_path)
@@ -142,14 +138,16 @@ wrdata {data_path} v(vboost) v(hvfilt)
     vboost = d[:, 1]
     hvfilt = d[:, 3]
 
-    hv_avg    = measures.get("hv_avg", hvfilt.mean())
-    hv_ripple = measures.get("hv_ripple", float("nan"))
+    hv_avg    = measures.get("hv_avg_lc", hvfilt.mean())
+    hv_max    = measures.get("hv_max_lc", float("nan"))
+    hv_min    = measures.get("hv_min_lc", float("nan"))
+    hv_ripple = hv_max - hv_min
 
     fig, ax = plt.subplots(figsize=(7, 4))
     fig.suptitle("HV Rail — Dickson Charge Pump Startup", fontsize=12, fontweight="bold")
 
     ax.plot(t_ms, vboost, color=C1, lw=1.2, label="V_BOOST (raw)")
-    ax.plot(t_ms, hvfilt, color=C2, lw=1.2, label="HV_FILT (LC filtered)")
+    ax.plot(t_ms, hvfilt, color=C2, lw=1.2, label="HV_FILT (LC ref, startup)")
     ax.axhline(68, color="#aaaaaa", lw=0.8, ls="--", label="68 V target")
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("Voltage (V)")

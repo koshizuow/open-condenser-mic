@@ -1,7 +1,7 @@
 * OPA1641 Mic Preamp — AC Frequency Response
 * Behavioral op-amp: gain 100k open-loop, single pole at 110Hz (GBW~11MHz)
 * For audio band (10Hz-200kHz) closed-loop bandwidth = GBW/60 ~183kHz, well above audio
-* Input network: R_GBIAS=94MΩ (47M+47M in series) to AC-ground HV rail
+* Input network: R_GBIAS=100MΩ (single R_GBIAS1) to AC-ground HV rail
 * Output DC block: C_DC=4.7µF (C_DC in PCB)
 * ---------------------------------------------------------------------------
 .title OPA1641 Mic AC Frequency Response
@@ -31,7 +31,7 @@ Cc    CAP_BOT  0         {Cc}
 
 * ---------------------------------------------------------------------------
 * HIGH-Z INPUT NODE (Pin3)
-* R_GBIAS: 94MΩ (R_GBIAS1 + R_GBIAS2, 47M+47M) to HV rail (AC ground, decoupled)
+* R_GBIAS: 100MΩ (R_GBIAS1) to HV rail (AC ground, decoupled)
 * R_BIAS1: 100MΩ bootstrapped (VPLUS = output-following) -> AC-invisible, omitted
 * ---------------------------------------------------------------------------
 R_GBIAS  0  PIN3_NODE  {R_GBIAS}
@@ -60,7 +60,7 @@ R_oout  NET_OPA_IDEAL  NET_OPA_OUT  50
 
 * Feedback: output to IN-
 R4    NET_VBIAS  PIN2_NODE  {R3}          ; R3 in schematic: gain resistor
-R7    NET_OPA_OUT  PIN2_NODE  {R6_hi_gain} ; R6 in schematic: hi-gain variant (47k)
+R7    NET_OPA_OUT  PIN2_NODE  {R6_default} ; R6 in schematic: default flat/hi-SPL variant (5.6k)
 
 * ---------------------------------------------------------------------------
 * OUTPUT: R7 (series protection) + C_DC (DC block, 4.7µF) + NTE10/3 Transformer
