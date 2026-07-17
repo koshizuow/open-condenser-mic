@@ -626,7 +626,7 @@ def route_all(board):
           (30.05,   49.0))
 
     # ── Clock nets (B.Cu — shielded under U3) ───────────────────────────────
-    # CLKA_IN: U3-pad1 (5.525,51.19) → R_OSC-pad2 (16.0,55.49) → C_OSC-pad1 (18.0,59.48)
+    # CLKA_IN: U3-pad1 (5.525,51.19) → R_OSC-pad2 (16.0,55.49) → C_OSC-pad1 (18.0,58.52)
     # Route on B.Cu to shield from input; vias offset from pads with F.Cu stubs.
     # U3 pad1: via moved right to (7.0,51.19); F.Cu stub to pad.
     # R_OSC1 pad2: via moved right to (17.5,55.49); F.Cu stub to pad.
@@ -639,13 +639,15 @@ def route_all(board):
           (15.0, 55.49))
     via(board, "CLKA_IN", 15.0, 55.49)
     route(board, "CLKA_IN", F, SIG, (15.0, 55.49), (16.0, 55.49))
-    # B.Cu bypass; via at x=15 avoids CLKA F.Cu Seg-C at x=17 (y=47-56.51)
+    # B.Cu bypass; via at (18.0,57.0) offset above C10 pad1 (18.0,58.52); F.Cu stub to pad.
+    # C10 at angle=270: pad1(CLKA_IN) at (18,58.52), pad2(GND) at (18,59.48).
+    # Stub goes (18,57.0)→(18,58.52) — does NOT cross pad2.
     route(board, "CLKA_IN", B, SIG,
           (15.0, 55.49),
           (15.0, 57.0 ),
-          (18.0, 57.0 ),
-          (18.0, 59.48))
-    via(board, "CLKA_IN", 18.0, 59.48)
+          (18.0, 57.0 ))
+    via(board, "CLKA_IN", 18.0, 57.0)
+    route(board, "CLKA_IN", F, SIG, (18.0, 57.0), (18.0, 58.52))
 
     # CLKA: U3-pad2 (5.525,52.46) → U3-pad3 (5.525,53.73) → R_OSC-pad1 (16.0,56.51)
     #       → Cp1-pad2 (22.95,59.0) → Cp3-pad2 (32.95,52.0)
@@ -945,8 +947,10 @@ def main():
           {"1": "CLKA", "2": "CLKA_IN"})
 
     # C_OSC moved to x=18 to clear T1A courtyard (T1A x_max=15.80, C_OSC x_min=17.54)
+    # angle=270: pad1(CLKA_IN) at (18,58.52) above center, pad2(GND) at (18,59.48) below;
+    # avoids via-in-pad — CLKA_IN via at (18,57.0) stubs to pad1 without crossing pad2.
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C10", "100p C0G", 18, 59, 90,
+          "C10", "100p C0G", 18, 59, 270,
           {"1": "CLKA_IN", "2": "GND"})
 
     # D1/D2: BAT54S series dual Schottky (SOT-23 pad1=A, pad2=K, pad3=COM)
