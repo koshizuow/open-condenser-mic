@@ -2,13 +2,17 @@
 """Generate BOM and CPL (pick-and-place) from <name>.kicad_pcb.
 
 Usage:
-    python3 pcb/gen_bom.py [--name PROJECT_NAME]
+    python3 pcb/gen_bom.py [--hi-gain] [--presence] [--name PROJECT_NAME]
 
-Outputs (written to pcb/):
-    bom.csv / cpl.csv                       — default build (R6=5.6k, presence DNP)
-    bom-hi-gain.csv / cpl-hi-gain.csv       — R6=47k, presence DNP
-    bom-presence.csv / cpl-presence.csv     — R6=5.6k, presence populated
-    bom-hi-gain-presence.csv / ...          — R6=47k, presence populated
+Flags:
+    --hi-gain    Use R6=47k (high-gain variant); default R6=5.6k
+    --presence   Populate R_PRES1/C_PRES1 presence-peak network; default DNP
+
+Output suffix is derived from active flags:
+    (none)            → bom.csv / cpl.csv
+    --hi-gain         → bom-hi-gain.csv / cpl-hi-gain.csv
+    --presence        → bom-presence.csv / cpl-presence.csv
+    --hi-gain --presence → bom-hi-gain-presence.csv / cpl-hi-gain-presence.csv
 """
 
 import argparse
@@ -22,24 +26,21 @@ except ImportError:
     sys.exit("pcbnew not found — run inside KiCad Python or with KiCad's Python")
 
 def _parse_args():
-    p = argparse.ArgumentParser(description="Generate BOM and CPL variants from KiCad PCB file.")
+    p = argparse.ArgumentParser(description="Generate BOM and CPL for one build variant.")
     p.add_argument("--name", default="open-condenser-mic",
                    help="Project name (default: open-condenser-mic)")
+    p.add_argument("--hi-gain", action="store_true",
+                   help="Use R6=47k instead of 5.6k")
+    p.add_argument("--presence", action="store_true",
+                   help="Populate R_PRES1/C_PRES1 presence-peak network")
     return p.parse_args()
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _args = _parse_args()
 PCB = os.path.join(_SCRIPT_DIR, f"{_args.name}.kicad_pcb")
 
-# ── Build variants ────────────────────────────────────────────────────────────
-# Each variant overrides R6 value/LCSC and controls the presence-peak DNP set.
-# The default (no suffix) is the standard build shipped in fabrication-outputs.
-VARIANTS = {
-    "":                  {"r6_val": "5.6k",  "r6_lcsc": "C25908", "presence": False},
-    "-hi-gain":          {"r6_val": "47k",   "r6_lcsc": "C25792", "presence": False},
-    "-presence":         {"r6_val": "5.6k",  "r6_lcsc": "C25908", "presence": True},
-    "-hi-gain-presence": {"r6_val": "47k",   "r6_lcsc": "C25792", "presence": True},
-}
+R6_DEFAULT = {"val": "5.6k",  "lcsc": "C25908"}
+R6_HI_GAIN = {"val": "47k",   "lcsc": "C25792"}
 
 # ── DNP: skip footprint library prefixes (test points, mounting holes) ───────
 DNP_LIB_PREFIXES = (
@@ -219,10 +220,17 @@ def main():
     if not os.path.exists(PCB):
         sys.exit(f"PCB not found: {PCB}\nRun gen_pcb.py first.")
 
+    r6 = R6_HI_GAIN if _args.hi_gain else R6_DEFAULT
+    parts = []
+    if _args.hi_gain:
+        parts.append("hi-gain")
+    if _args.presence:
+        parts.append("presence")
+    suffix = ("-" + "-".join(parts)) if parts else ""
+
     board = pcbnew.LoadBoard(PCB)
-    print(f"Generating BOM/CPL variants from {os.path.basename(PCB)}:")
-    for suffix, v in VARIANTS.items():
-        write_variant(board, suffix, v["r6_val"], v["r6_lcsc"], v["presence"])
+    print(f"Generating BOM/CPL from {os.path.basename(PCB)}:")
+    write_variant(board, suffix, r6["val"], r6["lcsc"], _args.presence)
 
 
 if __name__ == "__main__":

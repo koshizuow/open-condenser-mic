@@ -35,14 +35,19 @@ jobs:
           python3 pcb/gen_schematic.py
           python3 pcb/gen_pcb.py
           python3 pcb/gen_bom.py
+          python3 pcb/gen_bom.py --hi-gain
+          python3 pcb/gen_bom.py --presence
+          python3 pcb/gen_bom.py --hi-gain --presence
 
       - name: Verify KiCad outputs exist
         run: |
           ls pcb/open-condenser-mic.kicad_pro
           ls pcb/open-condenser-mic.kicad_pcb
           ls pcb/open-condenser-mic.kicad_sch
-          ls pcb/bom.csv
-          ls pcb/cpl.csv
+          ls pcb/bom.csv pcb/cpl.csv
+          ls pcb/bom-hi-gain.csv pcb/cpl-hi-gain.csv
+          ls pcb/bom-presence.csv pcb/cpl-presence.csv
+          ls pcb/bom-hi-gain-presence.csv pcb/cpl-hi-gain-presence.csv
 
       - name: PCB DRC report (all severities)
         if: always()
