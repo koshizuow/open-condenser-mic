@@ -41,7 +41,7 @@ Charge pump settles to ~68 V within ~1 ms. HV_FILT (RC-filtered, 1 MΩ + 470 nF)
 
 ![Frequency response](img/freq_response.png)
 
-Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within ±1 dB from ~200 Hz to ~20 kHz; high-pass rolloff from output DC block (C_DC = 4.7 µF) and R_GBIAS (94 MΩ) × capsule capacitance (55 pF). The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
+Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within ±1 dB from ~200 Hz to ~20 kHz; high-pass rolloff from output DC block (C_DC = 4.7 µF) and R_GBIAS (100 MΩ) × capsule capacitance (55 pF). The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
 
 #### Optional presence-peak network (R_PRES1, C_PRES1)
 
@@ -63,7 +63,7 @@ R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, parallel with R3 (2.2 kΩ), are
 
 ![Noise spectrum](img/noise_spectrum.png)
 
-SPICE input-referred noise, computed by dividing total output noise by the signal transfer function at each frequency. The slope reflects the signal path's high-pass characteristic (coupling caps attenuate low-frequency signal more than noise), not a real frequency-dependent noise source. Midband (1–10 kHz) noise floor is dominated by R_GBIAS Johnson noise (~28 nV/√Hz at 94 MΩ) and OPA1641 voltage noise (2.5 nV/√Hz).
+SPICE input-referred noise, computed by dividing total output noise by the signal transfer function at each frequency. The slope reflects the signal path's high-pass characteristic (coupling caps attenuate low-frequency signal more than noise), not a real frequency-dependent noise source. Midband (1–10 kHz) noise floor is dominated by R_GBIAS Johnson noise (~27 nV/√Hz at 100 MΩ) and OPA1641 voltage noise (2.5 nV/√Hz).
 
 ## Hardware Requirements
 
