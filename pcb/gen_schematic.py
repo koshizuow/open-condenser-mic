@@ -37,7 +37,13 @@ def new_uuid():
     _uuid_counter += 1
     return f"{_uuid_counter:08x}-0000-0000-0000-000000000000"
 
-ROOT_UUID = new_uuid()
+ROOT_UUID       = new_uuid()   # root .kicad_sch file uuid
+POWER_INST_UUID = new_uuid()   # power sheet instance uuid (in root)
+POWER_FILE_UUID = new_uuid()   # power .kicad_sch file uuid
+AUDIO_INST_UUID = new_uuid()   # audio sheet instance uuid (in root)
+AUDIO_FILE_UUID = new_uuid()   # audio .kicad_sch file uuid
+
+_spath = [f"/{ROOT_UUID}"]     # current component instances path; updated per-sheet
 
 # Centering offset for A3 (420×297mm) page.
 # Circuit spans x=15..250, y=6..211 → centre at (132.5, 108.5).
@@ -128,6 +134,19 @@ def label(net, x, y, angle=0):
             f'  (uuid "{new_uuid()}")\n)')
 
 
+def global_label(net, x, y, angle=0, shape="bidirectional"):
+    ax, ay = _G(x + OX), _G(y + OY)
+    # KiCad global_label angle = direction the PIN points (body is opposite).
+    # Callers pass angle = direction wire arrives; +180° converts to pin-points direction.
+    # Vertical entry labels (wire from below): pass angle=90 → ka=270 (pin down, body up).
+    ka = (angle + 180) % 360
+    return (f'(global_label "{net}" (shape {shape}) (at {ax:.2f} {ay:.2f} {ka})\n'
+            f'  (effects (font (size 1.27 1.27)) (justify right))\n'
+            f'  (uuid "{new_uuid()}")\n'
+            f'  (property "Intersheet References" "${{INTERSHEET_REFS}}" (at {ax:.2f} {ay:.2f} {ka})\n'
+            f'    (effects (font (size 1.27 1.27)) hide)))')
+
+
 # ── No-connect ────────────────────────────────────────────────────────────────
 def no_connect(x, y):
     return f'(no_connect (at {_G(x+OX):.2f} {_G(y+OY):.2f}) (uuid "{new_uuid()}"))'
@@ -158,7 +177,7 @@ def power_sym(lib_id, x, y, angle=0):
             f'    (effects (font (size 1.27 1.27))))\n'
             f'  (property "Footprint" "" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))\n'
             f'  (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))\n'
-            f'  (instances (project "{PROJECT}" (path "/{ROOT_UUID}" (reference "{ref}") (unit 1))))\n)')
+            f'  (instances (project "{PROJECT}" (path "{_spath[0]}" (reference "{ref}") (unit 1))))\n)')
 
 
 # ── Component symbol instance ──────────────────────────────────────────────────
@@ -187,7 +206,7 @@ def sym(lib_id, ref, val, x, y, angle=0, unit=1,
     if extra_props:
         for k, v in extra_props.items():
             lines.append(f'  (property "{k}" "{v}" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))')
-    lines.append(f'  (instances (project "{PROJECT}" (path "/{ROOT_UUID}" (reference "{ref}") (unit {unit}))))')
+    lines.append(f'  (instances (project "{PROJECT}" (path "{_spath[0]}" (reference "{ref}") (unit {unit}))))')
     lines.append(")")
     return "\n".join(lines)
 
@@ -350,7 +369,9 @@ def component(lib_id, ref, val, x, y, angle=0, unit=1,
 # ROW 4 (y≈165+):    Unused U3 gates | PWR flags
 # ─────────────────────────────────────────────────────────────────────────────
 
-elements = []
+_spath[0] = f"/{ROOT_UUID}/{POWER_INST_UUID}"
+power_elements = []
+elements = power_elements
 
 # ── BLOCK A: PHANTOM FEED + VOLTAGE REGULATOR (x=15..80, y=5..48) ────────────
 # GND pins (direction D) → power:GND symbols automatically
@@ -368,9 +389,9 @@ elements += component("Device:R", "R2", "6.8k 0.1%",
 # XLR_HOT/COLD: L-shape left from vertical stubs
 # R1.pin1 stub_end=(22,5.65); R2.pin2 stub_end=(22,43.35)
 elements.append(wire(22, 5.65, 12, 5.65))
-elements.append(label("XLR_HOT", 12, 5.65, 180))
+elements.append(global_label("XLR_HOT", 12, 5.65, 180))
 elements.append(wire(22, 43.35, 12, 43.35))
-elements.append(label("XLR_COLD", 12, 43.35, 180))
+elements.append(global_label("XLR_COLD", 12, 43.35, 180))
 
 elements += component("Device:C", "C1", "100n 63V X7R",
     35, 20,
@@ -440,7 +461,7 @@ elements += component("Device:D_Zener", "Z_OSC1", "15V MMSZ15VT1G",
 # Q1 at (85,20): E tip=(87.54,25.08), stub_end=(87.54,27.62) → wire right to spine
 # R_ZEN1.pin1 stub_end=(105,13.65) → wire left to spine at y=13.65
 elements.append(wire(92, 6.99, 92, 8.26))             # label stub: V_OPA label → junction
-elements.append(label("V_OPA", 92, 6.99, 270))        # supply-side label above junction
+elements.append(global_label("V_OPA", 92, 6.99, 90))  # power-sheet export
 elements.append(junction(92, 8.26))                   # T: label stub + spine down + C2 right
 elements.append(wire(92, 8.26, 99, 8.26))             # C2.pin1 stub_end ← junction
 elements.append(wire(92, 8.26, 92, 13.65))            # V_OPA spine seg1: junction → R_ZEN1 branch
@@ -512,31 +533,23 @@ elements += component("Device:C", "C4", "10u 25V X5R",
 elements.append(wire(60, 56.65, 72, 56.35))          # C5.pin1 stub_end → V_MID bus (R4.pin2 stub_end)
 elements.append(wire(72, 56.35, 80, 56.35))          # V_MID horiz seg1: R4.pin2 → R3 branch junction
 elements.append(wire(80, 56.35, 87, 56.35))          # V_MID horiz seg2: junction → C4.pin1 stub_end
-elements.append(junction(72, 56.35))                 # 4-way: C5 wire + R4.pin2 stub + bus right + vert down
-# R3(92,84).pin1 stub_end=(92,77.65) — route via x=80 vertical (spine at x=92 ends at y=59.19)
-elements.append(wire(80, 56.35, 80, 77.65))          # V_MID bus at x=80 (clear of spine)
-elements.append(wire(80, 77.65, 92, 77.65))          # right to R3.pin1 stub_end
-elements.append(junction(80, 56.35))                 # T: R4-C4 horizontal + R3 branch
-
-# T8b: V_MID bus left side — R_PRES1(77,90).pin1 stub_end=(77,83.65) and R_BIAS1(50,83).pin2 stub_end=(50,89.35)
-# Route below R5.pin2 stub_end(72,81.35): bus at y=83 clears R5 body (y=71-79) and stub.
-# Stop horizontal at x=53 (clear of R_BIAS1.pin1 VPLUS stub at x=50, y=76.35-79.19); then drop down.
-# (77,83) grid-snaps to same point as R_PRES1.pin1 stub_end(77,83.65) — no separate branch wire needed.
-elements.append(wire(80, 77.65, 80, 83))         # extend V_MID vert bus below R5 and VPLUS
-elements.append(wire(80, 83, 77, 83))            # horizontal left to R_PRES1 stub_end
-elements.append(wire(77, 83, 53, 83))            # continue left (clears R5 GND stub at x=72; cosmetic only)
-elements.append(wire(53, 83, 53, 89.35))         # down to R_BIAS1.pin2 level
-elements.append(wire(53, 89.35, 50, 89.35))      # left to R_BIAS1.pin2 stub_end
-elements.append(junction(80, 77.65))             # T: x=80 vert bus + right to R3 + new down ext
-elements.append(junction(77, 83))               # T: horizontal bus + R_PRES1.pin1 stub_end
+elements.append(junction(72, 56.35))                 # 3-way: C5 wire + R4.pin2 stub + bus right
+# V_MID export: bus ends at x=87 (C4.pin1 stub_end); short extension to global_label
+elements.append(wire(87, 56.35, 97, 56.35))
+elements.append(global_label("V_MID", 97, 56.35, 0))  # power-sheet export (audio sheet wires R3/R_PRES1/R_BIAS1/J2)
 
 # ── BLOCK C: HV BIAS CHAIN + CAPSULE + AC COUPLING (x=20..58, y=48..95) ──────
+_spath[0] = f"/{ROOT_UUID}/{AUDIO_INST_UUID}"
+audio_elements = []
+elements = audio_elements
 
 elements += component("Device:R", "R_GBIAS1", "100M 200V 1206",
     30, 58,
     footprint="Resistor_SMD:R_1206_3216Metric",
     pins={"1": "~HV_FILT", "2": "CAP_FP"},
     ref_at=(-13, -2.54), val_at=(-13, 1.27))
+# HV_FILT comes from power sheet (R_HV + C9 RC filter); connect at R_GBIAS1.pin1 stub_end
+elements.append(global_label("HV_FILT", 30, 51.65, 90))  # audio-sheet entry
 
 elements += component("Connector_Generic:Conn_01x02", "J2", "CAPSULE",
     50, 44,
@@ -553,6 +566,20 @@ elements += component("Device:R", "R_BIAS1", "100M 1206",
     50, 83,
     footprint="Resistor_SMD:R_1206_3216Metric",
     pins={"1": "~VPLUS", "2": "~V_MID"})
+
+# V_MID audio-sheet local bus: comes from power sheet via global_label.
+# Serves R3.pin1, R_PRES1.pin1 (Block D), R_BIAS1.pin2, J2.pin2 (Block C).
+# Global label at left; bus runs right to R3 (x=92) and down to R_PRES1/R_BIAS1/J2.
+elements.append(global_label("V_MID", 70, 77.65, 180))   # audio-sheet entry (stub points left)
+elements.append(wire(70, 77.65, 80, 77.65))
+elements.append(wire(80, 77.65, 92, 77.65))              # right to R3.pin1 stub_end
+elements.append(junction(80, 77.65))                     # T: entry + R3 branch + down ext
+elements.append(wire(80, 77.65, 80, 83))                 # down to R_PRES1 level
+elements.append(wire(80, 83, 77, 83))                    # left to R_PRES1 stub_end
+elements.append(wire(77, 83, 53, 83))                    # continue left to J2 branch junction
+elements.append(wire(53, 83, 53, 89.35))                 # down to R_BIAS1.pin2 level
+elements.append(wire(53, 89.35, 50, 89.35))              # left to R_BIAS1.pin2 stub_end
+elements.append(junction(77, 83))                        # T: horizontal bus + R_PRES1.pin1 stub_end
 
 # CAP_FP bus at x=36: J2.pin1 + C8.pin1 + R_GBIAS1.pin2 all physically wired.
 # J2(50,44) pin1 stub L→(42.38,44); C8(50,70) pin1 stub U→(50,63.65); R_GBIAS1(30,58) pin2 stub D→(30,64.35)
@@ -665,7 +692,7 @@ elements.append(wire(155, 51.65, 159, 51.65))        # right to C7.pin1 stub_end
 
 # V_OPA local: junction at U1.V+ stub_end; short stub up to V_OPA label; C3 branches left
 elements.append(wire(119.46, 56.84, 119.46, 54.30)) # short stub up from junction to label
-elements.append(label("V_OPA", 119.46, 54.30, 270))  # consumer-side label above junction
+elements.append(global_label("V_OPA", 119.46, 54.30, 90))  # audio-sheet entry
 elements.append(wire(119.46, 56.84, 113, 56.84))  # junction → left to C3 branch
 elements.append(wire(113, 56.84, 113, 76.65))     # down to C3.pin1 stub_end
 elements.append(junction(119.46, 56.84))           # T: U1.V+ stub + label stub + C3 branch
@@ -737,7 +764,7 @@ elements.append(wire(188.38, 51.65, 196, 51.65))     # to T-junction
 elements.append(wire(196, 51.65, 210, 51.65))         # T-junction → R_RFI1.pin1 stub_end
 elements.append(junction(196, 51.65))                 # at segment endpoint (not interior)
 elements.append(wire(196, 51.65, 196, 44.45))         # stub up
-elements.append(label("XLR_HOT", 196, 44.45, 270))   # flag points up
+elements.append(global_label("XLR_HOT", 196, 44.45, 90))  # audio-sheet entry (from phantom)
 # XLR_HOT_F bus at x=216 (avoids C_RFI1.pin2 GND stub_end at (222,64.35) same y as R_RFI1.pin2)
 # R_RFI1.pin2 D-stub_end=(210,64.35), C_RFI1.pin1 U-stub_end=(222,51.65), J3.pin2 L-stub_end=(239.38,67)
 elements.append(wire(210, 64.35, 216, 64.35))         # R_RFI1.pin2 stub_end → bus
@@ -755,7 +782,7 @@ elements.append(wire(188.38, 69.65, 203, 69.65))     # to T-junction
 elements.append(wire(203, 69.65, 210, 69.65))         # T-junction → R_RFI2.pin1 stub_end
 elements.append(junction(203, 69.65))                 # at segment endpoint (not interior)
 elements.append(wire(203, 69.65, 203, 44.45))         # stub up (crosses HOT wire without junction = no short)
-elements.append(label("XLR_COLD", 203, 44.45, 270))  # aligned with XLR_HOT label height
+elements.append(global_label("XLR_COLD", 203, 44.45, 90))  # audio-sheet entry (from phantom)
 # XLR_COLD_F bus at x=216
 # R_RFI2.pin2 D-stub_end=(210,82.35), C_RFI2.pin1 U-stub_end=(222,69.65), J3.pin3 L-stub_end=(239.38,69.54)
 # Split into two segments so junction is at an endpoint, not interior — interior junction causes KiCad ERC
@@ -766,6 +793,8 @@ elements.append(wire(216, 69.65, 222, 69.65))         # bus → C_RFI2.pin1 stub
 elements.append(wire(222, 69.54, 239.38, 69.54))      # approach: C_RFI2 → J3.pin3 (separate segment)
 elements.append(junction(222, 69.65))                 # 3-way: bus end + C_RFI2 stub + approach start
 elements.append(label("XLR_COLD_F", 222, 69.54, 180)) # label at approach left endpoint (junction)
+
+elements = power_elements
 
 # ── BLOCK F: SCHMITT OSCILLATOR (x=15..67, y=108..160) ───────────────────────
 
@@ -932,14 +961,10 @@ elements.append(wire(188, 119.35, 204, 119.35))  # horizontal
 elements.append(wire(204, 119.35, 204, 121.65))  # down to C9.pin1 stub_end
 
 # T11: HV_FILT long bus — R_GBIAS1(30,58).pin1 stub_end (30,51.65) to R_HV.pin2 stub_end (188,119.35)
-# Route: up at x=30 to y=2 (one grid above V_OSC bus at y=3, clears V_OPA spine top at y=8.19),
-# right along y=2 to x=185 (avoids R_HV.pin1 tip at x=188,y=109.19 which would short VBOOST),
-# down to R_HV.pin2 level, right 3mm to stub_end.
-elements.append(wire(30, 51.65, 30, 2))           # R_GBIAS1.pin1 stub_end up to top margin
-elements.append(wire(30, 2, 185, 2))              # right along y=2 (one grid above V_OSC at y=3)
-elements.append(wire(185, 2, 185, 119.35))        # down at x=185 (clear of R_HV.pin1 at x=188)
-elements.append(wire(185, 119.35, 188, 119.35))   # right to R_HV.pin2 stub_end
-elements.append(junction(188, 119.35))            # T: new bus + existing C9 wire + R_HV.pin2 stub
+# HV_FILT: exported to audio sheet via global_label; R_HV.pin2 stub + C9.pin1 wire meet at junction.
+elements.append(wire(180, 119.35, 188, 119.35))   # short segment left of junction for global_label
+elements.append(global_label("HV_FILT", 180, 119.35, 180))  # power-sheet export (stub points left)
+elements.append(junction(188, 119.35))            # T: global_label wire + C9 wire + R_HV.pin2 stub
 
 # ── POWER FLAGS ───────────────────────────────────────────────────────────────
 
@@ -947,7 +972,7 @@ elements.append(power_sym("power:GND",      20, 172))
 elements.append(power_sym("power:PWR_FLAG", 33, 172))
 elements.append(wire(20, 172, 33, 172))
 
-elements.append(label("V_OPA", 15, 185, 0))
+elements.append(global_label("V_OPA", 15, 185, 0))
 elements.append(wire(15, 185, 33, 185))
 elements.append(power_sym("power:PWR_FLAG", 33, 185))
 
@@ -959,29 +984,25 @@ elements.append(label("V_OSC", 15, 211, 0))
 elements.append(wire(15, 211, 33, 211))
 elements.append(power_sym("power:PWR_FLAG", 33, 211))
 
-# ── SHEET / SYMBOL INSTANCES (required for KiCad 7 validity) ─────────────────
-SHEET_INST = f'(sheet_instances (path "/" (page "1")))'
-SYMBOL_INST = ""  # Already embedded in each symbol via 'instances' field
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # ASSEMBLE AND WRITE
 # ─────────────────────────────────────────────────────────────────────────────
-def main():
-    os.makedirs("pcb", exist_ok=True)
-
-    body_lines = []
-    for e in elements:
+def _body(elist):
+    lines = []
+    for e in elist:
         if isinstance(e, str):
-            body_lines.append(e)
+            lines.append(e)
         elif isinstance(e, list):
-            body_lines.extend(e)
+            lines.extend(e)
+    return "\n\n".join(lines)
 
-    body = "\n\n".join(body_lines)
 
-    schematic = f"""(kicad_sch (version 20230819) (generator kiutils)
+def _write_subsheet(path, file_uuid, inst_uuid, page, elist):
+    body = _body(elist)
+    sheet_inst = f'(sheet_instances (path "/{ROOT_UUID}/{inst_uuid}" (page "{page}")))'
+    content = f"""(kicad_sch (version 20230819) (generator kiutils)
 
-  (uuid "{ROOT_UUID}")
+  (uuid "{file_uuid}")
 
   (paper "A3")
 
@@ -989,15 +1010,69 @@ def main():
 
 {body}
 
-  {SHEET_INST}
+  {sheet_inst}
 
 )
 """
-    out_path = OUT
-    with open(out_path, "w") as f:
-        f.write(schematic)
-    print(f"Written: {out_path}")
-    print(f"Components: {schematic.count('(lib_id ')} instances")
+    with open(path, "w") as f:
+        f.write(content)
+    print(f"Written: {path}  ({content.count('(lib_id ')} component instances)")
+
+
+def main():
+    os.makedirs("pcb", exist_ok=True)
+    base = os.path.splitext(OUT)[0]  # e.g. pcb/open-condenser-mic
+
+    # Power subsheet
+    _write_subsheet(
+        f"{base}-power.kicad_sch",
+        POWER_FILE_UUID, POWER_INST_UUID, "1",
+        power_elements,
+    )
+
+    # Audio subsheet
+    _write_subsheet(
+        f"{base}-audio.kicad_sch",
+        AUDIO_FILE_UUID, AUDIO_INST_UUID, "2",
+        audio_elements,
+    )
+
+    # Root sheet — contains the two sheet instances
+    power_file = os.path.basename(f"{base}-power.kicad_sch")
+    audio_file = os.path.basename(f"{base}-audio.kicad_sch")
+    root = f"""(kicad_sch (version 20230819) (generator kiutils)
+
+  (uuid "{ROOT_UUID}")
+
+  (paper "A3")
+
+  (lib_symbols)
+
+  (sheet (at 20 20) (size 80 60)
+    (stroke (width 0.15) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid "{POWER_INST_UUID}")
+    (property "Sheetname" "Power" (at 20 20 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom)))
+    (property "Sheetfile" "{power_file}" (at 20 22.54 0)
+      (effects (font (size 1.27 1.27)) (justify left top))))
+
+  (sheet (at 120 20) (size 80 60)
+    (stroke (width 0.15) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid "{AUDIO_INST_UUID}")
+    (property "Sheetname" "Audio" (at 120 20 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom)))
+    (property "Sheetfile" "{audio_file}" (at 120 22.54 0)
+      (effects (font (size 1.27 1.27)) (justify left top))))
+
+  (sheet_instances (path "/" (page "0")))
+
+)
+"""
+    with open(OUT, "w") as f:
+        f.write(root)
+    print(f"Written: {OUT}  (root sheet)")
 
 
 if __name__ == "__main__":
