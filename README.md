@@ -18,7 +18,6 @@ This design uses a Dickson charge pump oscillator to generate a 68 V HV rail fro
 - RFI filter on XLR output: differential RC network (R_RFI1/R_RFI2 + C_RFI1/C_RFI2)
 - Phantom power draw: ~2.4–3 mA typical (IEC 61938 limit: 14 mA)
 - All SMD/THT components available from standard distributors (LCSC, Mouser, Digi-Key); capsule and transformer are customer-supplied
-- Build variants (`--hi-gain`, `--presence`) selectable at BOM generation time — no schematic changes required
 
 ## Simulated Performance
 
