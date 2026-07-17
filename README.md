@@ -18,6 +18,7 @@ This design uses a Dickson charge pump oscillator to generate a 68 V HV rail fro
 - RFI filter on XLR output: differential RC network (R_RFI1/R_RFI2 + C_RFI1/C_RFI2)
 - Phantom power draw: ~2.4–3 mA typical (IEC 61938 limit: 14 mA)
 - All SMD/THT components available from standard distributors (LCSC, Mouser, Digi-Key); capsule and transformer are customer-supplied
+- Build variants (`--hi-gain`, `--presence`) selectable at BOM generation time — no schematic changes required
 
 ## Simulated Performance
 
@@ -155,11 +156,10 @@ kicad-cli sch erc --severity-error --exit-code-violations pcb/open-condenser-mic
 ### 3. Generate BOM and CPL
 
 ```bash
-python pcb/gen_bom.py        # reads pcb/open-condenser-mic.kicad_pcb; --name to match custom project name
-# → pcb/bom.csv / cpl.csv                       (default: R6=5.6k, presence DNP)
-# → pcb/bom-hi-gain.csv / cpl-hi-gain.csv       (R6=47k, presence DNP)
-# → pcb/bom-presence.csv / cpl-presence.csv     (R6=5.6k, presence populated)
-# → pcb/bom-hi-gain-presence.csv / cpl-hi-gain-presence.csv
+python pcb/gen_bom.py                    # → bom.csv / cpl.csv          (default: R6=5.6k, presence DNP)
+python pcb/gen_bom.py --hi-gain          # → bom-hi-gain.csv / cpl-hi-gain.csv
+python pcb/gen_bom.py --presence         # → bom-presence.csv / cpl-presence.csv
+python pcb/gen_bom.py --hi-gain --presence  # → bom-hi-gain-presence.csv / cpl-hi-gain-presence.csv
 ```
 
 ## Running Simulations
