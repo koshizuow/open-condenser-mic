@@ -49,6 +49,9 @@ jobs:
           ls pcb/bom-presence.csv pcb/cpl-presence.csv
           ls pcb/bom-hi-gain-presence.csv pcb/cpl-hi-gain-presence.csv
 
+      - name: Schematic ↔ PCB net consistency
+        run: python3 pcb/check_net_consistency.py
+
       - name: PCB DRC report (all severities)
         if: always()
         run: kicad-cli pcb drc --severity-all --format report -o drc-report.rpt pcb/open-condenser-mic.kicad_pcb
