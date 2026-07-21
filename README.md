@@ -35,7 +35,7 @@ Run with ngspice from `sim/` (see [Running Simulations](#running-simulations)):
 
 ![HV startup](img/hv_startup.png)
 
-Charge pump settles to ~68 V within ~1 ms. HV_FILT (RC-filtered, 1 MΩ + 470 nF) steady-state is 67.3 V (0.67 V drop across R_HV); theoretical ripple ~47 nV p-p at 100 kHz (−109 dB). Plot shows LC reference run (IC=60 V) for startup transient visibility.
+The simulation runs both an LC filter reference and the production RC filter (1 MΩ + 470 nF) in sequence for comparison. The production PCB uses the RC configuration. RC steady-state HV_FILT is 67.3 V (0.67 V drop across R_HV); theoretical ripple ~47 nV p-p at 100 kHz (−109 dB). The LC run (IC=60 V pre-charge) is retained to show startup transient behaviour and ripple contrast.
 
 ### AC Frequency Response (`amp_ac.sp`)
 
@@ -70,7 +70,7 @@ SPICE input-referred noise, computed by dividing total output noise by the signa
 ### Customer-supplied (not in PCBA BOM)
 | Item | Spec | Notes |
 |---|---|---|
-| Capsule | Single-diaphragm condenser | Design delivers 56 V polarization (68 V HV rail − 12 V V_MID). Compatible with most standard large/small-diaphragm capsules; K47-type capsules (typically rated 40–60 V) are compatible at this voltage. |
+| Capsule | Single-diaphragm condenser | Design delivers ~55 V polarization (HV_FILT ≈ 67.3 V − V_MID 12 V). Compatible with most standard large/small-diaphragm capsules; K47-type capsules (typically rated 40–60 V) are compatible at this voltage. |
 | Transformer | **Neutrik NTE10/3** (3:1, audio) | Mouser / Newark. No other transformer is currently supported; the PCB cutout and solder pads are sized for this specific part. |
 
 ### Transformer wiring

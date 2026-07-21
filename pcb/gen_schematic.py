@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate <name>.kicad_sch  (KiCad 7 S-expression format)
+Generate <name>.kicad_sch  (KiCad 9 S-expression format)
 
 Strategy: every component is placed on a grid; every pin gets a short wire
 stub and a local net label.  The schematic is electrically complete and can be
