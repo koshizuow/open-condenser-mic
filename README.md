@@ -35,7 +35,7 @@ Run with ngspice from `sim/` (see [Running Simulations](#running-simulations)):
 
 ![HV startup](img/hv_startup.png)
 
-The simulation runs both an LC filter reference and the production RC filter (1 MΩ + 470 nF) in sequence for comparison. The production PCB uses the RC configuration. RC steady-state HV_FILT is 67.3 V (0.67 V drop across R_HV); theoretical ripple ~47 nV p-p at 100 kHz (−109 dB). The LC run (IC=60 V pre-charge) is retained to show startup transient behaviour and ripple contrast.
+Charge pump settles to ~68 V within ~1 ms. HV_FILT is RC-filtered (1 MΩ + 470 nF); steady-state 67.3 V (0.67 V drop across R_HV), theoretical ripple ~47 nV p-p at 100 kHz (−109 dB). The simulation also runs an LC filter reference for ripple comparison (earlier board revisions used an LC filter before switching to the simpler RC approach); LC results are printed to the terminal but not plotted.
 
 ### AC Frequency Response (`amp_ac.sp`)
 
