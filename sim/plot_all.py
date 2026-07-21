@@ -138,16 +138,16 @@ def plot_hv_startup():
     vboost = d[:, 1]
     hvfilt = d[:, 3]
 
-    hv_avg    = measures.get("hv_avg_lc", hvfilt.mean())
-    hv_max    = measures.get("hv_max_lc", float("nan"))
-    hv_min    = measures.get("hv_min_lc", float("nan"))
+    hv_avg    = measures.get("hv_avg_rc", hvfilt.mean())
+    hv_max    = measures.get("hv_max_rc", float("nan"))
+    hv_min    = measures.get("hv_min_rc", float("nan"))
     hv_ripple = hv_max - hv_min
 
     fig, ax = plt.subplots(figsize=(7, 4))
     fig.suptitle("HV Rail — Dickson Charge Pump Startup", fontsize=12, fontweight="bold")
 
     ax.plot(t_ms, vboost, color=C1, lw=1.2, label="V_BOOST (raw)")
-    ax.plot(t_ms, hvfilt, color=C2, lw=1.2, label="HV_FILT (LC ref, startup)")
+    ax.plot(t_ms, hvfilt, color=C2, lw=1.2, label="HV_FILT (RC, 1 MΩ + 470 nF)")
     ax.axhline(68, color="#aaaaaa", lw=0.8, ls="--", label="68 V target")
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("Voltage (V)")

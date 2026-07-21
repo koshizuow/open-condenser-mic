@@ -92,13 +92,11 @@ echo "========================================================"
 echo "  boost_dickson: LC vs RC HV filter comparison"
 echo "========================================================"
 
-* ── LC filter (default params: R_HV=8Ω, L_HV=10mH) ──────────
+* ── LC filter (default params: R_HV=8Ω, L_HV=10mH) — for ripple comparison only ──
 echo ""
 echo "--- LC filter: L=10mH DCR=8Ω, C=470nF, fc≈2.3kHz, Q≈18 ---"
 reset
 tran 100n 15m 0 100n uic
-* write transient data for plot_all.py (read before reset clears vectors)
-wrdata _hv_tran.dat v(vboost) v(hvfilt)
 meas tran VBOOST_avg    avg V(VBOOST)  from=10m to=15m
 meas tran VBOOST_max    max V(VBOOST)  from=10m to=15m
 meas tran VBOOST_min    min V(VBOOST)  from=10m to=15m
@@ -112,7 +110,7 @@ echo "  VBOOST_ripple = $&VBOOST_ripple V p-p"
 echo "  HV_avg  (LC)  = $&HV_avg_LC V"
 echo "  HV_ripple(LC) = $&LC_ripple V p-p"
 
-* ── RC filter (R=1MΩ, L≈0, C=470nF, fc≈0.34Hz) ──────────────
+* ── RC filter (R=1MΩ, L≈0, C=470nF, fc≈0.34Hz) — production PCB config ───────
 echo ""
 echo "--- RC filter: R=1MΩ (C22935), C=470nF, fc≈0.34Hz ---"
 alterparam R_HV = 1Meg
@@ -121,6 +119,8 @@ alterparam L_HV = 1p
 alterparam C_LC_IC = 67.3
 reset
 tran 100n 15m 0 100n uic
+* write transient data for plot_all.py — RC run (production config)
+wrdata _hv_tran.dat v(vboost) v(hvfilt)
 meas tran HV_avg_RC     avg V(HVFILT)  from=10m to=15m
 meas tran HV_max_RC     max V(HVFILT)  from=10m to=15m
 meas tran HV_min_RC     min V(HVFILT)  from=10m to=15m
