@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate <name>.kicad_pcb using pcbnew Python API (KiCad 7).
+Generate <name>.kicad_pcb using pcbnew Python API (KiCad 9).
 
 Usage:
     python gen_pcb.py [--name PROJECT_NAME]
