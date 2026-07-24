@@ -1057,18 +1057,18 @@ def main():
 
     # C10 (osc timing cap): place directly above component at (18,59); old
     # position (25,56.5) was 7mm away and appeared disconnected from component.
-    fix_ref(board, "C10", x_mm=18, y_mm=56.5)
+    fix_ref(board, "C10", x_mm=20, y_mm=59, angle_deg=0)
 
     # Z_OSC1: default ref text at ~(30,27.5) sits over R7 pad2 at (27,27.8).
     # Shift slightly right; keep above pads (pad2 copper reaches y=28.35).
     fix_ref(board, "Z_OSC1", x_mm=31.5, y_mm=26.5)
     # C3: angle=180 rotates silk; force horizontal above component (body top ~y=20.5)
-    fix_ref(board, "C3", x_mm=24.0, y_mm=23.2, angle_deg=0)
+    fix_ref(board, "C3", x_mm=24.0, y_mm=24, angle_deg=0)
 
     # R6/R7: angle rotates silk; force horizontal and place above component,
     # above SIG_PROT via at (27,25.5) copper top ~y=25.0; both at y=24.5
-    fix_ref(board, "R6", x_mm=25.0, y_mm=24.5, angle_deg=0)
-    fix_ref(board, "R7", x_mm=27.0, y_mm=24.5, angle_deg=0)
+    fix_ref(board, "R6", x_mm=25.0, y_mm=29, angle_deg=0)
+    fix_ref(board, "R7", x_mm=27.0, y_mm=29, angle_deg=0)
     # R4: angle=180 rotates silk; force horizontal and place above component
     fix_ref(board, "R4", x_mm=7.51, y_mm=39.5, angle_deg=0)
     # R3: place below component (center y=29.7, body bottom ~29.95)
@@ -1094,12 +1094,12 @@ def main():
     fix_ref(board, "Cp2", x_mm=23.1, y_mm=62.0, angle_deg=0)
 
     # DZ1: right silk line at x=32.94..33.06 — move label to x=35 to clear it
-    fix_ref(board, "DZ1", x_mm=35, y_mm=65.5)
+    fix_ref(board, "DZ1", x_mm=34, y_mm=65.5)
     # Cres1: default ref is above body (y=65.3), overlaps DZ1 silk — move below body
     fix_ref(board, "Cres1", x_mm=29, y_mm=69)
 
     # C4: rotated 90°, default ref near board left edge (x=2); move above top pad
-    fix_ref(board, "C4", x_mm=4, y_mm=41)
+    fix_ref(board, "C4", x_mm=5.5, y_mm=44, angle_deg=0)
 
     fix_ref(board, "R_GBIAS1", x_mm=29, y_mm=15.83, angle_deg=0)
 
