@@ -7,7 +7,7 @@ Usage:
 
 Board: 36x93mm, 2-layer, y=0 at capsule end (top), y=93 at XLR (bottom).
 Transformer cutout: x=11..26, y=68.5..75.5 (body 14x6mm + 0.5mm per side).
-Mount holes: (6,5),(34,5),(6,85),(34,85) M2.5 28mm span; zip-tie (8,72),(31,72) M3.
+Mount holes: (5.75,5),(34.25,5),(5.75,85),(34.25,85) M2.5 28.5mm span, 3.2mm drill; zip-tie (8,72),(31,72) M3.
 
 Routing is fully scripted (reproducible):
   - HV nets (VBOOST, HV_FILT, HV_MID, CAP_FP): 0.4mm width
@@ -555,7 +555,7 @@ def route_all(board):
     # would overlap XLR_HOT at y=82.0 (w=0.2mm); y=83 gives 0.55mm gap ✓
     # y=83 vs R2.pad1 (XLR_COLD, y=83.825 top=83.35): gap=0.25mm ✓
     # y=83 vs R2.pad2 (V_OPA_RAW, y=82.175 top=82.65): gap=0.25mm ✓
-    # XLR_HOT vertical at x=10: MH3 copper edge at x=7.55; gap=2.45mm ✓
+    # XLR_HOT vertical at x=10: MH3 centre x=5.75, pad r≈3.2mm → right edge ≈8.95; gap≈1.05mm ✓
     route(board, "XLR_HOT", F, SIG,
           (17.0,  82.0),
           (17.0,  83.0),
@@ -728,15 +728,16 @@ def main():
     add_outline_rect(board, 11.0, 68.5, 26.0, 75.5)
 
     # ── Mechanical footprints ────────────────────────────────────────────────
-    # Mount hole pattern: 30mm horizontal x 80mm vertical (per housing bosses)
-    # Centred on 40mm wide board: x=5 and x=35 (5mm margins each side)
+    # Mount hole pattern: 28.5mm span (±0.25mm from original 28mm) x 80mm vertical.
+    # 3.2mm drill (vs M2.5 standard 2.7mm) adds ±0.25mm play per hole;
+    # combined with ±0.25mm position shift → accepts housings with 28–29mm boss span.
 
     # MH1/MH2 in capsule zone: NPTH (no F.Cu copper) so guard ring can enclose the zone.
-    for ref, x, y in [("MH1",6,5),("MH2",34,5)]:
-        place(board, "MountingHole", "MountingHole_2.7mm_M2.5", ref, ref, x, y)
+    for ref, x, y in [("MH1",5.75,5),("MH2",34.25,5)]:
+        place(board, "MountingHole", "MountingHole_3.2mm_M3", ref, ref, x, y)
     # MH3/MH4 in XLR zone: PTH with GND pad for housing grounding.
-    for ref, x, y in [("MH3",6,85),("MH4",34,85)]:
-        place(board, "MountingHole", "MountingHole_2.7mm_M2.5_Pad_TopBottom",
+    for ref, x, y in [("MH3",5.75,85),("MH4",34.25,85)]:
+        place(board, "MountingHole", "MountingHole_3.2mm_M3_Pad_TopBottom",
               ref, ref, x, y, pad_nets={"1": "GND"})
     for ref, x, y in [("ZT1",8,72),("ZT2",31,72)]:
         place(board, "MountingHole", "MountingHole_3.2mm_M3", ref, ref, x, y)
