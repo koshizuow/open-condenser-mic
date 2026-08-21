@@ -1,6 +1,6 @@
 * OPA1641 Mic — Low-Frequency Response: R_BIAS1 = 100M vs 500M
-* Full signal path: capsule Cc (55pF) → R_GBIAS (47M+47M) at CAP_FP
-*                   → C8 (10nF) → VPLUS (IN+) → R_BIAS1 → V_MID
+* Full signal path: capsule Cc (55pF) → R_GBIAS (100M single) at CAP_FP
+*                   → C8 (1nF) → VPLUS (IN+) → R_BIAS1 → V_MID
 * Shows effect of R_BIAS1 on bass -3dB frequency.
 * ---------------------------------------------------------------------------
 .title OPA1641 Bias Resistor Comparison
@@ -35,14 +35,13 @@ Cc    CAP_BOT  0         {Cc}
 Rconn  CAP_HOT  CAP_FP  1    ; 1Ω wire resistance
 
 * ---------------------------------------------------------------------------
-* HV POLARIZATION BIAS: R_GBIAS1 + R_GBIAS2 in series (47M each = 94M total)
+* HV POLARIZATION BIAS: R_GBIAS (100M single) from HV → CAP_FP
 * HV_FILT is AC-grounded (C9 decouples HV)
 * ---------------------------------------------------------------------------
-R_GBIAS1  NET_HV  HV_MID  47Meg
-R_GBIAS2  HV_MID  CAP_FP  47Meg
+R_GBIAS  NET_HV  CAP_FP  {R_GBIAS}
 
 * ---------------------------------------------------------------------------
-* INPUT COUPLING: C8 = 10nF (CAP_FP → VPLUS = OPA1641 IN+)
+* INPUT COUPLING: C8 = 1nF (CAP_FP → VPLUS = OPA1641 IN+)
 * ---------------------------------------------------------------------------
 C8  CAP_FP  VPLUS  {C8}
 

@@ -19,7 +19,7 @@ PARAMS = {
     "R_BIAS1":      "100Meg", # bootstrapped bias resistor
     # ── Capsule model (customer-supplied; nominal for simulation) ─────────
     "Cc":           "55p",    # capsule self-capacitance (typical LDC capsule)
-    "C8":           "10n",    # input coupling cap (C8 in schematic)
+    "C8":           "1n",     # input coupling cap (C8 in schematic); 1nF C0G, f_hp=1/(2π×R_BIAS1×C8)≈1.6Hz
     # ── Output stage ─────────────────────────────────────────────────────
     "C_DC":         "4.7u",   # DC block cap (C7 in schematic)
     # ── Charge pump (gen_schematic.py: Cp1/Cp2/Cp3, Cres1, L1, C9) ──────

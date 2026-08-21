@@ -3,7 +3,7 @@
 *   Voltage noise: 2.5 nV/rtHz (OPA1641 datasheet)
 *   Current noise: ~0.8 fA/rtHz (JFET input, negligible vs resistor noise)
 *   GBW: 11 MHz (behavioral single-pole at 110Hz -> GBW=11MHz with gain 100k)
-* Input network: R_GBIAS=94MΩ (R_GBIAS1+R_GBIAS2 in series) dominates noise floor
+* Input network: R_GBIAS=100MΩ (single resistor) dominates noise floor
 *   R_BIAS1=100MΩ bootstrapped (VPLUS follows output) -> AC-invisible, omitted
 * ---------------------------------------------------------------------------
 .title OPA1641 Mic Noise Analysis
@@ -32,8 +32,9 @@ Cc    CAP_BOT  0  {Cc}
 Rconn CAP_HOT  PIN3_NODE  1
 
 * High-Z bias network
-* R_GBIAS = R_GBIAS1 + R_GBIAS2 = 47M + 47M = 94MΩ to HV rail (AC ground, decoupled)
+* R_GBIAS = 100MΩ (single resistor) to HV rail (AC ground, decoupled)
 * R_BIAS1 = 100MΩ bootstrapped (VPLUS follows output) -> AC-invisible, omitted
+* C8 = 1nF omitted: bootstrapping makes R_BIAS1 AC-invisible; C8×R_GBIAS pole at ~1.6Hz
 R_GBIAS  NET_HV  PIN3_NODE  {R_GBIAS}
 Vhv   NET_HV  0  DC 68
 

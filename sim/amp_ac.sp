@@ -32,7 +32,8 @@ Cc    CAP_BOT  0         {Cc}
 * ---------------------------------------------------------------------------
 * HIGH-Z INPUT NODE (Pin3)
 * R_GBIAS: 100MΩ (R_GBIAS1) to HV rail (AC ground, decoupled)
-* R_BIAS1: 100MΩ bootstrapped (VPLUS = output-following) -> AC-invisible, omitted
+* C8 (1nF) and R_BIAS1 (100MΩ) omitted: bootstrapping makes R_BIAS1 AC-invisible;
+* C8×R_GBIAS pole at ~1.6Hz is below Cc×R_GBIAS dominant pole at ~29Hz
 * ---------------------------------------------------------------------------
 R_GBIAS  0  PIN3_NODE  {R_GBIAS}
 
