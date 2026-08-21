@@ -433,12 +433,12 @@ elements += component("Device:C", "C2", "100n 25V X7R",
     pins={"1": "~V_OPA", "2": "GND"},
     val_at=(2.54, -5.08))
 
-elements += component("Device:C_Polarized", "C5", "10u 25V",
+elements += component("Device:C_Polarized", "C5", "10u 35V",
     60, 63,
     footprint="Capacitor_SMD:CP_Elec_4x5.4",
     pins={"1": "~V_MID", "2": "GND"})
 
-elements += component("Device:C_Polarized", "C6", "10u 25V",
+elements += component("Device:C_Polarized", "C6", "10u 35V",
     95, 50,
     footprint="Capacitor_SMD:CP_Elec_4x5.4",
     pins={"1": "~V_OPA", "2": "GND"})

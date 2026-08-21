@@ -95,7 +95,7 @@ LCSC = {
     ("470n 100V X7R", "C_0805_2012Metric"):        "C596323",   # CC0805KKX7R0BB474 YAGEO 81k stock — C9, Cres1
 
     # SMD electrolytic
-    ("10u 25V",       "CP_Elec_4x5.4"):            "C3343",     # Honor Elec RVT1E100M0405 D4x5.4mm 2000hrs — C5/C6
+    ("10u 35V",       "CP_Elec_4x5.4"):            "C86602",    # Honor Elec RVT1V100M0405 D4x5.4mm 2000hrs 35V — C5/C6; replaces C3343 25V (C6 V_OPA margin too small)
 
     # HV filter resistor (0603)
     ("1M 75V 0603",   "R_0603_1608Metric"):         "C22935",    # UNI-ROYAL 0603WAF1004T5E 1MΩ 75V ±1% Basic

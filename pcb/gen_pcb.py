@@ -907,13 +907,13 @@ def main():
     # angle=180: pad1(+) rotates to (+1.8,0) in board frame.
     # C5 at (30,43) angle=180: pad1(V_MID) at (31.8,43), pad2(GND) at (28.2,43) ✓
     place(board, "Capacitor_SMD", "CP_Elec_4x5.4",
-          "C5", "10u 25V", 30, 43, 180,
+          "C5", "10u 35V", 30, 43, 180,
           {"1": "V_MID", "2": "GND"})
 
     # C6 at (31,60) angle=180: pad1(V_OPA) at (32.8,60), pad2(GND) at (29.2,60)
     # pad2(GND) left=27.4mm; VBOOST right=27.1mm → gap 0.3mm ✓
     place(board, "Capacitor_SMD", "CP_Elec_4x5.4",
-          "C6", "10u 25V", 31, 60, 180,
+          "C6", "10u 35V", 31, 60, 180,
           {"1": "V_OPA", "2": "GND"})
 
     # Z_OSC shunt regulator: V_OPA -> R_ZEN -> V_OSC -> Z_OSC -> GND (15V supply for U3)
