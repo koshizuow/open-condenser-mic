@@ -754,9 +754,23 @@ def main():
     add_keepout(board, pcbnew.F_Cu,
                 [(6, 17), (14.5, 17), (14.5, 30), (6, 30)])
 
+    # B.Cu keepout around J2 (BP/FP): both pads are high-Z bias nodes (BP=V_MID
+    # ~12V, FP=CAP_FP referenced through R_GBIAS1 to HV_FILT ~67V). The B.Cu
+    # GND plane otherwise runs from y=0, leaving only the zone's default
+    # clearance (0.3mm) between these THT pads and ground copper. In humid
+    # conditions, flux/condensation across that narrow gap next to a ~67V node
+    # is a plausible leakage/creepage path. Pull B.Cu copper back locally
+    # around the two pads (buffer ~2-3mm on all sides) rather than shrinking
+    # the whole capsule-zone B.Cu shield — the rest of the y<17 B.Cu plane is
+    # the only shielding this high-impedance front-end area has (no F.Cu pour
+    # here), so a global pull-back would trade leakage margin for EMI immunity.
+    add_keepout(board, pcbnew.B_Cu,
+                [(12, 0), (22, 0), (22, 8), (12, 8)])
+
     # J2: bare THT solder pads; pad1(left)=V_MID at x=15.23, pad2(right)=CAP_FP at x=19.04
     # pitch_mm=3.81 (150mil) gives extra separation for the high-Z FP node vs V_MID backplate.
     place_solder_pads(board, "J2", 15.23, 3, ["V_MID", "CAP_FP"], axis='x', pitch_mm=3.81)
+
 
     # angle=180: pad1(CAP_FP) at right (14.76,14); pad2(VPLUS) at left (13.80,14)
     # 0402 pad offset ±0.48mm; pad1 at x=14.76 slightly left of J2-pad1 x=15.23
