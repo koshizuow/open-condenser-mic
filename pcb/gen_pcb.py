@@ -10,7 +10,12 @@ Transformer cutout: x=11..26, y=68.5..75.5 (body 14x6mm + 0.5mm per side).
 Mount holes: (5.75,5),(34.25,5),(5.75,85),(34.25,85) M2.5 28.5mm span, 3.2mm drill; zip-tie (8,72),(31,72) M3.
 
 Routing is fully scripted (reproducible):
-  - HV nets (VBOOST, HV_FILT, HV_MID, CAP_FP): 0.4mm width
+  - HV nets (VBOOST, HV_FILT, CAP_FP): 0.4mm trace width; "HV" net class
+    (gen_project.py) enforces 0.3mm clearance around these nets as a
+    machine-checked DRC rule (#58) -- 0.3mm is what these nets actually
+    achieve against the F.Cu GND zone's own clearance (add_zone() below),
+    not the 0.4mm trace width figure (a different property; conflating the
+    two was the source of #58's original stale docstring here)
   - Power nets (V_OPA, V_MID, V_OSC, PHANTOM, V_OPA_RAW): 0.3mm width
   - Signal/clock nets: 0.2mm width
   - GND: B.Cu zone + vias at each SMD GND pad; no F.Cu GND star

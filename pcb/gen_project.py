@@ -213,8 +213,44 @@ def build_project(name: str) -> dict:
                     "microvia_drill": 0.1,
                     "name": "Default",
                     "pcb_color": "rgba(0, 0, 0, 0.000)",
+                    "priority": 2147483647,
                     "schematic_color": "rgba(0, 0, 0, 0.000)",
                     "track_width": 0.2,
+                    "via_diameter": 0.6,
+                    "via_drill": 0.3,
+                    "wire_width": 6
+                },
+                {
+                    # HV net class (#58): enforces wider clearance around the
+                    # ~67-68V VBOOST/HV_FILT/CAP_FP rail as a machine-checked
+                    # rule instead of relying only on code comments (e.g.
+                    # gen_pcb.py:264, :756-768). Verified empirically (see #58
+                    # PR discussion) that these nets' actual routed clearance
+                    # to the F.Cu GND zone is ~0.3005mm (the GND zone's own
+                    # SetLocalClearance override, gen_pcb.py add_zone() call)
+                    # -- NOT 0.4mm as the pre-existing docstring in gen_pcb.py
+                    # implied (that comment conflated 0.4mm *trace width* with
+                    # *clearance*, two different properties). 0.3mm is set
+                    # here to match what's actually achieved without forcing
+                    # a re-route; this still gives 3x margin over IPC-2221
+                    # Table 6-1's >=0.10mm minimum for the 51-100V bracket
+                    # (uncoated external conductors, sea level-3050m), and is
+                    # 1.5x tighter than the 0.2mm Default class, so it now
+                    # catches future accidental narrowing on these HV nets
+                    # specifically that Default alone would not flag.
+                    "bus_width": 12,
+                    "clearance": 0.3,
+                    "diff_pair_gap": 0.25,
+                    "diff_pair_via_gap": 0.25,
+                    "diff_pair_width": 0.2,
+                    "line_style": 0,
+                    "microvia_diameter": 0.3,
+                    "microvia_drill": 0.1,
+                    "name": "HV",
+                    "pcb_color": "rgba(0, 0, 0, 0.000)",
+                    "priority": 0,
+                    "schematic_color": "rgba(0, 0, 0, 0.000)",
+                    "track_width": 0.4,
                     "via_diameter": 0.6,
                     "via_drill": 0.3,
                     "wire_width": 6
@@ -225,7 +261,11 @@ def build_project(name: str) -> dict:
             },
             "net_colors": None,
             "netclass_assignments": None,
-            "netclass_patterns": []
+            "netclass_patterns": [
+                {"netclass": "HV", "pattern": "VBOOST"},
+                {"netclass": "HV", "pattern": "HV_FILT"},
+                {"netclass": "HV", "pattern": "CAP_FP"}
+            ]
         },
         "pcbnew": {
             "last_paths": {
