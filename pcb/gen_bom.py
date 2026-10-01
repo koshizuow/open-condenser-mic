@@ -99,6 +99,9 @@ LCSC = {
 
     # HV filter resistor (0603)
     ("1M 75V 0603",   "R_0603_1608Metric"):         "C22935",    # UNI-ROYAL 0603WAF1004T5E 1MΩ 75V ±1% Basic
+
+    # DZ1 series resistor (#67)
+    ("680R",          "R_0603_1608Metric"):         "C23228",    # UNI-ROYAL 0603WAF6800T5E 680Ω 75V ±1% 100mW Basic — R_DZ1; confirmed via JLCPCB parts search (2.39M stock)
 }
 
 # ── KiCad → JLCPCB rotation correction ───────────────────────────────────────
