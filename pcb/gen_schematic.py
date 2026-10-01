@@ -875,8 +875,23 @@ elements += component("Diode:BAT54S", "D1", "BAT54S",
 elements += component("Diode:BAT54S", "D2", "BAT54S",
     118, 113,
     footprint="Package_TO_SOT_SMD:SOT-23",
-    pins={"1": "~N2", "3": "N3", "2": "~VBOOST"},
+    pins={"1": "~N2", "3": "N3", "2": "~N_PUMP"},
     val_at=(2.54, 2.54))
+
+# R_DZ1 (#67): series resistor between the Dickson pump's raw output (N_PUMP)
+# and the VBOOST rail (Cres1/DZ1/R_HV). Shifts most of DZ1's worst-case
+# overcurrent onto this resistor instead, reducing DZ1 from ~1.53W (306.6% of
+# its 500mW SOD-123 rating, see docs/wcca.md) to ~282mW (56.4%) at 680R.
+# HV_FILT impact confirmed negligible (<10mV worst-case, capsule polarization
+# stays at ~55.21V) via SPICE sweep -- see PR description for full sweep data.
+# Placed at y=113 (same row as D1/D2/Cp1/Cp3) so pin1's stub_end lands
+# exactly on the VBOOST bus at y=106.65 (113-3.81-2.54=106.65), matching the
+# R_HV convention below. pin2(N_PUMP) stub_end lands at y=119.35.
+elements += component("Device:R", "R_DZ1", "680R",
+    140, 113,
+    footprint="Resistor_SMD:R_0603_1608Metric",
+    pins={"1": "~VBOOST", "2": "~N_PUMP"},
+    val_at=(2.54, -2.54))
 
 elements += component("Device:C", "Cp1", "100n 100V X7R",
     88, 133,
@@ -933,12 +948,17 @@ elements += component("Device:D_Zener", "DZ1", "68V BZT52C68",
     pins={"1": "~VBOOST", "2": "GND"},
     val_at=(2.54, -5.08))
 
-# VBOOST horizontal bus at y=106.65: D2 → Cres1 → DZ1 → L1
-# Cres1.stub_end=(150,106.65), L1.stub_end=(188,106.65) already at this y level
-elements.append(wire(128.16, 106.65, 150, 106.65))  # VBOOST bus seg1: D2 → Cres1 junction
+# N_PUMP: D2.pin2 stub_end (128.16,113) → R_DZ1.pin2 stub_end (140,119.35)
+# (#67: inserts R_DZ1 between the pump's raw output and the VBOOST rail)
+elements.append(wire(128.16, 113,    128.16, 119.35))
+elements.append(wire(128.16, 119.35, 140,    119.35))
+
+# VBOOST horizontal bus at y=106.65: R_DZ1 → Cres1 → DZ1 → R_HV
+# R_DZ1.pin1 stub_end=(140,106.65); Cres1.stub_end=(150,106.65);
+# R_HV.pin1 stub_end=(188,106.65) already at this y level
+elements.append(wire(140, 106.65, 150, 106.65))     # VBOOST bus seg1: R_DZ1 → Cres1 junction
 elements.append(wire(150, 106.65, 159.65, 106.65)) # VBOOST bus seg2: Cres1 → DZ1 junction
-elements.append(wire(159.65, 106.65, 188, 106.65)) # VBOOST bus seg3: DZ1 → L1
-elements.append(wire(128.16, 113, 128.16, 106.65))  # D2.pin2 stub_end → bus
+elements.append(wire(159.65, 106.65, 188, 106.65)) # VBOOST bus seg3: DZ1 → R_HV
 elements.append(wire(159.65, 128, 159.65, 106.65))  # DZ1.pin1 stub_end → bus
 elements.append(junction(150, 106.65))              # T: bus + Cres1 stub
 elements.append(junction(159.65, 106.65))           # T: bus + DZ1 branch

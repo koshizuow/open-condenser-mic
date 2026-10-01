@@ -107,6 +107,48 @@ work, not part of issue #59's scope which is documentation-only):
    `V_OSC` amplitude) to reduce the excess current DZ1 must absorb — larger
    design change, affects `VBOOST` headroom margin above the 67.3 V target.
 
+### Resolution (#67)
+
+Option 1 above was implemented: a 680 Ω series resistor (`R_DZ1`, 0603) was
+added between the Dickson pump's raw output (net `N_PUMP`, D2 pin 2/K) and
+the `VBOOST` rail (`Cres1`/`DZ1`/`R_HV`), which previously connected directly.
+
+Two higher-power zener packages (SOD-123FL / SMB) were also investigated and
+rejected: no footprint larger than the existing SOD-123 fits anywhere on the
+current 36×93 mm board layout without colliding with the F.Cu GND zone,
+existing traces, or neighboring component courtyards (checked exhaustively
+against the real KiCad pcbnew courtyard/track/zone geometry, not by hand
+calculation) — the board's copper density leaves no room for a part ~2–3×
+the SOD-123's footprint area without a broader re-layout of the HV section,
+which was judged out of proportion to the fix.
+
+Verification (SPICE sweep over 330/470/680 Ω at both nominal and worst-case
+corners, same methodology as the DZ1 table above):
+
+| R_DZ1 | DZ1 P (worst-case) | % of 500 mW rating | HV_FILT drop (worst-case) | Capsule polarization (worst-case) |
+|---|---|---|---|---|
+| 0 Ω (original) | 1495 mW | 299.0% | — | 55.218 V |
+| 330 Ω | 492.7 mW | 98.5% | 5.5 mV | 55.212 V |
+| 470 Ω | 379.4 mW | 75.9% | 6.5 mV | 55.211 V |
+| **680 Ω (chosen)** | **282.1 mW** | **56.4%** | **7.5 mV** | **55.210 V** |
+
+(The 0 Ω worst-case figure above, 1495 mW/299.0%, differs slightly from the
+1533 mW/306.6% in the combined worst-case row of the DZ1 table — both are
+from independent SPICE runs of the same worst-case corner; the ~2.5%
+difference reflects normal simulation-to-simulation variation in transient
+settling within the 10–15 ms measurement window, not a methodology change.)
+
+680 Ω was chosen over 330/470 Ω for the widest safety margin (56.4% vs.
+98.5%/75.9% of the 500 mW rating) at effectively the same cost: the extra
+HV_FILT drop between 330 Ω and 680 Ω is only ~2 mV, and the resulting
+capsule polarization voltage (55.21 V worst-case vs. the original 55.22 V)
+is unchanged to within measurement noise — far smaller than the capsule's
+own manufacturing tolerance. R_DZ1 itself dissipates ≤19 mW worst-case
+across all three values, well within a 0603's 100 mW rating.
+
+See PR for issue #67 for the generator script changes
+(`pcb/gen_schematic.py`, `pcb/gen_pcb.py`) and layout details.
+
 ## Simulation reproducibility
 
 The DZ1 figures above were obtained via ad hoc modifications to

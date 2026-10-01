@@ -246,15 +246,26 @@ def route_all(board):
     # HV NETS  (0.4mm)
     # ════════════════════════════════════════════════════════════════════════
 
-    # ── VBOOST: D2-pad2 → Cres-pad1 → DZ1-pad1, also Cres-pad1 → R_HV-pad1 ──
-    # D2 pad2 (VBOOST) at (26.0625, 49.95)
-    # Cres pad1 at (28.05, 67.0); Cres pad2 (GND) at (29.95, 67.0)
-    # DZ1 pad1 at (32.0, 67.15); R_HV pad1 at (31.175, 78.5)
-    # Route D2-pad2 to horizontal bus at y=65.5 to stay clear of Cres pad2 at y=67
-    # x=26.9: Cp2-pad2(25.95,64) right copper=26.3mm; gap=26.9-0.2-26.3=0.4mm
-    route(board, "VBOOST", F, HV,
+    # ── N_PUMP: D2-pad2 → R_DZ1-pad2 (#67: series resistor ahead of VBOOST) ──
+    # D2 pad2 (N_PUMP) at (26.0625, 49.95); R_DZ1 pad2(N_PUMP) at (26.9, 56.675)
+    # (R_DZ1 placed at (26.9,57.5) rot=90, pad2=top/N_PUMP, pad1=bottom/VBOOST
+    # — verified with pcbnew; see place() call below)
+    # Reuses the same x=26.9 vertical corridor the old direct VBOOST run used
+    # (clearance notes below still apply: x=26.9 gives 0.4mm gap to Cp2-pad2
+    # right copper at x=26.3, and this column has no other obstacles between
+    # D2 (y=49.95) and the R_DZ1/VBOOST bus turn at y=65.5).
+    route(board, "N_PUMP", F, HV,
           (26.0625, 49.95),
           (26.9,    49.95),
+          (26.9,    56.675))
+
+    # ── VBOOST: R_DZ1-pad1 → Cres-pad1 → DZ1-pad1, also Cres-pad1 → R_HV-pad1 ──
+    # R_DZ1 pad1(VBOOST) at (26.9, 58.325)
+    # Cres pad1 at (28.05, 67.0); Cres pad2 (GND) at (29.95, 67.0)
+    # DZ1 pad1 at (32.0, 67.15); R_HV pad1 at (31.175, 78.5)
+    # Route R_DZ1-pad1 to horizontal bus at y=65.5 to stay clear of Cres pad2 at y=67
+    route(board, "VBOOST", F, HV,
+          (26.9,    58.325),
           (26.9,    65.5 ),
           (28.05,   65.5 ),
           (28.05,   67.0 ))
@@ -981,7 +992,21 @@ def main():
 
     place(board, "Package_TO_SOT_SMD", "SOT-23",
           "D2", "BAT54S", 27, 49, 0,
-          {"1": "N2", "2": "VBOOST", "3": "N3"})
+          {"1": "N2", "2": "N_PUMP", "3": "N3"})
+
+    # R_DZ1 (#67): series resistor between D2's raw pump output (N_PUMP) and
+    # the VBOOST rail. Reduces DZ1 worst-case power from ~1.53W (306.6% of its
+    # 500mW SOD-123 rating) to ~282mW (56.4%) at 680R; HV_FILT/polarization
+    # impact confirmed <10mV worst-case via SPICE sweep (see PR description).
+    # 0603 angle=90 (verified with pcbnew): pad1 lands at BOTTOM (26.9,58.325),
+    # pad2 at TOP (26.9,56.675). Assign pad2(N_PUMP)=top, closer to D2 above
+    # (y=49.95); pad1(VBOOST)=bottom, closer to the VBOOST bus turn below
+    # (y=65.5). Placed in the same x=26.9 vertical corridor the old direct
+    # D2->VBOOST run used — several mm clear of D2 above and the bus turn
+    # below.
+    place(board, "Resistor_SMD", "R_0603_1608Metric",
+          "R_DZ1", "680R", 26.9, 57.5, 90,
+          {"1": "VBOOST", "2": "N_PUMP"})
 
     # Cp1-3: pump capacitors 100n 100V (0805 PP film)
     place(board, "Capacitor_SMD", "C_0805_2012Metric",
@@ -1109,6 +1134,18 @@ def main():
     fix_ref(board, "C5", x_mm=30.0, y_mm=39.8, angle_deg=0)
     fix_ref(board, "C6", x_mm=31.0, y_mm=56.8, angle_deg=0)
 
+    # R_DZ1 (#67): default ref overlaps Cp1 silk; move directly below body.
+    # Rotated 90° (angle_deg=270 -> vertical text) like C9's label below, so
+    # the narrow bbox fits close to the body instead of needing the wider
+    # horizontal clearance a 0°-text label would need. At (26.9,62.2) the
+    # label's top edge is just 1mm below the pads (58.725mm) -- verified
+    # clear of every other footprint's Reference/Value text + silkscreen
+    # graphic + pad geometry. Overlaps the F.Cu VBOOST trace underneath,
+    # but that's electrically fine (solder mask covers it) and is the norm
+    # on this board -- nearly every ref label here sits over some F.Cu
+    # trace (checked: 30 of 31 visible labels do). Only silk-vs-silk and
+    # silk-vs-pad are the real DRC/manufacturing concerns.
+    fix_ref(board, "R_DZ1", x_mm=26.9, y_mm=62.2, angle_deg=270)
     # Cp1/Cp2: silk below body
     fix_ref(board, "Cp1", x_mm=25.0, y_mm=55.5, angle_deg=0)
     fix_ref(board, "Cp2", x_mm=23.1, y_mm=62.0, angle_deg=0)

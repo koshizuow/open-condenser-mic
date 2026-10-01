@@ -264,7 +264,12 @@ def build_project(name: str) -> dict:
             "netclass_patterns": [
                 {"netclass": "HV", "pattern": "VBOOST"},
                 {"netclass": "HV", "pattern": "HV_FILT"},
-                {"netclass": "HV", "pattern": "CAP_FP"}
+                {"netclass": "HV", "pattern": "CAP_FP"},
+                # N_PUMP (#67): the Dickson pump's raw output, upstream of the
+                # new R_DZ1 series resistor. Same voltage territory as VBOOST
+                # (slightly higher, since R_DZ1 drops voltage downstream of
+                # this node) -- needs the same HV clearance, not Default.
+                {"netclass": "HV", "pattern": "N_PUMP"}
             ]
         },
         "pcbnew": {
