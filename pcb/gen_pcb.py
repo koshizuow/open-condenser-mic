@@ -585,19 +585,16 @@ def route_all(board):
 
     # ── XLR_HOT_F: R_RFI1-pad1 → C_RFI1-pad1 + J3-pad2 ─────────────
     # R_RFI1 pad1 (10.0,86.53); T-junction at (10,87); C_RFI1 pad1 (12.47,87)
-    # GND: C_RFI1 pad2 (13.53,87) → 1mm stub RIGHT → via; clears courtyard right edge (13.98)
+    # C_RFI1 pad2 (GND, 13.53,87): connected via F.Cu GND zone fill — no stub/via needed.
     route(board, "XLR_HOT_F", F, SIG, (10.0, 86.53), (10.0, 87.0), (12.47, 87.0))
     route(board, "XLR_HOT_F", F, SIG, (10.0, 87.0), (10.0, 88.54), (20.0, 88.54), (20.0, 90.0))
     # TVS1 shunt tap (#60): stub from the XLR_HOT_F trace to TVS1 pad1
     # (18.08,88.1).
     route(board, "XLR_HOT_F", F, SIG, (20.0, 88.54), (18.08, 88.54), (18.08, 88.1))
-    # TVS1 pad2 (GND, 18.92,88.1): short F.Cu stub + via into B.Cu GND
-    # plane, same convention as C_RFI1's GND pad above (not a direct
-    # zone-fill connection -- see placement comment for why).
+    # TVS1 pad2 (GND, 18.92,88.1): stub + via for short ESD return path; nearest
+    # board stitching vias are 15-17mm away so via here keeps inductance low.
     route(board, "GND", F, SIG, (18.92, 88.1), (18.9, 87.0))
     via(board, "GND", 18.9, 87.0)
-    route(board, "GND", F, SIG, (13.53, 87.0), (14.53, 87.0))
-    via(board, "GND", 14.53, 87.0)
 
     # ── XLR_COLD: T1B-pad2 → R_RFI2-pad2 ───────────────────────────────
     # T1B pad2 (22.0,82.0); R_RFI2 pad2 (22.0,85.47)
@@ -613,18 +610,16 @@ def route_all(board):
 
     # ── XLR_COLD_F: R_RFI2-pad1 → C_RFI2-pad1 + J3-pad3 ───────────
     # R_RFI2 pad1 (22.0,86.53); T-junction at (22,87); C_RFI2 pad1 (24.47,87)
-    # GND: C_RFI2 pad2 (25.53,87) → 1mm stub RIGHT → via; clears courtyard right edge (25.98)
+    # C_RFI2 pad2 (GND, 25.53,87): connected via F.Cu GND zone fill — no stub/via needed.
     route(board, "XLR_COLD_F", F, SIG, (22.0, 86.53), (22.0, 87.0), (24.47, 87.0))
     route(board, "XLR_COLD_F", F, SIG, (22.0, 87.0), (22.0, 89.0), (22.54, 89.0), (22.54, 90.0))
     # TVS2 shunt tap (#60): stub from the XLR_COLD_F trace to TVS2 pad1
     # (24.08,90.0).
     route(board, "XLR_COLD_F", F, SIG, (22.54, 90.0), (24.08, 90.0))
-    # TVS2 pad2 (GND, 24.92,90.0): short F.Cu stub + via, same convention
-    # as TVS1 above.
+    # TVS2 pad2 (GND, 24.92,90.0): stub + via for short ESD return path (same
+    # reason as TVS1 above).
     route(board, "GND", F, SIG, (24.92, 90.0), (25.9, 90.0))
     via(board, "GND", 25.9, 90.0)
-    route(board, "GND", F, SIG, (25.53, 87.0), (26.53, 87.0))
-    via(board, "GND", 26.53, 87.0)
 
 
     # ── Dickson pump nodes ───────────────────────────────────────────────────
@@ -922,21 +917,10 @@ def main():
     # outline overlapped J3 pin3's silk circle, a check the first search
     # pass missed.)
     #
-    # GND pad routing: uses a short F.Cu stub + via into the B.Cu GND plane,
-    # same convention as C_RFI1/C_RFI2's GND pads (gen_pcb.py below), NOT
-    # ZONE_CONNECTION_FULL direct-fill. An earlier version of this placement
-    # relied on ZONE_CONNECTION_FULL alone (no stub/via) since the pad
-    # already sits inside the F.Cu GND zone's footprint -- that is
-    # DRC-clean but inconsistent with every other GND pad on this board,
-    # which all get a stub+via even when already zone-covered. Worth
-    # flagging for reflow: a pad with ZONE_CONNECTION_FULL has no thermal
-    # relief, so it heat-sinks into the surrounding copper fill faster than
-    # its unconnected neighbor pad (pad1, carrying only a thin signal
-    # trace) -- a asymmetric thermal mass between a 2-pad SOD-923's pads is
-    # a plausible contributor to a cold/tombstone joint on the GND side if
-    # the two pads don't reach reflow temperature at the same time. The
-    # stub+via approach avoids this by keeping GND pad's local copper
-    # similar in extent to the other RFI shunt caps' GND pads.
+    # GND pad routing: short F.Cu stub + via to B.Cu GND plane. Via provides a
+    # low-inductance ESD return path; nearest board stitching vias are 15-17mm
+    # away. C_RFI1/C_RFI2 GND pads do NOT use this approach — they connect
+    # through the F.Cu GND zone fill, which is sufficient for RF bypass at 16MHz.
     tvs1 = place(board, "Diode_SMD", "D_SOD-923",
                  "TVS1", "ESD9B5.0ST5G", 18.5, 88.1, 0,
                  {"1": "XLR_HOT_F", "2": "GND"})
