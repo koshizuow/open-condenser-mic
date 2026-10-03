@@ -587,6 +587,14 @@ def route_all(board):
     # GND: C_RFI1 pad2 (13.53,87) → 1mm stub RIGHT → via; clears courtyard right edge (13.98)
     route(board, "XLR_HOT_F", F, SIG, (10.0, 86.53), (10.0, 87.0), (12.47, 87.0))
     route(board, "XLR_HOT_F", F, SIG, (10.0, 87.0), (10.0, 88.54), (20.0, 88.54), (20.0, 90.0))
+    # TVS1 shunt tap (#60): stub from the XLR_HOT_F trace to TVS1 pad1
+    # (18.08,88.1).
+    route(board, "XLR_HOT_F", F, SIG, (20.0, 88.54), (18.08, 88.54), (18.08, 88.1))
+    # TVS1 pad2 (GND, 18.92,88.1): short F.Cu stub + via into B.Cu GND
+    # plane, same convention as C_RFI1's GND pad above (not a direct
+    # zone-fill connection -- see placement comment for why).
+    route(board, "GND", F, SIG, (18.92, 88.1), (18.9, 87.0))
+    via(board, "GND", 18.9, 87.0)
     route(board, "GND", F, SIG, (13.53, 87.0), (14.53, 87.0))
     via(board, "GND", 14.53, 87.0)
 
@@ -607,6 +615,13 @@ def route_all(board):
     # GND: C_RFI2 pad2 (25.53,87) → 1mm stub RIGHT → via; clears courtyard right edge (25.98)
     route(board, "XLR_COLD_F", F, SIG, (22.0, 86.53), (22.0, 87.0), (24.47, 87.0))
     route(board, "XLR_COLD_F", F, SIG, (22.0, 87.0), (22.0, 89.0), (22.54, 89.0), (22.54, 90.0))
+    # TVS2 shunt tap (#60): stub from the XLR_COLD_F trace to TVS2 pad1
+    # (24.08,90.0).
+    route(board, "XLR_COLD_F", F, SIG, (22.54, 90.0), (24.08, 90.0))
+    # TVS2 pad2 (GND, 24.92,90.0): short F.Cu stub + via, same convention
+    # as TVS1 above.
+    route(board, "GND", F, SIG, (24.92, 90.0), (25.9, 90.0))
+    via(board, "GND", 25.9, 90.0)
     route(board, "GND", F, SIG, (25.53, 87.0), (26.53, 87.0))
     via(board, "GND", 26.53, 87.0)
 
@@ -889,6 +904,47 @@ def main():
           "C_RFI2", "100p C0G", 25, 87, 0,
           {"1": "XLR_COLD_F", "2": "GND"})
 
+    # TVS1/TVS2 (#60): bidirectional ESD/TVS protection shunt, right at the
+    # J3 pads (closest point to the connector where ESD/hot-plug transients
+    # enter). Positions found via exhaustive collision search against real
+    # courtyard/pad/track geometry with the standard 0.2mm Default net class
+    # clearance inflated onto every pad (not estimated by hand -- an earlier
+    # attempt placing these directly on top of the existing XLR_HOT_F/
+    # XLR_COLD_F traces was DRC-clean on courtyard/pad overlap alone but
+    # failed clearance against those same traces, since SOD-923's pad
+    # pitch (0.84mm) is tighter than the 0.2mm clearance budget allows this
+    # close to other copper).
+    # TVS1 pad1(XLR_HOT_F)=(18.08,88.1), pad2(GND)=(18.92,88.1)
+    # (Position re-checked against every other footprint's silkscreen
+    # body/label geometry, not just courtyard/pads -- the first candidate
+    # placement passed courtyard/pad checks but its own component-body silk
+    # outline overlapped J3 pin3's silk circle, a check the first search
+    # pass missed.)
+    #
+    # GND pad routing: uses a short F.Cu stub + via into the B.Cu GND plane,
+    # same convention as C_RFI1/C_RFI2's GND pads (gen_pcb.py below), NOT
+    # ZONE_CONNECTION_FULL direct-fill. An earlier version of this placement
+    # relied on ZONE_CONNECTION_FULL alone (no stub/via) since the pad
+    # already sits inside the F.Cu GND zone's footprint -- that is
+    # DRC-clean but inconsistent with every other GND pad on this board,
+    # which all get a stub+via even when already zone-covered. Worth
+    # flagging for reflow: a pad with ZONE_CONNECTION_FULL has no thermal
+    # relief, so it heat-sinks into the surrounding copper fill faster than
+    # its unconnected neighbor pad (pad1, carrying only a thin signal
+    # trace) -- a asymmetric thermal mass between a 2-pad SOD-923's pads is
+    # a plausible contributor to a cold/tombstone joint on the GND side if
+    # the two pads don't reach reflow temperature at the same time. The
+    # stub+via approach avoids this by keeping GND pad's local copper
+    # similar in extent to the other RFI shunt caps' GND pads.
+    tvs1 = place(board, "Diode_SMD", "D_SOD-923",
+                 "TVS1", "ESD9B5.0ST5G", 18.5, 88.1, 0,
+                 {"1": "XLR_HOT_F", "2": "GND"})
+
+    # TVS2 pad1(XLR_COLD_F)=(24.08,90.0), pad2(GND)=(24.92,90.0)
+    tvs2 = place(board, "Diode_SMD", "D_SOD-923",
+                 "TVS2", "ESD9B5.0ST5G", 24.5, 90.0, 0,
+                 {"1": "XLR_COLD_F", "2": "GND"})
+
     # Low-Iq V_OPA supply: R_REG1 + Z_REG1 (24V) + Q1 NPN emitter follower
     # SOT-23 pad1=B, pad2=E, pad3=C (MMBT5551 pinout)
     place(board, "Package_TO_SOT_SMD", "SOT-23",
@@ -1170,13 +1226,19 @@ def main():
 
     # R_RFI2: rotated 90°, default silk (20.83,86) overlaps C_RFI2 ref and P2 silk.
     # x=20 is right of previous x=18, still clear of P2 (x=22,y=84) and C_RFI2 (x=25).
-    fix_ref(board, "R_RFI2", x_mm=20, y_mm=86)
+    fix_ref(board, "R_RFI2", x_mm=20.5, y_mm=86)
 
     fix_ref(board, "C_RFI1", x_mm=14.5, y_mm=85.5)
     fix_ref(board, "C_RFI2", x_mm=26.5, y_mm=85.5)
 
     # C9: default ref at x=38.18 cut by new board edge (x=38); move above pads
     fix_ref(board, "C9", x_mm=36.5, y_mm=75.5)
+
+    # TVS1/TVS2 (#60): default refs overlap R_RFI2's label / own component
+    # silk+J3 area respectively; moved to clean positions found via the
+    # same exhaustive text-bbox search used for R_DZ1 (#67).
+    fix_ref(board, "TVS1", x_mm=17.8, y_mm=85.7, angle_deg=90)
+    fix_ref(board, "TVS2", x_mm=25.5, y_mm=91.4, angle_deg=0)
 
     # ZT1/ZT2 and MH1-MH4: no label needed on silk
     for ref in ("ZT1", "ZT2", "MH1", "MH2", "MH3", "MH4"):

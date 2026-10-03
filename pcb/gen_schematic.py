@@ -86,6 +86,7 @@ LIBS = {
     "Amplifier_Operational:OPA1641": (f"{SYM_PATH}/Amplifier_Operational.kicad_sym", "OPA1641"),
     "4xxx:40106":         (f"{SYM_PATH}/4xxx.kicad_sym",                  "40106"),
     "Diode:BAT54S":       (f"{SYM_PATH}/Diode.kicad_sym",                 "BAT54S"),
+    "Diode:ESD9B5.0ST5G": (f"{SYM_PATH}/Diode.kicad_sym",                 "ESD9B5.0ST5G"),
     "Connector_Generic:Conn_01x02": (f"{SYM_PATH}/Connector_Generic.kicad_sym", "Conn_01x02"),
     "Connector_Generic:Conn_01x03": (f"{SYM_PATH}/Connector_Generic.kicad_sym", "Conn_01x03"),
     "power:GND":          (f"{SYM_PATH}/power.kicad_sym",                 "GND"),
@@ -282,6 +283,11 @@ PIN_OFFSETS = {
         "1": (-7.62,  0,    "L"),   # A  anode (left)
         "2": ( 7.62,  0,    "R"),   # K  cathode (right)
         "3": ( 0,     5.08, "D"),   # COM mid-node (sym y=-5.08 → sch +5.08, below)
+    },
+    "Diode:ESD9B5.0ST5G": {
+        # Bidirectional symmetric TVS, no fixed polarity: pin1=A1 (left), pin2=A2 (right)
+        "1": (-3.81,  0,    "L"),
+        "2": ( 3.81,  0,    "R"),
     },
     "Connector_Generic:Conn_01x02": {
         # sym Y-up: pin1=(−5.08, 0), pin2=(−5.08, −2.54) → sch: negate y
@@ -746,6 +752,38 @@ elements += component("Device:C", "C_RFI2", "100p C0G",
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "~XLR_COLD_F", "2": "GND"})
 
+# TVS1/TVS2 (#60): bidirectional ESD/TVS protection on XLR_HOT_F/XLR_COLD_F,
+# placed right at the J3 pads (closest point to the connector where ESD/
+# hot-plug transients enter). Shunt to GND, same topology as C_RFI1/C_RFI2.
+elements += component("Diode:ESD9B5.0ST5G", "TVS1", "ESD9B5.0ST5G",
+    230, 67,
+    footprint="Diode_SMD:D_SOD-923",
+    pins={"1": "~XLR_HOT_F", "2": "GND"},
+    val_at=(-3.81, -2.54))
+
+elements += component("Diode:ESD9B5.0ST5G", "TVS2", "ESD9B5.0ST5G",
+    230, 76,
+    footprint="Diode_SMD:D_SOD-923",
+    pins={"1": "~XLR_COLD_F", "2": "GND"},
+    val_at=(-3.81, -2.54))
+
+# TVS1.pin1 stub_end (223.65,67) → XLR_HOT_F bus. (216,67) is already a
+# corner where the bus-down segment meets the J3 approach segment; adding
+# this third branch makes it a proper T, so mark it with a junction.
+elements.append(wire(216, 67, 223.65, 67))
+elements.append(junction(216, 67))
+
+# TVS2.pin1 stub_end (223.65,76) → XLR_COLD_F bus. (216,76) falls mid-span on
+# the existing single-segment vertical bus run (216,82.35)->(216,69.65) --
+# per the comment on that run below, an interior junction on an existing
+# wire segment causes KiCad ERC to flag the downstream label as dangling.
+# Split the bus into two segments meeting exactly at (216,76) instead, so
+# the junction sits at a real endpoint.
+elements.append(wire(216, 82.35, 216, 76))
+elements.append(wire(216, 76, 216, 69.65))
+elements.append(wire(216, 76, 223.65, 76))
+elements.append(junction(216, 76))
+
 # TX_DRV: C7.pin2 stub_end (159,64.35) → TP1.pin1 stub_end (170.38,60.46)
 # C7(159,58) pin2(D) stub_end=(159,64.35); TP1(178,63) pin1(L) stub_end=(170.38,60.46)
 # Route via x=164 to avoid crossing TP1.pin2 GND stub_end at (170.38,63)
@@ -785,7 +823,7 @@ elements.append(wire(188.38, 69.65, 210, 69.65))      # XLR_COLD bus: TS1 juncti
 # Split into two segments so junction is at an endpoint, not interior — interior junction causes KiCad ERC
 # to flag the label at J3.pin3 stub_end as dangling even when the wire endpoint is correct.
 elements.append(wire(210, 82.35, 216, 82.35))         # R_RFI2.pin2 stub_end → bus
-elements.append(wire(216, 82.35, 216, 69.65))         # bus up to C_RFI2/J3 level
+# bus up to C_RFI2/J3 level: split at (216,76) for the TVS2 tap above, see comment there
 elements.append(wire(216, 69.65, 222, 69.65))         # bus → C_RFI2.pin1 stub_end
 elements.append(wire(222, 69.54, 239.38, 69.54))      # approach: C_RFI2 → J3.pin3 (separate segment)
 elements.append(junction(222, 69.65))                 # 3-way: bus end + C_RFI2 stub + approach start
