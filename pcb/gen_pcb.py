@@ -400,11 +400,12 @@ def route_all(board):
     route(board, "V_OPA", F, PWR,
           (19.0,    51.05),
           (21.0625, 51.05))
-    # C6 pad2(V_OPA) at (32.8,60.0): branch from bus at (30.75,40.8), right to x=34, down to pad2
+    # C6 pad2(V_OPA) at (32.8,60.0): branch from bus at (30.75,40.8), right to x=35, down to pad2
+    # (x=34 column shifted to x=35 to clear C1 1206 pad2 at (33.475,54))
     route(board, "V_OPA", F, PWR,
           (30.75, 40.8),
-          (34.0,  40.8),
-          (34.0,  57.0),
+          (35.0,  40.8),
+          (35.0,  57.0),
           (32.8,  57.0),
           (32.8,  60.0))
 
