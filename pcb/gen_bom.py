@@ -66,6 +66,7 @@ LCSC = {
     # Standard resistors (0402)
     ("5.6k",      "R_0402_1005Metric"):            "C25908",    # UNI-ROYAL 0402WGF5601TCE ±1% — R6 default (flat/hi-SPL)
     ("6.2k",      "R_0402_1005Metric"):            "C25915",    # UNI-ROYAL 0402WGF6201TCE ±1%
+    ("1.2k",      "R_0402_1005Metric"):            "C25867",    # YAGEO RC0402FR-071K2L ±1% — R_REG1 (#72)
     ("2.2k",      "R_0402_1005Metric"):            "C25879",
     ("6.8k",      "R_0402_1005Metric"):            "C25944",    # UNI-ROYAL 0402WGJ0682TCE ±5% 44k pcs; C144738 ±1% out of stock; C26022 maps to 4.7kΩ 0805 in JLCPCB
     ("47k",       "R_0402_1005Metric"):            "C25792",    # UNI-ROYAL 0402WGF4702TCE ±1% BASIC — R6 hi-gain variant; C25900 maps to 4.7kΩ in JLCPCB
