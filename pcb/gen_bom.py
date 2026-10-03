@@ -102,6 +102,9 @@ LCSC = {
 
     # DZ1 series resistor (#67)
     ("680R",          "R_0603_1608Metric"):         "C23228",    # UNI-ROYAL 0603WAF6800T5E 680Ω 75V ±1% 100mW Basic — R_DZ1; confirmed via JLCPCB parts search (2.39M stock)
+
+    # TVS1/TVS2 ESD protection (#60)
+    ("ESD9B5.0ST5G", "D_SOD-923"): "C111566",   # onsemi ESD9B5.0ST5G, genuine OEM part (not a clone/equivalent); bidirectional, 7.8V clamp, 15pF, SOD-923; confirmed via JLCPCB parts search (221k stock)
 }
 
 # ── KiCad → JLCPCB rotation correction ───────────────────────────────────────
