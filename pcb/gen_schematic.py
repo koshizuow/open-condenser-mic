@@ -400,14 +400,15 @@ elements += component("Device:R", "R2", "6.8k 0.1%",
 elements.append(label("XLR_HOT", 22, 5.65, 180))
 elements.append(label("XLR_COLD", 22, 37.35, 180))
 
-elements += component("Device:C", "C1", "100n 63V X7R",
+elements += component("Device:C", "C1", "4.7u 50V X7R",
     35, 20,
-    footprint="Capacitor_SMD:C_0402_1005Metric",
+    footprint="Capacitor_SMD:C_1206_3216Metric",
     pins={"1": "~V_OPA_RAW", "2": "GND"})
 
 # Low-Iq V_OPA supply: R_REG1 biases Z_REG1 (24V zener) → Q1 emitter follower → V_OPA = 23.3V
-# Total Iq < 3.5mA at 48V phantom; V_OPA_RAW ≈ 25.8V (vs ~11V with L78L24 at 48V phantom)
-elements += component("Device:R", "R_REG1", "2.2k",
+# R_REG1=1.2k raises Z_REG1 Iz to ~1.5mA (was 0.82mA at 2.2k), reducing rz spread across
+# ±5% Vz tolerance; total Iq ~4mA at 48V phantom (#72).
+elements += component("Device:R", "R_REG1", "1.2k",
     55, 13,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "~V_OPA_RAW", "2": "~V_BASE_REG"})

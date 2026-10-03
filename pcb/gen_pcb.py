@@ -342,9 +342,9 @@ def route_all(board):
     route(board, "V_OPA_RAW", F, PWR, (25.0, 44.0), (24.0, 44.0))
     route(board, "V_OPA_RAW", F, PWR, (24.0, 44.0), (24.0, 46.3))
     route(board, "V_OPA_RAW", F, PWR, (24.0, 46.3), (24.49, 46.3))
-    # C1-pad1 (V_OPA_RAW) at (30.49,54): via on B.Cu vertical; 1.99mm F.Cu stub right
+    # C1-pad1 (V_OPA_RAW) at (30.175,54): via on B.Cu vertical; F.Cu stub to 1206 pad1
     via(board, "V_OPA_RAW", 28.5, 54.0)
-    route(board, "V_OPA_RAW", F, PWR, (28.5, 54.0), (30.49, 54.0))
+    route(board, "V_OPA_RAW", F, PWR, (28.5, 54.0), (30.175, 54.0))
 
     # ── V_OPA: vertical bus at x=30.75, individual branches to each consumer ────
     # Q1.E (22.0625,44.95) → LEFT to x=20 → UP to y=40.8 → RIGHT to bus at x=30.75
@@ -961,12 +961,15 @@ def main():
     # 0402 angle=0: pad1(V_OPA_RAW) at (24.49,46.3), pad2(V_BASE_REG) at (25.51,46.3)
     # x=25.0 → courtyard right=26.08 < C5 left=26.605; y=46.3 clears CLKA top (46.9) by 0.28mm.
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R_REG1", "2.2k", 25.0, 46.3, 0,
+          "R_REG1", "1.2k", 25.0, 46.3, 0,
           {"1": "V_OPA_RAW", "2": "V_BASE_REG"})
 
     # C1/C2: V_OPA_RAW and V_OPA bypass caps (still valid with emitter-follower supply)
-    place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C1", "100n 63V X7R", 31, 54, 0,
+    # C1 upgraded to 4.7µF 1206 (#71): 100nF 0402 had no filtering effect at audio freq
+    # (Xc=31.8kΩ at 50Hz vs R1||R2=3.4kΩ); 4.7µF gives Xc=677Ω — 47× better.
+    # Moved 1mm right to (32,54) so 1206 courtyard clears via at (28.5,54).
+    place(board, "Capacitor_SMD", "C_1206_3216Metric",
+          "C1", "4.7u 50V X7R", 32, 54, 0,
           {"1": "V_OPA_RAW", "2": "GND"})
 
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
