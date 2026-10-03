@@ -91,9 +91,13 @@ LCSC = {
     ("1n 100V C0G",   "C_0402_1005Metric"):        "C694157",   # TDK C1005C0G2A102JT000E 100V C0G — C8 has ~56V DC bias; 1nF gives f=1.6Hz with R_BIAS1
     ("4.7u 50V X7R",  "C_1206_3216Metric"):        "C51205",    # CL31B475KBHNNNE Samsung
 
-    # 100V capacitors
-    ("100n 100V X7R", "C_0805_2012Metric"):        "C28233",    # CL21B104KCFNNNE Samsung BASIC — Cp1/2/3
-    ("470n 100V X7R", "C_0805_2012Metric"):        "C596323",   # CC0805KKX7R0BB474 YAGEO 81k stock — C9, Cres1
+    # HV capacitors (#61: pump caps upgraded to 200V to reduce derating from 68% to 34%)
+    ("100n 200V X7R", "C_0805_2012Metric"):        "C5448894",  # CCTC TCC0805X7R104K201FT ±10% 28k stock — Cp1/2/3
+    # WCCA note (Cres1/C9): 470nF 200V X7R is 1206-only; layout constraints (transformer
+    # cutout clearance + board edge) prevent 1206 upgrade without rerouting. Steady-state DC
+    # bias (67-68V on 100V-rated cap) causes ~30% capacitance derating — no functional impact
+    # on HV filter (fc still well below 1Hz). Accepted risk for DIY use; revisit at next rev.
+    ("470n 100V X7R", "C_0805_2012Metric"):        "C596323",   # CC0805KKX7R0BB474 YAGEO — C9, Cres1
 
     # SMD electrolytic
     ("10u 35V",       "CP_Elec_4x5.4"):            "C86602",    # Honor Elec RVT1V100M0405 D4x5.4mm 2000hrs 35V — C5/C6; replaces C3343 25V (C6 V_OPA margin too small)

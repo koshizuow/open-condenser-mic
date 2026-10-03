@@ -1068,18 +1068,19 @@ def main():
           "R_DZ1", "680R", 26.9, 57.5, 90,
           {"1": "VBOOST", "2": "N_PUMP"})
 
-    # Cp1-3: pump capacitors 100n 100V (0805 PP film)
+    # Cp1-3: pump capacitors 100n 200V X7R (0805) — upgraded from 100V per #61
+    # (24-68V dynamic swing at 100kHz; 200V gives <35% derating vs 68% at 100V)
     place(board, "Capacitor_SMD", "C_0805_2012Metric",
-          "Cp1", "100n 100V X7R", 22, 55.5, 0,
+          "Cp1", "100n 200V X7R", 22, 55.5, 0,
           {"1": "N1", "2": "CLKA"})
 
     # angle=180: pad1(N2) at right (24.05,60.5); pad2(CLKB) at left (22.15,60.5)
     place(board, "Capacitor_SMD", "C_0805_2012Metric",
-          "Cp2", "100n 100V X7R", 23.1, 60.5, 180,
+          "Cp2", "100n 200V X7R", 23.1, 60.5, 180,
           {"1": "N2", "2": "CLKB"})
 
     place(board, "Capacitor_SMD", "C_0805_2012Metric",
-          "Cp3", "100n 100V X7R", 31, 49, 0,
+          "Cp3", "100n 200V X7R", 31, 49, 0,
           {"1": "N3", "2": "CLKA"})
 
     # Transformer wire solder pads — bare THT holes

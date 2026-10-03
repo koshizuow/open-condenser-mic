@@ -932,19 +932,19 @@ elements += component("Device:R", "R_DZ1", "680R",
     pins={"1": "~VBOOST", "2": "~N_PUMP"},
     val_at=(2.54, -2.54))
 
-elements += component("Device:C", "Cp1", "100n 100V X7R",
+elements += component("Device:C", "Cp1", "100n 200V X7R",
     88, 133,
     footprint="Capacitor_SMD:C_0805_2012Metric",
     pins={"1": "~N1", "2": "CLKA"},
     val_at=(-1, -5.08))
 
-elements += component("Device:C", "Cp2", "100n 100V X7R",
+elements += component("Device:C", "Cp2", "100n 200V X7R",
     103, 133,
     footprint="Capacitor_SMD:C_0805_2012Metric",
     pins={"1": "~N2", "2": "~CLKB"},
     val_at=(2.54, -5.08))
 
-elements += component("Device:C", "Cp3", "100n 100V X7R",
+elements += component("Device:C", "Cp3", "100n 200V X7R",
     118, 133,
     footprint="Capacitor_SMD:C_0805_2012Metric",
     pins={"1": "~N3", "2": "~CLKA"},
