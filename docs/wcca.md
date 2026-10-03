@@ -22,7 +22,7 @@ Component tolerances used (from `pcb/bom.csv` / LCSC part datasheets):
 | Ref | Part | Nominal | Tolerance | Worst-case bound used |
 |---|---|---|---|---|
 | R1, R2 | ARG03BTC6801 (Viking) | 6.8 kΩ | ±0.1% | −0.1% (maximizes current into V_OPA_RAW) |
-| R_REG1 | 0402WGF2201TCE (UNI-ROYAL) | 2.2 kΩ | ±1% | −1% (maximizes current into Z_REG1) |
+| R_REG1 | RC0402FR-071K2L (YAGEO) | 1.2 kΩ | ±1% | −1% (maximizes current into Z_REG1); changed from 2.2 kΩ in PR #75 to improve phantom ripple PSRR |
 | Z_REG1 | BZT52C24 (MDD) | 24 V | ±5% (22.8–25.2 V) | 25.2 V (maximizes P = Vz·Iz at fixed Iz-driving network) |
 | Z_OSC1 | MMSZ15T1G (onsemi) | 15 V | ±5% (14.25–15.75 V) | 15.75 V (drives Dickson pump harder) |
 | DZ1 | MMSZ5266BT1G (onsemi) | 68 V | ±5% (64.6–71.4 V) | 64.6 V (lowest clamp voltage → most excess pump current shunted) |
@@ -49,17 +49,22 @@ R_REG1 flows through Z_REG1.
 
 I_z = (V_phantom − V_z) / (R1‖R2 + R_REG1), P_z = I_z × V_z
 
+R_REG1 was lowered from 2.2 kΩ to 1.2 kΩ in PR #75 to increase Z_REG1's
+operating current (reducing its dynamic impedance rz and improving PSRR).
+The higher bias current raises Z_REG1's dissipation slightly; re-checked
+below with the new value.
+
 | Condition | V_phantom | R1‖R2 (−tol) | R_REG1 (−tol) | V_z (+tol) | I_z | P_z | % of P_D (500 mW) |
 |---|---|---|---|---|---|---|---|
-| Nominal | 48 V | 3396.6 Ω | 2178.0 Ω | 25.2 V | 4.090 mA | 103.1 mW | 20.6% |
-| Worst-case low | 44 V | 3396.6 Ω | 2178.0 Ω | 25.2 V | 3.372 mA | 85.0 mW | 17.0% |
-| **Worst-case high** | **52 V** | **3396.6 Ω** | **2178.0 Ω** | **25.2 V** | **4.808 mA** | **121.2 mW** | **24.2%** |
+| Nominal | 48 V | 3396.6 Ω | 1188.0 Ω | 25.2 V | 4.974 mA | 125.3 mW | 25.1% |
+| Worst-case low | 44 V | 3396.6 Ω | 1188.0 Ω | 25.2 V | 4.101 mA | 103.3 mW | 20.7% |
+| **Worst-case high** | **52 V** | **3396.6 Ω** | **1188.0 Ω** | **25.2 V** | **5.847 mA** | **147.3 mW** | **29.5%** |
 
-**Result: Z_REG1 worst-case dissipation is 121.2 mW, 24.2% of the 500 mW
-package rating — comfortable margin (>4× headroom).**
+**Result: Z_REG1 worst-case dissipation is 147.3 mW, 29.5% of the 500 mW
+package rating — comfortable margin (>3× headroom).**
 
-Thermal check (RθJA = 340 °C/W): ΔT_j = 0.1212 W × 340 °C/W ≈ 41.2 °C above
-ambient. Even at an elevated in-enclosure ambient of 60 °C, T_j ≈ 101 °C,
+Thermal check (RθJA = 340 °C/W): ΔT_j = 0.1473 W × 340 °C/W ≈ 50.1 °C above
+ambient. Even at an elevated in-enclosure ambient of 60 °C, T_j ≈ 110 °C,
 well below the 150 °C junction limit.
 
 ## DZ1 (68 V) — active Dickson charge-pump clamp, with R_DZ1 series resistor
