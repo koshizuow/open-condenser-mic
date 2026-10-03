@@ -104,6 +104,15 @@ Pad numbers run left to right as viewed from the **front** (component side). The
 - 2-layer, 36 × 93 mm, ENIG or HASL
 - All other components sourced from standard distributors; LCSC part numbers included in BOM
 - 4 × M2.5 mounting holes with GND pads for chassis bonding — 28 mm horizontal span, 80 mm vertical span
+- **MH3/MH4 mounting hardware must be electrically conductive** (metal standoffs and screws, not plastic). These two holes connect the PCB GND plane to the metal housing; plastic hardware breaks both the chassis ground bond and the EMC shielding path.
+
+### Safety note — HV rail (IEC 62368-1)
+
+The internal HV rail (VBOOST ≈ 68 V DC, HV\_FILT ≈ 67.3 V DC) is generated from 48 V phantom power by the Dickson charge pump and is entirely enclosed inside the microphone housing. It is **not connected to any externally accessible connector pin, contact, or exposed surface** under normal or single-fault conditions.
+
+Under IEC 62368-1, a DC source in the 60–120 V range is classified as **ES2**. ES2 is permissible in a product provided that the source is not accessible to the user during normal operation; the sealed housing satisfies this requirement. The XLR output pins carry only the transformer-coupled signal and phantom supply (≤ 48 V, ES1), not the HV rail.
+
+**Consequence for builders:** do not probe the HV rail while the board is powered from a live phantom source — treat it as you would any 68 V DC bus.
 
 ## Software Requirements
 
