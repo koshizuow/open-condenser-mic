@@ -212,20 +212,18 @@ C_PRES1  RS_MID  PIN2_NODE  12n
 # ─── 3. AC FREQUENCY RESPONSE (amp_ac.sp) ────────────────────────────────────
 
 def _run_ac(content_modifier=None):
-    """Run amp_ac.sp, optionally modifying SPICE content, return (freq, db_norm)."""
+    """Run amp_ac.sp, optionally modifying SPICE content, return (freq, db_norm).
+
+    amp_ac.sp writes _ac.dat in its own .control block; no injection needed here.
+    content_modifier must insert netlist elements BEFORE .control, not before .end,
+    to avoid corrupting .endc tokens.
+    """
     data_path = os.path.join(SIM_DIR, "_ac.dat")
-    ctrl = f"""
-.control
-run
-let xlr_db = db(v(xlr_diff))
-wrdata {data_path} xlr_db
-.endc"""
     with open(os.path.join(SIM_DIR, "amp_ac.sp")) as f:
         base = f.read()
     if content_modifier:
         base = content_modifier(base)
-    content = base.replace(".end", ctrl + "\n.end")
-    run_ngspice_stdout(content, "ac", is_content=True)
+    run_ngspice_stdout(base, "ac", is_content=True)
     d = parse_wrdata(data_path)
     if os.path.exists(data_path):
         os.remove(data_path)
@@ -238,7 +236,7 @@ wrdata {data_path} xlr_db
 def plot_freq_response():
     freq_base, db_base = _run_ac()
     freq_peak, db_peak = _run_ac(
-        lambda s: s.replace(".end", PRESENCE_PEAK_LINES + ".end")
+        lambda s: s.replace('\n.control', '\n' + PRESENCE_PEAK_LINES + '\n.control', 1)
     )
 
     mask = (freq_base >= 20) & (freq_base <= 200000)
