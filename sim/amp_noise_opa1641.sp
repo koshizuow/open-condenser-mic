@@ -90,24 +90,7 @@ C5    NET_24V  0  10u  IC=24
 run
 setplot noise1
 print inoise_spectrum onoise_spectrum
-
-* ── Pass/fail assertion ─────────────────────────────────────────────────────
-* Input-referred noise at 1kHz: dominated by R_GBIAS(100MΩ) Johnson noise
-* (~40.7 nV/√Hz) + OPA1641 voltage noise (2.5 nV/√Hz) → expected ~40.8 nV/√Hz.
-* Limit 60 nV/√Hz: 47% margin; catches wrong R_GBIAS value or missing bypass caps.
-meas noise INOISE_1K find inoise_spectrum at=1000
-let inoise_nv = INOISE_1K * 1e9
-echo ""
-echo "========================================================"
-echo "  amp_noise: input-referred noise at 1kHz"
-echo "  $&inoise_nv nV/rtHz  (limit 60 nV/rtHz)"
-echo "========================================================"
-let noise_limit = 60
-if inoise_nv > noise_limit
-  echo "FAIL amp_noise: input-referred noise = $&inoise_nv nV/rtHz (limit 60 nV/rtHz)"
-else
-  echo "PASS amp_noise: input-referred noise = $&inoise_nv nV/rtHz"
-end
+* Pass/fail for inoise checked by check_noise.py in CI (meas noise unsupported here).
 .endc
 
 .end
