@@ -127,10 +127,17 @@ jobs:
       - name: Run SPICE simulations
         working-directory: sim
         run: |
-          ngspice -b boost_dickson.sp
+          set -o pipefail
+          ngspice -b boost_dickson.sp 2>&1 | tee /tmp/boost_out.txt
           ngspice -b amp_ac.sp
           ngspice -b amp_bias_compare.sp
           ngspice -b amp_noise_opa1641.sp
+          ngspice -b phantom_ripple_psrr.sp 2>&1 | tee /tmp/psrr_out.txt
+          if grep -q "^FAIL" /tmp/boost_out.txt /tmp/psrr_out.txt; then
+            echo "--- SPICE assertion failures ---"
+            grep "^FAIL" /tmp/boost_out.txt /tmp/psrr_out.txt
+            exit 1
+          fi
 
       - name: Generate plots
         run: python3 sim/plot_all.py
