@@ -110,6 +110,20 @@ echo "  VBOOST_ripple = $&VBOOST_ripple V p-p"
 echo "  HV_avg  (LC)  = $&HV_avg_LC V"
 echo "  HV_ripple(LC) = $&LC_ripple V p-p"
 
+* ── VBOOST assertion: check here before reset clears the meas result ────────
+* DZ1 clamps VBOOST at 68V; bounds allow ±5V for model/param variation.
+let vboost_lo = 63
+let vboost_hi = 73
+if VBOOST_avg < vboost_lo
+  echo "FAIL boost_dickson: VBOOST_avg = $&VBOOST_avg V (min 63 V)"
+else
+  if VBOOST_avg > vboost_hi
+    echo "FAIL boost_dickson: VBOOST_avg = $&VBOOST_avg V (max 73 V)"
+  else
+    echo "PASS boost_dickson: VBOOST_avg = $&VBOOST_avg V"
+  end
+end
+
 * ── RC filter (R=1MΩ, L≈0, C=470nF, fc≈0.34Hz) — production PCB config ───────
 echo ""
 echo "--- RC filter: R=1MΩ (C22935), C=470nF, fc≈0.34Hz ---"
@@ -128,23 +142,10 @@ let RC_ripple = HV_max_RC - HV_min_RC
 echo "  HV_avg  (RC)  = $&HV_avg_RC V"
 echo "  HV_ripple(RC) = $&RC_ripple V p-p"
 
-* ── Pass/fail assertions ─────────────────────────────────────────────────────
-* DZ1 clamps VBOOST at 68V; bounds allow ±5V for model/param variation.
-* HV_avg_RC: 1MΩ drop across R_HV into 100MΩ R_GBIAS → ≈0.67V below VBOOST.
-* "FAIL" prefix triggers CI grep-based gate in verify.yml.
-let vboost_lo = 63
-let vboost_hi = 73
-let hvrc_lo   = 61
-let hvrc_hi   = 73
-if VBOOST_avg < vboost_lo
-  echo "FAIL boost_dickson: VBOOST_avg = $&VBOOST_avg V (min 63 V)"
-else
-  if VBOOST_avg > vboost_hi
-    echo "FAIL boost_dickson: VBOOST_avg = $&VBOOST_avg V (max 73 V)"
-  else
-    echo "PASS boost_dickson: VBOOST_avg = $&VBOOST_avg V"
-  end
-end
+* ── HV_avg_RC assertion ──────────────────────────────────────────────────────
+* 1MΩ drop across R_HV into 100MΩ R_GBIAS → ≈0.67V below VBOOST (~67.3V).
+let hvrc_lo = 61
+let hvrc_hi = 73
 if HV_avg_RC < hvrc_lo
   echo "FAIL boost_dickson: HV_avg_RC = $&HV_avg_RC V (min 61 V)"
 else

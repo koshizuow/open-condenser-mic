@@ -97,4 +97,49 @@ Ediff_out  XLR_DIFF  0  XLR_HOT_F  XLR_COLD_F  1
 
 .print ac db(V(XLR_DIFF)) db(V(NET_OPA_OUT)) db(V(XLR_P2)) db(V(XLR_P3))
 
+.control
+run
+* Write differential output AC data for plot_all.py
+let xlr_db = db(v(xlr_diff))
+wrdata _ac.dat xlr_db
+
+* ── Passband flatness measurements ─────────────────────────────────────────
+* Relative gains: all measurements against 1kHz mid-band reference.
+* LF note: NTE10/3 primary (0.5H, Rp=521Ω) + C_DC(4.7µF) form a 2nd-order HPF
+* with ω₀≈104Hz, Q≈0.49 → ~15dB drop at 100Hz is by design. Check at 500Hz
+* instead (~0.4dB expected drop), where the response is near-flat.
+meas ac G_1K   find v(xlr_diff) at=1000
+meas ac G_500  find v(xlr_diff) at=500
+meas ac G_10K  find v(xlr_diff) at=10000
+let gain_1k  = 20*log10(abs(G_1K))
+let gain_500 = 20*log10(abs(G_500))
+let gain_10k = 20*log10(abs(G_10K))
+let drop_500 = gain_1k - gain_500
+let drop_10k = gain_1k - gain_10k
+
+echo ""
+echo "========================================================"
+echo "  amp_ac: passband flatness (normalized to 1kHz)"
+echo "  Gain at   500Hz: $&gain_500 dBV  (drop $&drop_500 dB)"
+echo "  Gain at  1kHz:   $&gain_1k dBV  (reference)"
+echo "  Gain at 10kHz:  $&gain_10k dBV  (drop $&drop_10k dB)"
+echo "========================================================"
+
+* ── Pass/fail assertions ────────────────────────────────────────────────────
+* 500Hz limit 3.0dB: expected ~0.4dB (2.6dB margin); catches C_DC/transformer changes.
+* 10kHz limit 1.5dB: catches HF rolloff regressions from transformer or output cap.
+let flat_lo_limit = 3.0
+let flat_hi_limit = 1.5
+if drop_500 > flat_lo_limit
+  echo "FAIL amp_ac: gain drop at 500Hz = $&drop_500 dB (limit 3.0 dB)"
+else
+  echo "PASS amp_ac: gain flat at 500Hz ($&drop_500 dB from 1kHz)"
+end
+if drop_10k > flat_hi_limit
+  echo "FAIL amp_ac: gain drop at 10kHz = $&drop_10k dB (limit 1.5 dB)"
+else
+  echo "PASS amp_ac: gain flat at 10kHz ($&drop_10k dB from 1kHz)"
+end
+.endc
+
 .end
