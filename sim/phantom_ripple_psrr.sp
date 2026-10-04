@@ -219,6 +219,45 @@ echo "  Improvement (nom):  $&improvement_nom dB"
 echo "  Improvement (WC):   $&improvement_wc dB"
 echo "========================================================"
 
+* ── Ripple sensitivity table: after-fix nominal, scaled by source amplitude ──
+* System is linear; output scales proportionally with phantom supply ripple.
+* Reference: AC=100m (100 mVpp in sim convention) → H3 dBu.
+* Other amplitudes: dBu = H3 + 20*log10(A/100).
+let amp_10  = H3 - 20.000
+let amp_20  = H3 - 13.979
+let amp_50  = H3 -  6.021
+let amp_100 = H3
+let amp_200 = H3 +  6.021
+let amp_500 = H3 + 13.979
+echo ""
+echo "========================================================"
+echo "  Ripple sensitivity (after-fix nominal, 50Hz):"
+echo "  Phantom ripple (mVpp)   Output hum (dBu)"
+echo "     10                   $&amp_10"
+echo "     20                   $&amp_20"
+echo "     50                   $&amp_50"
+echo "    100  (reference)      $&amp_100"
+echo "    200                   $&amp_200"
+echo "    500                   $&amp_500"
+echo "========================================================"
+
+* ── Pass/fail assertions ─────────────────────────────────────────────────────
+* Thresholds: after-fix nominal hum < -118 dBu (4 dB margin from -122.3 nominal);
+* improvement > 5 dB (1.6 dB margin from 6.6 dB nominal).
+* "FAIL" prefix triggers CI grep-based gate in verify.yml.
+let hum_limit = -118
+let imp_limit = 5
+if H3 > hum_limit
+  echo "FAIL phantom_ripple_psrr: after-fix nominal hum = $&H3 dBu (limit -118 dBu)"
+else
+  echo "PASS phantom_ripple_psrr: after-fix nominal hum = $&H3 dBu"
+end
+if improvement_nom < imp_limit
+  echo "FAIL phantom_ripple_psrr: fix improvement = $&improvement_nom dB (min 5 dB)"
+else
+  echo "PASS phantom_ripple_psrr: fix improvement = $&improvement_nom dB"
+end
+
 .endc
 
 .end
