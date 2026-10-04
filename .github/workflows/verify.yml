@@ -21,7 +21,11 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends \
             kicad kicad-footprints kicad-symbols \
-            ngspice python3-numpy python3-matplotlib git ca-certificates zip
+            ngspice python3-numpy python3-matplotlib python3-pytest \
+            git ca-certificates zip
+
+      - name: BOM LCSC sanity check
+        run: pytest pcb/test_bom.py -v
 
       - name: Python syntax check
         run: |
