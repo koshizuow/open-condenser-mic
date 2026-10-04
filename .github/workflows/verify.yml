@@ -128,14 +128,14 @@ jobs:
         working-directory: sim
         run: |
           set -o pipefail
-          ngspice -b boost_dickson.sp 2>&1 | tee /tmp/boost_out.txt
-          ngspice -b amp_ac.sp
+          ngspice -b boost_dickson.sp       2>&1 | tee /tmp/boost_out.txt
+          ngspice -b amp_ac.sp              2>&1 | tee /tmp/amp_ac_out.txt
           ngspice -b amp_bias_compare.sp
-          ngspice -b amp_noise_opa1641.sp
+          ngspice -b amp_noise_opa1641.sp   2>&1 | tee /tmp/amp_noise_out.txt
           ngspice -b phantom_ripple_psrr.sp 2>&1 | tee /tmp/psrr_out.txt
-          if grep -q "^FAIL" /tmp/boost_out.txt /tmp/psrr_out.txt; then
+          if grep -q "^FAIL" /tmp/boost_out.txt /tmp/amp_ac_out.txt /tmp/amp_noise_out.txt /tmp/psrr_out.txt; then
             echo "--- SPICE assertion failures ---"
-            grep "^FAIL" /tmp/boost_out.txt /tmp/psrr_out.txt
+            grep "^FAIL" /tmp/boost_out.txt /tmp/amp_ac_out.txt /tmp/amp_noise_out.txt /tmp/psrr_out.txt
             exit 1
           fi
 
