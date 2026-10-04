@@ -90,6 +90,7 @@ C5    NET_24V  0  10u  IC=24
 run
 setplot noise1
 print inoise_spectrum onoise_spectrum
+* Pass/fail for inoise checked by check_noise.py in CI (meas noise unsupported here).
 .endc
 
 .end
