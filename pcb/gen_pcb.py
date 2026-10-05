@@ -23,6 +23,7 @@ Routing is fully scripted (reproducible):
 """
 
 import argparse
+import math
 import os, sys
 import pcbnew
 
@@ -277,13 +278,14 @@ def route_all(board):
           (32.0,  67.15))
     # Cres → R_HV: x=27.15 stays left of ZT2 hole (r=1.6mm) until y=75, then jog right to pad1
     # Track ends at y=75→78.5, never reaching V_OPA_RAW F.Cu at y=79.2 (no crossing)
-    # At (31.175,75): dist to ZT2(31,72)=3.02mm > 1.6+0.2+0.25=2.05mm hole clearance OK
     route(board, "VBOOST", F, HV,
           (28.05, 67.0),
           (27.15, 67.0),
           (27.15, 75.0),
           (31.175, 75.0),
           (31.175, 78.5))
+    # jog point (31.175,75) to ZT2 center: min = drill_r(1.6) + copper_clr(0.2) + trace_hw(0.25)
+    _assert_trace_clears_hole("VBOOST jog", 31.175, 75.0, _ZT2_X, _ZT2_Y, 1.6 + 0.2 + 0.25)
 
     # ── HV_FILT: R_HV-pad2 → C9-pad1 ────────────────────────────────────
     # R_HV pad2 at (32.825, 78.5); C9 pad1 at (36.5, 78.0625) [rot=-90, pad1 at top]
@@ -739,6 +741,57 @@ def fix_ref(board, ref, new_text=None, x_mm=None, y_mm=None, angle_deg=None, hid
             return
 
 
+# ── PCB geometry constants ────────────────────────────────────────────────────
+_CUTOUT_X2   = 26.0            # transformer cutout right edge x
+_ZT2_X       = 31.0            # ZT2 mounting hole center x
+_ZT2_Y       = 72.0            # ZT2 mounting hole center y
+
+# Courtyard half-extents (x, y) at rotation=0 — KiCad standard footprints
+_C_0805_CY      = (1.70, 0.95)  # C_0805_2012Metric  3.40×1.90mm courtyard
+_D_SOD123_CY    = (2.00, 0.85)  # D_SOD-123          4.00×1.70mm courtyard
+_MH_M3_CY_R     = 3.455         # MountingHole_3.2mm_M3 courtyard circle radius
+# C_0805_2012Metric: pad center offset = 1.0mm, pad half-width = 0.45mm
+# → distance from component center to pad outer edge = 1.45mm
+_C_0805_PAD_REACH = 1.45
+
+
+def _cy_corners(cx, cy, rot_deg, half_xy):
+    """4 corners of a rectangular courtyard after 0 or 90-degree rotation."""
+    hx, hy = (half_xy[1], half_xy[0]) if rot_deg % 180 == 90 else half_xy
+    return [(cx + dx, cy + dy) for dx in (-hx, hx) for dy in (-hy, hy)]
+
+
+def _assert_cy_clears_hole(name, corners, hole_x, hole_y, min_dist):
+    """Raise if any courtyard corner is closer than min_dist to the hole center."""
+    for corner in corners:
+        d = math.hypot(corner[0] - hole_x, corner[1] - hole_y)
+        if d < min_dist:
+            raise AssertionError(
+                f"{name} courtyard corner {corner} is {d:.3f} mm from hole "
+                f"({hole_x},{hole_y}) — min {min_dist:.3f} mm required"
+            )
+
+
+def _assert_pad_clears_cutout(name, pad_left_x, cutout_right_x, min_gap):
+    """Raise if a pad's left edge is closer than min_gap to a cutout right edge."""
+    gap = pad_left_x - cutout_right_x
+    if gap < min_gap:
+        raise AssertionError(
+            f"{name} left edge {pad_left_x:.3f} mm: gap to cutout right "
+            f"{cutout_right_x} mm is {gap:.3f} mm < {min_gap:.3f} mm"
+        )
+
+
+def _assert_trace_clears_hole(label, px, py, hole_x, hole_y, min_dist):
+    """Raise if a trace waypoint (px,py) is closer than min_dist to a hole center."""
+    d = math.hypot(px - hole_x, py - hole_y)
+    if d < min_dist:
+        raise AssertionError(
+            f"Trace {label} at ({px},{py}) is {d:.3f} mm from hole "
+            f"({hole_x},{hole_y}) — min {min_dist:.3f} mm required"
+        )
+
+
 def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
@@ -1077,20 +1130,20 @@ def main():
     # ── HV filter + VBOOST clamp (right of transformer cutout, x=26..34) ──────
 
     # Cres: 470n reservoir cap on VBOOST
-    # At (29,67): pad1 left edge=27.55 vs cutout right x=26.0, gap=1.55mm OK
-    # Courtyard nearest corner (30.7,67.95) to ZT2 center (31,72): 4.06mm > r=3.455mm OK
     cres = place(board, "Capacitor_SMD", "C_0805_2012Metric",
                  "Cres1", "470n 100V X7R", 29, 67, 0,
                  {"1": "VBOOST", "2": "GND"})
     for pad in cres.Pads():
         if pad.GetNumber() == "2":
             pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
+    _assert_pad_clears_cutout("Cres1 pad1", 29.0 - _C_0805_PAD_REACH, _CUTOUT_X2, 0.5)
+    _assert_cy_clears_hole("Cres1", _cy_corners(29.0, 67.0, 0, _C_0805_CY), _ZT2_X, _ZT2_Y, _MH_M3_CY_R)
 
     # DZ1: 68V zener clamp on VBOOST (K=pad1=VBOOST, A=pad2=GND)
-    # At (32,65.5): nearest courtyard corner (31.15,67.5) to ZT2 center (31,72): 4.50mm > r=3.455mm OK
     place(board, "Diode_SMD", "D_SOD-123",
           "DZ1", "68V BZT52C68", 32, 65.5, 90,
           {"1": "VBOOST", "2": "GND"})
+    _assert_cy_clears_hole("DZ1", _cy_corners(32.0, 65.5, 90, _D_SOD123_CY), _ZT2_X, _ZT2_Y, _MH_M3_CY_R)
 
     # R_HV: 1MΩ RC filter resistor (0603, 1.6×0.8mm, pad pitch 1.65mm)
     # Center at (32.0,78.5); pad1(VBOOST) at (31.175,78.5), pad2(HV_FILT) at (32.825,78.5)
