@@ -36,8 +36,6 @@ def _parse_args():
     return p.parse_args()
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_args = _parse_args()
-PCB = os.path.join(_SCRIPT_DIR, f"{_args.name}.kicad_pcb")
 
 R6_DEFAULT = {"val": "5.6k",  "lcsc": "C25908"}
 R6_HI_GAIN = {"val": "47k",   "lcsc": "C25792"}
@@ -228,6 +226,9 @@ def write_variant(board, suffix, r6_val, r6_lcsc, presence):
 
 
 def main():
+    _args = _parse_args()
+    PCB = os.path.join(_SCRIPT_DIR, f"{_args.name}.kicad_pcb")
+
     if not os.path.exists(PCB):
         sys.exit(f"PCB not found: {PCB}\nRun gen_pcb.py first.")
 
