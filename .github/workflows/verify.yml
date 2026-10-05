@@ -25,7 +25,8 @@ jobs:
             git ca-certificates zip
 
       - name: BOM LCSC sanity check
-        run: pytest pcb/test_bom.py -v
+        working-directory: pcb
+        run: python3 -m pytest -v test_bom.py
 
       - name: Python syntax check
         run: |

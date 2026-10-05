@@ -6,14 +6,11 @@ introducing an empty, duplicate, or known-wrong LCSC number.
 Run: pytest pcb/test_bom.py -v
 """
 
-import os
 import re
-import sys
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(__file__))
-import gen_bom  # noqa: E402
+import gen_bom
 
 VALID_LCSC = re.compile(r"^C\d+$")
 
