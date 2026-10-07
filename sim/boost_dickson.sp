@@ -10,7 +10,9 @@
 * HV filter   : mode-selectable LC or RC (see .control block)
 *   LC default: L1=10mH (DCR 8Ω), C=470nF, fc≈2.3kHz, Q≈18
 *   RC alt    : R=1MΩ (C22935),   C=470nF, fc≈0.34Hz
-* Load        : R_GBIAS1 = 100MOhm (capsule at DC ~0.7µA)
+* Load        : 100MOhm to GND (~0.7µA). Conservative stand-in: in the real
+*               circuit R_GBIAS1 feeds the capsule and C8, so HV_FILT has no
+*               DC load and settles at VBOOST (#101)
 * ---------------------------------------------------------------------------
 .title Active Dickson Boost — LC vs RC HV filter comparison
 
@@ -76,7 +78,8 @@ L_HV  LNODE    HVFILT  {L_HV}
 C_LC  HVFILT   0       {C_LC}  IC={C_LC_IC}
 
 * ---------------------------------------------------------------------------
-* LOAD: R_GBIAS1 = 100MOhm (capsule DC load ~0.7µA)
+* LOAD: 100MOhm to GND (~0.7µA). The real circuit has no DC path here (see header);
+* this load makes HV_FILT sit ~0.67V below VBOOST in the sim only.
 * ---------------------------------------------------------------------------
 R_load  HVFILT  0  {R_GBIAS}
 

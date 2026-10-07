@@ -26,7 +26,7 @@ Run with ngspice from `sim/` (see [Running Simulations](#running-simulations)):
 | Parameter | Simulated | Notes |
 |---|---|---|
 | V_BOOST steady-state | 67.97 V | target 68.2 V, DZ1-clamped |
-| HV_FILT DC | 67.30 V | 0.67 V drop across R_HV (1 MΩ × 0.67 µA load) |
+| HV_FILT DC | 67.30 V | Sim models a 100 MΩ load to GND, giving a 0.67 V drop across R_HV. The real circuit has no DC load on HV_FILT (R_GBIAS1 feeds the capsule and C8), so it settles at V_BOOST, about 0.7 V higher. Small next to DZ1's ±5% tolerance |
 | HV_FILT ripple | ~47 nV p-p calc | RC at 100 kHz: −109 dB; LC ref sim: 10 µV p-p |
 | RC filter corner | ~0.34 Hz | R_HV=1 MΩ × C9=470 nF; no LC resonance |
 | Capsule polarization | ~55 V | HV_FILT (67.3 V) − V_MID (12 V) at steady state |
@@ -41,7 +41,10 @@ Charge pump settles to ~68 V within ~1 ms. HV_FILT is RC-filtered (1 MΩ + 470 n
 
 ![Frequency response](img/freq_response.png)
 
-Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within ±1 dB from ~200 Hz to ~20 kHz; high-pass rolloff from output DC block (C_DC = 4.7 µF) and R_GBIAS (100 MΩ) × capsule capacitance (55 pF). The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
+Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within about ±1 dB from ~500 Hz to ~20 kHz. Two high-pass mechanisms shape the low end: the input network (R_GBIAS ∥ R_BIAS1 = 50 MΩ against the 55 pF capsule, corner ~60 Hz) and the output DC block (C_DC = 4.7 µF) with the transformer.
+
+> **The response below about 500 Hz is not verified.** The transformer model uses `Lp = 0.5 H` for the driven winding, which is an estimate; the Neutrik datasheet gives no inductance. The winding resistances (521 Ω and 42 Ω) are measured. The real low-frequency corner may be lower than plotted.
+ The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
 
 #### Optional presence-peak network (R_PRES1, C_PRES1)
 
@@ -63,7 +66,7 @@ R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, parallel with R3 (2.2 kΩ), are
 
 ![Noise spectrum](img/noise_spectrum.png)
 
-SPICE input-referred noise, computed by dividing total output noise by the signal transfer function at each frequency. The slope reflects the signal path's high-pass characteristic (coupling caps attenuate low-frequency signal more than noise), not a real frequency-dependent noise source. Midband (1–10 kHz) noise floor is dominated by R_GBIAS Johnson noise (~27 nV/√Hz at 100 MΩ) and OPA1641 voltage noise (2.5 nV/√Hz).
+SPICE input-referred noise, computed by dividing total output noise by the signal transfer function at each frequency. The slope reflects the signal path's high-pass characteristic (coupling caps attenuate low-frequency signal more than noise), not a real frequency-dependent noise source. Below a few kHz the noise is set by the two 100 MΩ bias resistors (R_GBIAS1 and R_BIAS1): their thermal noise current flows into the capsule capacitance, so it falls with frequency. Simulated input-referred noise is 55 nV/√Hz at 1 kHz and about 10 nV/√Hz at 10 kHz, where the OPA1641 and R_IN1 take over. A-weighted over 20 Hz–20 kHz this is about 2.9 µV, equivalent to roughly 21 dB(A) SPL for a 13 mV/Pa, 55 pF capsule. These are simulated figures, not measurements.
 
 ## Hardware Requirements
 
