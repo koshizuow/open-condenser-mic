@@ -438,7 +438,7 @@ elements.append(wire(65.65, 19.35, 77.38, 19.35))  # V_BASE_REG bus seg2
 elements.append(wire(65.65, 19.35, 65.65, 25))
 elements.append(junction(65.65, 19.35))
 
-elements += component("Device:C", "C2", "100n 25V X7R",
+elements += component("Device:C", "C2", "100n 50V X7R",
     99, 14.61,
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "~V_OPA", "2": "GND"},
@@ -671,7 +671,7 @@ elements += component("Amplifier_Operational:OPA1641", "U1", "OPA1641",
     pins={"3": "~VPLUS_IN", "2": "~VINV", "6": "SIG_OUT", "7": "~V_OPA", "4": "GND"},
     ref_at=(10, 4), val_at=(10, 6.5))
 
-elements += component("Device:C", "C3", "100n 25V X7R",
+elements += component("Device:C", "C3", "100n 50V X7R",
     113, 83,
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "~V_OPA", "2": "GND"})

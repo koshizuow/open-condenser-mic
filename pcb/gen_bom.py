@@ -79,7 +79,8 @@ LCSC = {
 
     # Standard capacitors (0402)
     ("12n 25V X7R",   "C_0402_1005Metric"):        "C113786",   # YAGEO CC0402KRX7R8BB123; X7R fine — no DC bias, mV signal level
-    ("100n 25V X7R",  "C_0402_1005Metric"):        "C77014",    # GRM155R71E104KE14D Murata; C307331 out of stock
+    ("100n 25V X7R",  "C_0402_1005Metric"):        "C77014",    # GRM155R71E104KE14D Murata; C307331 out of stock — C_U3 (15V rail)
+    ("100n 50V X7R",  "C_0402_1005Metric"):        "C131394",   # YAGEO CC0402KRX7R9BB104 ±10% 50V — C2/C3 on V_OPA (up to 24.6V), same margin reasoning as C5/C6 in #54 (#100). Not C60474: that is the 16V CC0402KRX7R7BB104
     ("100n 63V X7R",  "C_0402_1005Metric"):        "C162178",   # GRM155R62A104KE14D muRata 100V X5R
     ("100p C0G",      "C_0402_1005Metric"):        "C445763",   # TDK C1005C0G1H101JT000F 100pF 50V C0G; C1554 maps to 20pF in JLCPCB
 
