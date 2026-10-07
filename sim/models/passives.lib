@@ -11,7 +11,10 @@
 .model BZX55C56 D (Is=1n N=1 Rs=10 Cj0=50p Bv=56 Ibv=5m Vj=0.6 M=0.4)
 
 * NTE10/3 transformer model (used reversed: 3-turn section as primary)
-* Primary inductance (red-blue, 3-turn section): 0.5H estimate
+* Primary inductance (red-blue, 3-turn section): 0.5H. UNVERIFIED ESTIMATE (#99).
+*   The Neutrik datasheet gives only the 1:3:10 ratio. An earlier note argues
+*   0.5H belongs to the 1-turn winding, which would make this section ~4.5H.
+*   Until it is measured, treat the simulated response below ~500Hz as uncertain.
 * Secondary inductance (white-yellow, 1-turn): 0.5 / 9 = 55.6mH  (Ls = Lp/n^2, n=3)
 * Coupling k=0.99 (high quality audio transformer)
 * Primary DC resistance: 521Ω measured (Red-Blue, S1-S2)

@@ -3,8 +3,9 @@
 *   Voltage noise: 2.5 nV/rtHz (OPA1641 datasheet)
 *   Current noise: ~0.8 fA/rtHz (JFET input, negligible vs resistor noise)
 *   GBW: 11 MHz (behavioral single-pole at 110Hz -> GBW=11MHz with gain 100k)
-* Input network: R_GBIAS=100MΩ (single resistor) dominates noise floor
-*   R_BIAS1=100MΩ bootstrapped (VPLUS follows output) -> AC-invisible, omitted
+* Input network: R_GBIAS=100MΩ and R_BIAS1=100MΩ both contribute; they
+*   dominate the noise floor below a few kHz. R_BIAS1 returns to V_MID, which
+*   is AC ground, so it is not bootstrapped (#101).
 * ---------------------------------------------------------------------------
 .title OPA1641 Mic Noise Analysis
 
@@ -29,13 +30,17 @@ C3    NET_VBIAS  0  10u  IC=12
 * ---------------------------------------------------------------------------
 Vcap  CAP_HOT  CAP_BOT  AC 0  DC 0
 Cc    CAP_BOT  0  {Cc}
-Rconn CAP_HOT  PIN3_NODE  1
+Rconn CAP_HOT  CAP_FP  1
 
 * High-Z bias network
 * R_GBIAS = 100MΩ (single resistor) to HV rail (AC ground, decoupled)
-* R_BIAS1 = 100MΩ bootstrapped (VPLUS follows output) -> AC-invisible, omitted
-* C8 = 1nF omitted: bootstrapping makes R_BIAS1 AC-invisible; C8×R_GBIAS pole at ~1.6Hz
-R_GBIAS  NET_HV  PIN3_NODE  {R_GBIAS}
+* C8 = 1nF couples CAP_FP to VPLUS
+* R_BIAS1 = 100MΩ from VPLUS to V_MID (AC ground). Earlier revisions omitted
+* C8 and R_BIAS1 as "bootstrapped", which left out half of the bias network's
+* noise current and understated the noise below a few kHz by about 3 dB (#101).
+R_GBIAS  NET_HV  CAP_FP  {R_GBIAS}
+C8       CAP_FP  PIN3_NODE  {C8}
+R_BIAS1  PIN3_NODE  NET_VBIAS  {R_BIAS1}
 Vhv   NET_HV  0  DC 68
 
 * ---------------------------------------------------------------------------

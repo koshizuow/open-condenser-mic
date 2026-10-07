@@ -94,19 +94,20 @@ C9     HVFILT   0        470n
 * ────────────────────────────────────────────────────────────────────────────
 * CAPSULE BIAS / INPUT COUPLING
 *
-* Topology: HVFILT → R_GBIAS1 (100MΩ) → CAP_FP (IN+) → Cc (55pF) → CAP_BP
-*           CAP_BP → C8 (1nF) → GND  (sets backplate AC ground reference)
+* Topology (matches the netlist):
+*   HVFILT → R_GBIAS1 (100MΩ) → CAP_FP
+*   CAP_FP → Cc (55pF) → backplate = V_MID (AC ground: C4 + C5 = 20µF)
+*   CAP_FP → C8 (1nF) → IN+ ;  IN+ → R_BIAS1 (100MΩ) → V_MID (AC ground)
 *
 * HV ripple at HVFILT couples to IN+ through this network. The op-amp
 * closed-loop gain then amplifies the IN+ ripple to the output.
+* R_BIAS1 is not bootstrapped: V_MID is a stiff AC ground (#101). Earlier
+* revisions of this file put IN+ at CAP_FP and C8 on the backplate side.
 * ────────────────────────────────────────────────────────────────────────────
-R_GBIAS1   HVFILT    IN_PLUS   {R_GBIAS}
-Cc_cap     IN_PLUS   CAP_BP    {Cc}
-C8_cap     CAP_BP    0         {C8}
-* R_BIAS1 (100MΩ): DC path for CAP_BP (prevents singular matrix); models the
-* bootstrapped bias resistor in the real circuit. At 50Hz, 100MΩ >> Xc(C8)=3.18MΩ
-* so its effect on the AC transfer function is negligible (<0.15dB).
-R_BIAS1    CAP_BP    0         {R_BIAS1}
+R_GBIAS1   HVFILT    CAP_FP    {R_GBIAS}
+Cc_cap     CAP_FP    0         {Cc}
+C8_cap     CAP_FP    IN_PLUS   {C8}
+R_BIAS1    IN_PLUS   0         {R_BIAS1}
 
 * ────────────────────────────────────────────────────────────────────────────
 * BEHAVIORAL OPA1641 (closed-loop, non-inverting)
@@ -255,8 +256,8 @@ echo "    500                   $&amp_500"
 echo "========================================================"
 
 * ── Pass/fail assertions ─────────────────────────────────────────────────────
-* Thresholds: #95-fix nominal hum < -125.5 dBu (4.3 dB margin from -129.8);
-* improvement over v3.4 > 9 dB (1.9 dB margin from 10.9 dB).
+* Thresholds: #95-fix nominal hum < -125.5 dBu (5.5 dB margin from -131.0);
+* improvement over v3.4 > 9 dB (1.6 dB margin from 10.6 dB).
 * "FAIL" prefix triggers CI grep-based gate in verify.yml.
 let hum_limit = -125.5
 let imp_limit = 9
