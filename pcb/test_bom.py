@@ -25,6 +25,7 @@ KNOWN_WRONG = {
     "C25900",   # 47k 0402 slot → 4.7kΩ
     "C1554",    # 100p C0G slot → 20pF
     "C25905",   # 470k 0402 slot → 5.1kΩ
+    "C60474",   # 100n 0402 slot → 16V part (CC0402KRX7R7BB104), not the 50V one
     "C111566",  # ESD9B5.0ST5G 5V TVS → clamps the phantom-fed XLR lines (#93)
 }
 
