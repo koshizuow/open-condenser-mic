@@ -106,8 +106,8 @@ LCSC = {
     # DZ1 series resistor (#67)
     ("680R",          "R_0603_1608Metric"):         "C23228",    # UNI-ROYAL 0603WAF6800T5E 680Ω 75V ±1% 100mW Basic — R_DZ1; confirmed via JLCPCB parts search (2.39M stock)
 
-    # TVS1/TVS2 ESD protection (#60)
-    ("ESD9B5.0ST5G", "D_SOD-923"): "C111566",   # onsemi ESD9B5.0ST5G, genuine OEM part (not a clone/equivalent); bidirectional, 7.8V clamp, 15pF, SOD-923; confirmed via JLCPCB parts search (221k stock)
+    # TVS1/TVS2 ESD protection (#60, #93)
+    ("SMF58CA", "D_SOD-123F"): "C1851338",   # Littelfuse SMF58CA, bidirectional, VRWM 58V, VBR 64.4-71.2V, Vc 93.6V, IR 1uA, SOD-123FL; Extended (1040 stock 2026-10-07). Standoff must be >= 52V: these sit on the phantom-fed XLR lines. Replaces ESD9B5.0ST5G (C111566, 5V standoff) which clamped phantom to ~7V
 }
 
 # ── KiCad → JLCPCB rotation correction ───────────────────────────────────────
@@ -117,6 +117,7 @@ ROT_OFFSET = {
     "SOT-89-3":                    0,
     "SOT-23":                      180,
     "D_SOD-123":                   0,
+    "D_SOD-123F":                  0,
 }
 
 ROT_OFFSET_REF = {
