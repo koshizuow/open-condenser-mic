@@ -855,6 +855,21 @@ elements += component("4xxx:40106", "U3", "CD40106B",
     pins={"14": "~V_OSC", "7": "GND"},
     ref_at=(-5, -2.54), val_at=(-5, 1.27))
 
+# Unused gates U3C-U3F (#94): CMOS inputs must not float. A floating input
+# drifts with leakage/humidity, and while it sits between the Schmitt
+# thresholds the gate draws shoot-through current from V_OSC, which only has
+# ~1.2mA available through R_ZEN1. Inputs (5, 9, 11, 13) tied to GND;
+# outputs (6, 8, 10, 12) left open.
+# Drawn as a 2x2 group in the free area right of Block H.
+for _unit, _gx, _gy in ((3, 235, 98), (4, 262, 98), (5, 235, 116), (6, 262, 116)):
+    elements += component("4xxx:40106", "U3", "CD40106B",
+        _gx, _gy, unit=_unit,
+        footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+        ref_at=(0, -5.08), val_at=(0, 5.08))
+    elements.append(wire(_gx - 7.62, _gy, _gx - 10.16, _gy))        # input stub
+    elements.append(power_sym("power:GND", _gx - 10.16, _gy, 0))    # input → GND
+    elements.append(no_connect(_gx + 7.62, _gy))                    # output open
+
 elements += component("Device:R", "R_OSC1", "47k",
     40, 106,
     footprint="Resistor_SMD:R_0402_1005Metric",
