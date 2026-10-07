@@ -30,14 +30,19 @@ Vcap  CAP_HOT  CAP_BOT  AC 13.07m   DC 0
 Cc    CAP_BOT  0         {Cc}
 
 * ---------------------------------------------------------------------------
-* HIGH-Z INPUT NODE (Pin3)
-* R_GBIAS: 100MΩ (R_GBIAS1) to HV rail (AC ground, decoupled)
-* C8 (1nF) and R_BIAS1 (100MΩ) omitted: bootstrapping makes R_BIAS1 AC-invisible;
-* C8×R_GBIAS pole at ~1.6Hz is below Cc×R_GBIAS dominant pole at ~29Hz
+* HIGH-Z INPUT NETWORK
+* R_GBIAS: 100MΩ (R_GBIAS1) from CAP_FP to the HV rail (AC ground, decoupled)
+* C8 (1nF): CAP_FP → VPLUS
+* R_BIAS1 (100MΩ): VPLUS → V_MID. V_MID is AC ground (C4 + C5 = 20µF), so
+* R_BIAS1 is NOT bootstrapped. At audio frequencies C8 is a short and the
+* capsule sees R_GBIAS || R_BIAS1 = 50MΩ, giving a corner of ~60Hz with
+* Cc = 55pF. Earlier revisions omitted C8 and R_BIAS1 on the assumption that
+* R_BIAS1 was bootstrapped, which put the corner at ~30Hz (#101).
 * ---------------------------------------------------------------------------
-R_GBIAS  0  PIN3_NODE  {R_GBIAS}
-
-Rconn  CAP_HOT  PIN3_NODE  1   ; capsule hot wire to Pin3
+Rconn    CAP_HOT  CAP_FP     1   ; capsule hot wire to CAP_FP
+R_GBIAS  0        CAP_FP     {R_GBIAS}
+C8       CAP_FP   PIN3_NODE  {C8}
+R_BIAS1  PIN3_NODE  NET_VBIAS  {R_BIAS1}
 
 * ---------------------------------------------------------------------------
 * BEHAVIORAL OPA1641 (single-supply, V_MID=12V bias)
@@ -106,8 +111,10 @@ wrdata _ac.dat xlr_db
 * ── Passband flatness measurements ─────────────────────────────────────────
 * Relative gains: all measurements against 1kHz mid-band reference.
 * LF note: NTE10/3 primary (0.5H, Rp=521Ω) + C_DC(4.7µF) form a 2nd-order HPF
-* with ω₀≈104Hz, Q≈0.49 → ~15dB drop at 100Hz is by design. Check at 500Hz
-* instead (~0.4dB expected drop), where the response is near-flat.
+* with ω₀≈104Hz, Q≈0.49 → ~15dB drop at 100Hz in this model. That depends on
+* Lp=0.5H, an unverified estimate (#99, see passives.lib), so it is not a
+* confirmed property of the hardware. Check at 500Hz instead (~1.1dB drop
+* including the ~60Hz input corner), where the model is less sensitive to Lp.
 meas ac G_1K   find v(xlr_diff) at=1000
 meas ac G_500  find v(xlr_diff) at=500
 meas ac G_10K  find v(xlr_diff) at=10000
