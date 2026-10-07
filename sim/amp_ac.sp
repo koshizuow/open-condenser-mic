@@ -14,8 +14,8 @@
 * POWER (DC bias for proper op-amp operating point)
 * ---------------------------------------------------------------------------
 V48   N48_SRC  0  DC 48
-R1    N48_SRC  NET_48V  6.81k
-R2    N48_SRC  NET_48V  6.81k
+R1    N48_SRC  NET_48V  {R_PH_TAP}
+R2    N48_SRC  NET_48V  {R_PH_TAP}
 Vreg  NET_24V  0  DC 24
 R5    NET_24V  NET_VBIAS  470k
 R6    NET_VBIAS  0  470k

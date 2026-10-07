@@ -16,7 +16,7 @@ This design uses a Dickson charge pump oscillator to generate a 68 V HV rail fro
 - HV rail RC filter: 1 MΩ (R_HV) + 470 nF, corner ~0.34 Hz; no LC resonance
 - Output sensitivity ~−48 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); ~−38 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×)
 - RFI filter on XLR output: differential RC network (R_RFI1/R_RFI2 + C_RFI1/C_RFI2)
-- Phantom power draw: ~2.4–3 mA typical (IEC 61938 limit: 14 mA)
+- Phantom power draw: ~4.6 mA typical at 48 V (IEC 61938 P48 rated maximum: 10 mA)
 - All SMD/THT components available from standard distributors (LCSC, Mouser, Digi-Key); capsule and transformer are customer-supplied
 
 ## Simulated Performance
@@ -180,6 +180,8 @@ ngspice boost_dickson.sp      # HV rail: VBOOST steady-state + ripple
 ngspice amp_noise_opa1641.sp  # Input-referred noise, OPA1641 model
 ngspice amp_ac.sp             # Closed-loop AC frequency response
 ngspice amp_bias_compare.sp   # R_BIAS1 100 MΩ vs 500 MΩ low-freq rolloff comparison
+ngspice phantom_ripple_psrr.sp # Phantom supply ripple → output hum
+ngspice supply_dc_op.sp       # V_OPA regulator DC operating point across phantom/load corners
 ```
 
 ### Regenerating plots

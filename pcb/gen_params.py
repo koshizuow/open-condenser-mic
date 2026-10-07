@@ -28,6 +28,11 @@ PARAMS = {
     "L1_val":       "10m",    # HV filter inductor value (10 mH)
     "L1_DCR":       "8",      # L1 winding resistance Ω (FNR5040S datasheet)
     "C_LC":         "470n",   # HV filter cap (C9 in schematic)
+    # ── Phantom feed + V_OPA regulator (gen_schematic.py: R1/R2, R_REG1, R_ZEN1) ─
+    "R_PH_FEED":    "6.8k",   # phantom feed resistor per leg, in the interface (IEC 61938 P48)
+    "R_PH_TAP":     "2.2k",   # R1/R2: on-board phantom tap resistor per leg (#95)
+    "R_REG1":       "2.2k",   # Z_REG1 bias resistor (#95)
+    "R_ZEN1":       "6.8k",   # V_OPA → V_OSC dropper
     # ── Supply voltages ───────────────────────────────────────────────────
     "V_OPA":        "24",     # regulated supply (Z_REG1 = 24V BZT52C24)
     "V_OSC":        "15",     # oscillator rail (Z_OSC1 = 15V MMSZ15VT1G)

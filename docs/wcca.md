@@ -21,8 +21,8 @@ Component tolerances used (from `pcb/bom.csv` / LCSC part datasheets):
 
 | Ref | Part | Nominal | Tolerance | Worst-case bound used |
 |---|---|---|---|---|
-| R1, R2 | ARG03BTC6801 (Viking) | 6.8 kΩ | ±0.1% | −0.1% (maximizes current into V_OPA_RAW) |
-| R_REG1 | RC0402FR-071K2L (YAGEO) | 1.2 kΩ | ±1% | −1% (maximizes current into Z_REG1); changed from 2.2 kΩ in PR #75 to improve phantom ripple PSRR |
+| R1, R2 | RT0603BRD072K2L (YAGEO) | 2.2 kΩ | ±0.1% | −0.1% (maximizes current into V_OPA_RAW); changed from 6.8 kΩ for #95 |
+| R_REG1 | 0402 thick film (LCSC C25879) | 2.2 kΩ | ±1% | −1% (maximizes current into Z_REG1); 2.2 kΩ → 1.2 kΩ in PR #75, back to 2.2 kΩ for #95 (see below) |
 | Z_REG1 | BZT52C24 (MDD) | 24 V | ±5% (22.8–25.2 V) | 25.2 V (maximizes P = Vz·Iz at fixed Iz-driving network) |
 | Z_OSC1 | MMSZ15T1G (onsemi) | 15 V | ±5% (14.25–15.75 V) | 15.75 V (drives Dickson pump harder) |
 | DZ1 | MMSZ5266BT1G (onsemi) | 68 V | ±5% (64.6–71.4 V) | 64.6 V (lowest clamp voltage → most excess pump current shunted) |
@@ -42,30 +42,69 @@ in this design):
 
 ## Z_REG1 (24 V) — resistively-biased shunt regulator
 
-Circuit: `XLR_HOT`/`XLR_COLD` (phantom) → R1‖R2 (6.8 kΩ each) → `V_OPA_RAW` →
+Circuit: `XLR_HOT`/`XLR_COLD` (phantom) → R1‖R2 (2.2 kΩ each) → `V_OPA_RAW` →
 R_REG1 (2.2 kΩ) → `V_BASE_REG` → Z_REG1 (K) → GND. Q1's base current is
 negligible (high-hFE emitter follower), so nearly all current through
 R_REG1 flows through Z_REG1.
 
-I_z = (V_phantom − V_z) / (R1‖R2 + R_REG1), P_z = I_z × V_z
+Two questions are answered separately, because they need opposite
+assumptions about the phantom source:
 
-R_REG1 was lowered from 2.2 kΩ to 1.2 kΩ in PR #75 to increase Z_REG1's
-operating current (reducing its dynamic impedance rz and improving PSRR).
-The higher bias current raises Z_REG1's dissipation slightly; re-checked
-below with the new value.
+1. **Maximum dissipation**: assume the stiffest possible source and no load.
+2. **Minimum bias current (does it stay in regulation?)**: assume the real
+   source impedance and the heaviest load.
+
+### 1. Maximum dissipation (stiff source, no load)
+
+This bound applies the phantom voltage directly at the XLR pins, ignoring the
+6.8 kΩ feed resistors that IEC 61938 requires in the supply, and ignores all
+load current drawn from `V_OPA`. Both assumptions are deliberately
+pessimistic: a compliant supply cannot deliver this much current.
+
+I_z = (V_phantom − V_z) / (R1‖R2 + R_REG1), P_z = I_z × V_z
 
 | Condition | V_phantom | R1‖R2 (−tol) | R_REG1 (−tol) | V_z (+tol) | I_z | P_z | % of P_D (500 mW) |
 |---|---|---|---|---|---|---|---|
-| Nominal | 48 V | 3396.6 Ω | 1188.0 Ω | 25.2 V | 4.974 mA | 125.3 mW | 25.1% |
-| Worst-case low | 44 V | 3396.6 Ω | 1188.0 Ω | 25.2 V | 4.101 mA | 103.3 mW | 20.7% |
-| **Worst-case high** | **52 V** | **3396.6 Ω** | **1188.0 Ω** | **25.2 V** | **5.847 mA** | **147.3 mW** | **29.5%** |
+| Nominal | 48 V | 1098.9 Ω | 2178.0 Ω | 25.2 V | 6.958 mA | 175.3 mW | 35.1% |
+| Worst-case low | 44 V | 1098.9 Ω | 2178.0 Ω | 25.2 V | 5.737 mA | 144.6 mW | 28.9% |
+| **Worst-case high** | **52 V** | **1098.9 Ω** | **2178.0 Ω** | **25.2 V** | **8.178 mA** | **206.1 mW** | **41.2%** |
 
-**Result: Z_REG1 worst-case dissipation is 147.3 mW, 29.5% of the 500 mW
-package rating — comfortable margin (>3× headroom).**
+**Result: Z_REG1 worst-case dissipation is 206.1 mW, 41.2% of the 500 mW
+package rating (>2.4× headroom).**
 
-Thermal check (RθJA = 340 °C/W): ΔT_j = 0.1473 W × 340 °C/W ≈ 50.1 °C above
-ambient. Even at an elevated in-enclosure ambient of 60 °C, T_j ≈ 110 °C,
-well below the 150 °C junction limit.
+Thermal check (RθJA = 340 °C/W): ΔT_j = 0.2061 W × 340 °C/W ≈ 70.1 °C above
+ambient. At an elevated in-enclosure ambient of 60 °C, T_j ≈ 130 °C, below
+the 150 °C junction limit.
+
+With a compliant source (6.8 kΩ feed resistors) the dissipation is far lower:
+52 mW at 52 V, V_z +5%, light load (`sim/supply_dc_op.sp`, case 5).
+
+### 2. Operating point and regulation headroom (real source, real load)
+
+The real source is V_phantom behind 6.8 kΩ per leg in the interface, in
+series with R1/R2. Loads on `V_OPA` are the op-amp quiescent current
+(OPA1641: 1.8 mA typ, 2.3 mA max), the R4+R5 divider and R_ZEN1 into
+Z_OSC1. Solved in `sim/supply_dc_op.sp`, which runs in CI with FAIL
+thresholds on each row:
+
+| Condition | V_phantom | Op-amp Iq | V_z | V_OPA_RAW | V_OPA | I_z | CI minimum |
+|---|---|---|---|---|---|---|---|
+| Nominal | 48 V | 1.8 mA | 24 V | 27.48 V | 23.42 V | 1.51 mA | 1.2 mA |
+| Phantom low | 44 V | 1.8 mA | 24 V | 26.15 V | 23.39 V | 0.92 mA | 0.7 mA |
+| Phantom low, Iq max | 44 V | 2.3 mA | 24 V | 25.41 V | 23.36 V | 0.59 mA | 0.4 mA |
+| Phantom low, Iq max, V_z +5% | 44 V | 2.3 mA | 25.2 V | 25.95 V | 24.53 V | 0.30 mA | 0.15 mA |
+
+Phantom draw at the nominal point is 4.56 mA (P48 rated maximum: 10 mA).
+
+**History (#95).** With the earlier R1/R2 = 6.8 kΩ and R_REG1 = 1.2 kΩ the same
+analysis gives I_z = 0.41 mA at nominal and zero (out of regulation) in all
+three low-phantom rows. PR #75 lowered R_REG1 to raise I_z, but I_z is set by
+the whole feed path (interface 6.8 kΩ + R1/R2 + R_REG1), and R1/R2 dominated.
+Lowering R1/R2 to 2.2 kΩ supplies the headroom. R_REG1 goes back to 2.2 kΩ
+because, with R1/R2 fixed, a larger R_REG1 both improves ripple rejection
+into `V_BASE_REG` and keeps the stiff-source dissipation bound in section 1
+inside the thermal limit (1.2 kΩ would give 295 mW and T_j ≈ 160 °C at 60 °C
+ambient under that bound).
 
 ## DZ1 (68 V) — active Dickson charge-pump clamp, with R_DZ1 series resistor
 
