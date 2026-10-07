@@ -85,7 +85,7 @@ LCSC = {
 
     # Standard capacitors (0603/0805/1206)
     ("10u 25V X5R",   "C_0603_1608Metric"):        "C344022",   # GRM188R61E106KA73D muRata
-    ("1n 100V C0G",   "C_0402_1005Metric"):        "C694157",   # TDK C1005C0G2A102JT000E 100V C0G — C8 has ~56V DC bias; 1nF gives f=1.6Hz with R_BIAS1
+    ("1n 100V C0G 1206", "C_1206_3216Metric"):    "C513661",   # YAGEO CC1206JRNPO0BN102 NP0 ±5% 100V — C8; 1206 for creepage across ~55V DC (#96; was 0402 C694157)
     ("4.7u 50V X7R",  "C_1206_3216Metric"):        "C51205",    # CL31B475KBHNNNE Samsung
 
     # HV capacitors (#61: pump caps upgraded to 200V to reduce derating from 68% to 34%)
