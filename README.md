@@ -41,7 +41,7 @@ Charge pump settles to ~68 V within ~1 ms. HV_FILT is RC-filtered (1 MΩ + 470 n
 
 ![Frequency response](img/freq_response.png)
 
-Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within about ±1 dB from ~500 Hz to ~20 kHz. Two high-pass mechanisms shape the low end: the input network (R_GBIAS ∥ R_BIAS1 = 50 MΩ against the 55 pF capsule, corner ~60 Hz) and the output DC block (C_DC = 4.7 µF) with the transformer.
+Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within about ±1 dB from ~500 Hz to ~20 kHz. Two high-pass mechanisms shape the low end: the input network (R_GBIAS1 ∥ R_BIAS1 = 100 MΩ against the 55 pF capsule, corner ~29 Hz) and the output DC block (C_DC = 4.7 µF) with the transformer.
 
 > **The response below about 500 Hz is not verified.** The transformer model uses `Lp = 0.5 H` for the driven winding, which is an estimate; the Neutrik datasheet gives no inductance. The winding resistances (521 Ω and 42 Ω) are measured. The real low-frequency corner may be lower than plotted.
  The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
@@ -66,7 +66,19 @@ R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, parallel with R3 (2.2 kΩ), are
 
 ![Noise spectrum](img/noise_spectrum.png)
 
-SPICE input-referred noise, computed by dividing total output noise by the signal transfer function at each frequency. The slope reflects the signal path's high-pass characteristic (coupling caps attenuate low-frequency signal more than noise), not a real frequency-dependent noise source. Below a few kHz the noise is set by the two 100 MΩ bias resistors (R_GBIAS1 and R_BIAS1): their thermal noise current flows into the capsule capacitance, so it falls with frequency. Simulated input-referred noise is 55 nV/√Hz at 1 kHz and about 10 nV/√Hz at 10 kHz, where the OPA1641 and R_IN1 take over. A-weighted over 20 Hz–20 kHz this is about 2.9 µV, equivalent to roughly 21 dB(A) SPL for a 13 mV/Pa, 55 pF capsule. These are simulated figures, not measurements.
+SPICE input-referred noise, computed by dividing total output noise by the signal transfer function at each frequency. The slope reflects the signal path's high-pass characteristic (coupling caps attenuate low-frequency signal more than noise), not a real frequency-dependent noise source. Below a few kHz the noise is set by the two 200 MΩ bias resistors (R_GBIAS1 and R_BIAS1): their thermal noise current flows into the capsule capacitance, so it falls with frequency. Simulated input-referred noise is 39 nV/√Hz at 1 kHz and about 9 nV/√Hz at 10 kHz, where the OPA1641 and R_IN1 take over. A-weighted over 20 Hz–20 kHz this is about 2.2 µV, equivalent to roughly 18 dB(A) SPL for a 13 mV/Pa, 55 pF capsule. These are simulated figures, not measurements.
+
+#### Bias resistor value (R_GBIAS1, R_BIAS1)
+
+Both are 0805 and must be the same value. A higher value lowers the noise floor and the input corner, and makes the input node proportionally more sensitive to surface leakage (flux residue, humidity). 200 MΩ is the default as the balance point.
+
+| Value (both) | Simulated self-noise | Input corner | Leakage sensitivity |
+|---|---|---|---|
+| 100 MΩ (up to v3.4.1, 1206) | 21.0 dB(A) | 59 Hz | 1× |
+| **200 MΩ (default)** | **18.4 dB(A)** | **29 Hz** | **2×** |
+| 470 MΩ (drop-in, e.g. Vishay CRCW0805470MJPEAHR) | 15.7 dB(A) | 12.5 Hz | 4.7× |
+
+The 470 MΩ option is not a generated BOM variant; fit it by hand if wanted. Clean the area around C8, R_IN1, R_BIAS1 and U1 pin 3 thoroughly whichever value is used.
 
 ## Hardware Requirements
 
@@ -182,7 +194,7 @@ cd sim
 ngspice boost_dickson.sp      # HV rail: VBOOST steady-state + ripple
 ngspice amp_noise_opa1641.sp  # Input-referred noise, OPA1641 model
 ngspice amp_ac.sp             # Closed-loop AC frequency response
-ngspice amp_bias_compare.sp   # R_BIAS1 100 MΩ vs 500 MΩ low-freq rolloff comparison
+ngspice amp_bias_compare.sp   # Low-frequency rolloff vs R_BIAS1 value
 ngspice phantom_ripple_psrr.sp # Phantom supply ripple → output hum
 ngspice supply_dc_op.sp       # V_OPA regulator DC operating point across phantom/load corners
 ```

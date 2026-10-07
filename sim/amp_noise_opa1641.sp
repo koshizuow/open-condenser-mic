@@ -3,7 +3,7 @@
 *   Voltage noise: 2.5 nV/rtHz (OPA1641 datasheet)
 *   Current noise: ~0.8 fA/rtHz (JFET input, negligible vs resistor noise)
 *   GBW: 11 MHz (behavioral single-pole at 110Hz -> GBW=11MHz with gain 100k)
-* Input network: R_GBIAS=100MΩ and R_BIAS1=100MΩ both contribute; they
+* Input network: R_GBIAS1=200MΩ and R_BIAS1=200MΩ both contribute; they
 *   dominate the noise floor below a few kHz. R_BIAS1 returns to V_MID, which
 *   is AC ground, so it is not bootstrapped (#101).
 * ---------------------------------------------------------------------------
@@ -33,9 +33,9 @@ Cc    CAP_BOT  0  {Cc}
 Rconn CAP_HOT  CAP_FP  1
 
 * High-Z bias network
-* R_GBIAS = 100MΩ (single resistor) to HV rail (AC ground, decoupled)
+* R_GBIAS1 = 200MΩ to HV rail (AC ground, decoupled)
 * C8 = 1nF couples CAP_FP to VPLUS
-* R_BIAS1 = 100MΩ from VPLUS to V_MID (AC ground). Earlier revisions omitted
+* R_BIAS1 = 200MΩ from VPLUS to V_MID (AC ground). Earlier revisions omitted
 * C8 and R_BIAS1 as "bootstrapped", which left out half of the bias network's
 * noise current and understated the noise below a few kHz by about 3 dB (#101).
 R_GBIAS  NET_HV  CAP_FP  {R_GBIAS}

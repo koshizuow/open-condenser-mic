@@ -296,19 +296,19 @@ def route_all(board):
           (36.5,   78.0625))
 
     # ── HV_FILT: C9-pad1 → R_GBIAS1-pad2  (long HV rail up right edge) ───
-    # R_GBIAS1 pad2 (HV_FILT) at (30.4625,14); run x=37.2 to avoid everything
+    # R_GBIAS1 pad2 (HV_FILT) at (29.9125,14); run x=37.2 to avoid everything
     # x=37.2: board edge gap 0.6mm ✓; MH2 pad right=36.7mm, trace left=37.0mm, gap=0.3mm ✓
     route(board, "HV_FILT", F, HV,
           (36.5,    78.0625),
           (37.2,    78.0625),
           (37.2,    14.0   ),
-          (30.4625, 14.0   ))
+          (29.9125, 14.0   ))
 
     # ── CAP_FP: R_GBIAS1-pad1 → C8-pad1 → J2-pad2 ────────────────────────
-    # R_GBIAS1 pad1 (CAP_FP) at (27.5375,14); straight left to C8.pad1 (14.425,14)
+    # R_GBIAS1 pad1 (CAP_FP) at (28.0875,14); straight left to C8.pad1 (14.425,14)
     # J2-pad2 (CAP_FP) at (19.04,3): branch off horizontal at x=19.04, go up to pad.
     route(board, "CAP_FP", F, HV,
-          (27.5375, 14.0),
+          (28.0875, 14.0),
           (14.425,  14.0))
     route(board, "CAP_FP", F, HV,
           (19.04,   14.0),
@@ -477,11 +477,11 @@ def route_all(board):
     # ════════════════════════════════════════════════════════════════════════
 
     # ── VPLUS / VPLUS_IN (all F.Cu, HIZ class, within keepout) ──────────────
-    # VPLUS: R_BIAS1 pad1 (9.925,27.5) → R_IN1 pad1 (11.475,27.635)
+    # VPLUS: R_BIAS1 pad1 (8.825,27.5) → R_IN1 pad1 (11.475,27.635)
     # VPLUS_IN: R_IN1 pad2 (13.125,27.635) → U1 pin3 (15.025,27.635)
     route(board, "VPLUS", F, SIG,
-          (9.925,  27.5  ),
-          (9.925,  27.635),
+          (8.825,  27.5  ),
+          (8.825,  27.635),
           (11.475, 27.635))
     route(board, "VPLUS_IN", F, SIG,
           (13.125, 27.635),
@@ -895,10 +895,10 @@ def main():
           "C8", "1n 100V C0G 1206", 12.95, 14, 180,
           {"1": "CAP_FP", "2": "VPLUS"})
 
-    # R_GBIAS1: single 100MΩ, HV_FILT → CAP_FP
-    # pad1(left)=CAP_FP at (27.5375,14); pad2(right)=HV_FILT at (30.4625,14)
-    place(board, "Resistor_SMD", "R_1206_3216Metric",
-          "R_GBIAS1", "100M 200V 1206", 29, 14, 0,
+    # R_GBIAS1: 200MΩ 0805 (#109), HV_FILT → CAP_FP
+    # pad1(left)=CAP_FP at (28.0875,14); pad2(right)=HV_FILT at (29.9125,14)
+    place(board, "Resistor_SMD", "R_0805_2012Metric",
+          "R_GBIAS1", "200M 0805", 29, 14, 0,
           {"1": "CAP_FP", "2": "HV_FILT"})
 
     # ── OPA1641 amplifier zone (y=18..42) ────────────────────────────────────
@@ -911,10 +911,10 @@ def main():
             _pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
             break
 
-    # R_BIAS: VPLUS -> V_MID  (100M, establishes DC operating point for IN+)
-    # angle=180: pad1(VPLUS) at right (9.925,27.5); pad2(V_MID) at left (7.0,27.5) on bus
-    place(board, "Resistor_SMD", "R_1206_3216Metric",
-          "R_BIAS1", "100M 1206", 8.4625, 27.5, 180,
+    # R_BIAS: VPLUS -> V_MID  (200M 0805, #109; establishes DC operating point for IN+)
+    # angle=180: pad1(VPLUS) at right (8.825,27.5); pad2(V_MID) at left (7.0,27.5) on bus
+    place(board, "Resistor_SMD", "R_0805_2012Metric",
+          "R_BIAS1", "200M 0805", 7.9125, 27.5, 180,
           {"1": "VPLUS", "2": "V_MID"})
 
     # R_IN1 (#96): VPLUS -> VPLUS_IN (U1 pin 3), 680R series. Limits current
@@ -1270,7 +1270,7 @@ def main():
     fix_ref(board, "C_PRES1", x_mm=19.0, y_mm=34.5, angle_deg=0)
     # R_BIAS1: angle=180 rotates silk; force horizontal and place above component
     # (body top at y=26.7, 1206 half-height=0.8mm)
-    fix_ref(board, "R_BIAS1", x_mm=8.4625, y_mm=25.5, angle_deg=0)
+    fix_ref(board, "R_BIAS1", x_mm=7.9125, y_mm=25.6, angle_deg=0)
     # R_IN1 (#96): default ref lands on R_BIAS1's; put it below the part
     fix_ref(board, "R_IN1", x_mm=12.3, y_mm=29.0, angle_deg=0)
 
