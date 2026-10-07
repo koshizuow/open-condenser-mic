@@ -7,6 +7,7 @@
 .param R_GBIAS          = 100Meg
 .param R_BIAS1          = 100Meg
 .param Cc               = 55p
+.param R_IN             = 680
 .param C8               = 1n
 .param C_DC             = 4.7u
 .param Cp               = 100n

@@ -305,11 +305,11 @@ def route_all(board):
           (30.4625, 14.0   ))
 
     # ── CAP_FP: R_GBIAS1-pad1 → C8-pad1 → J2-pad2 ────────────────────────
-    # R_GBIAS1 pad1 (CAP_FP) at (27.5375,14); straight left to C8.pad1 (14.76,14)
+    # R_GBIAS1 pad1 (CAP_FP) at (27.5375,14); straight left to C8.pad1 (14.425,14)
     # J2-pad2 (CAP_FP) at (19.04,3): branch off horizontal at x=19.04, go up to pad.
     route(board, "CAP_FP", F, HV,
           (27.5375, 14.0),
-          (14.76,   14.0))
+          (14.425,  14.0))
     route(board, "CAP_FP", F, HV,
           (19.04,   14.0),
           (19.04,    3.0))
@@ -476,19 +476,21 @@ def route_all(board):
     # SIGNAL NETS  (0.2mm)
     # ════════════════════════════════════════════════════════════════════════
 
-    # ── VPLUS: R_BIAS1-pad1 → U1-pin3 → C8-pad2 (all F.Cu, within keepout) ──
-    # R_BIAS1 pad1 (9.925,27.5); U1 pin3 (15.025,27.635); C8 pad2 (13.80,14.0)
-    # Jog left to x=13.33 before running vertical: clears U1 pad1 at (15.025,25.095)
-    # (x=13.80 vertical fails clearance; x=13.33 gives 1.3mm gap to U1 pad1 copper)
-    # Entire path in keepout/capsule zone: no adjacent F.Cu GND copper.
+    # ── VPLUS / VPLUS_IN (all F.Cu, HIZ class, within keepout) ──────────────
+    # VPLUS: R_BIAS1 pad1 (9.925,27.5) → R_IN1 pad1 (11.475,27.635)
+    # VPLUS_IN: R_IN1 pad2 (13.125,27.635) → U1 pin3 (15.025,27.635)
     route(board, "VPLUS", F, SIG,
           (9.925,  27.5  ),
           (9.925,  27.635),
+          (11.475, 27.635))
+    route(board, "VPLUS_IN", F, SIG,
+          (13.125, 27.635),
           (15.025, 27.635))
+    # VPLUS: C8.pad2 (11.475,14) straight down to R_IN1.pad1 (11.475,27.635).
+    # C8 and R_IN1 are placed so this is one vertical segment (#96).
     route(board, "VPLUS", F, SIG,
-          (13.80, 14.0),
-          (13.33, 14.0),
-          (13.33, 27.635))
+          (11.475, 14.0),
+          (11.475, 27.635))
 
     # ── VINV: three F.Cu stubs → vias → B.Cu backbone ───────────────────────
     # R6.pad1(VINV) at (25,26.49): stub UP to via (25,25.5).
@@ -886,10 +888,11 @@ def main():
     place_solder_pads(board, "J2", 15.23, 3, ["V_MID", "CAP_FP"], axis='x', pitch_mm=3.81)
 
 
-    # angle=180: pad1(CAP_FP) at right (14.76,14); pad2(VPLUS) at left (13.80,14)
-    # 0402 pad offset ±0.48mm; pad1 at x=14.76 slightly left of J2-pad1 x=15.23
-    place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C8", "1n 100V C0G", 14.28, 14, 180,
+    # C8 is 1206 (#96): ~55V DC across it with the 100MΩ input node on one
+    # side. 1206 gives ~1.8mm between pads (0402 was 0.40mm).
+    # angle=180: pad1(CAP_FP) at right (14.425,14); pad2(VPLUS) at left (11.475,14)
+    place(board, "Capacitor_SMD", "C_1206_3216Metric",
+          "C8", "1n 100V C0G 1206", 12.95, 14, 180,
           {"1": "CAP_FP", "2": "VPLUS"})
 
     # R_GBIAS1: single 100MΩ, HV_FILT → CAP_FP
@@ -902,7 +905,7 @@ def main():
 
     u1_fp = place(board, "Package_SO", "SOIC-8_3.9x4.9mm_P1.27mm",
                   "U1", "OPA1641", 17.5, 27, 0,
-                  {"2": "VINV", "3": "VPLUS", "4": "GND", "6": "SIG_OUT", "7": "V_OPA"})
+                  {"2": "VINV", "3": "VPLUS_IN", "4": "GND", "6": "SIG_OUT", "7": "V_OPA"})
     for _pad in u1_fp.Pads():
         if _pad.GetNumber() == "4":
             _pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
@@ -913,6 +916,15 @@ def main():
     place(board, "Resistor_SMD", "R_1206_3216Metric",
           "R_BIAS1", "100M 1206", 8.4625, 27.5, 180,
           {"1": "VPLUS", "2": "V_MID"})
+
+    # R_IN1 (#96): VPLUS -> VPLUS_IN (U1 pin 3), 680R series. Limits current
+    # into the op-amp input diodes if the capsule node discharges abruptly.
+    # 0603, not 0402: both nets are in the HIZ class (0.6mm) and an 0402's
+    # pad gap is smaller than that.
+    # angle=0: pad1(VPLUS) at left (11.475,27.635); pad2(VPLUS_IN) at right (13.125,27.635)
+    place(board, "Resistor_SMD", "R_0603_1608Metric",
+          "R_IN1", "680R", 12.3, 27.635, 0,
+          {"1": "VPLUS", "2": "VPLUS_IN"})
 
     # R3: V_MID -> VINV  (2.2k, sets IN- DC level = IN+ for balance)
     # angle=0: pad1(V_MID) at left (7.0,29.7) on bus; pad2(VINV) at right (8.02,29.7)
@@ -1259,6 +1271,8 @@ def main():
     # R_BIAS1: angle=180 rotates silk; force horizontal and place above component
     # (body top at y=26.7, 1206 half-height=0.8mm)
     fix_ref(board, "R_BIAS1", x_mm=8.4625, y_mm=25.5, angle_deg=0)
+    # R_IN1 (#96): default ref lands on R_BIAS1's; put it below the part
+    fix_ref(board, "R_IN1", x_mm=12.3, y_mm=29.0, angle_deg=0)
 
     # C2: move left, clear of R_ZEN1 area
     fix_ref(board, "C2",     x_mm=31, y_mm=38, angle_deg=0)

@@ -567,9 +567,11 @@ elements += component("Connector_Generic:Conn_01x02", "J2", "CAPSULE",
     footprint="Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
     pins={"1": "~CAP_FP", "2": "~V_MID"})
 
-elements += component("Device:C", "C8", "1n 100V C0G 0402",
+# C8 is 1206 (#96): it has ~55V DC across it (CAP_FP ~67V, VPLUS 12V) and one
+# side is the 100MΩ input node. 1206 gives ~1.8mm between pads; 0402 was 0.40mm.
+elements += component("Device:C", "C8", "1n 100V C0G 1206",
     50, 70,
-    footprint="Capacitor_SMD:C_0402_1005Metric",
+    footprint="Capacitor_SMD:C_1206_3216Metric",
     pins={"1": "~CAP_FP", "2": "~VPLUS"},
     val_at=(2.54, 3.81))
 
@@ -610,10 +612,26 @@ elements.append(junction(53, 83))
 # Both stubs meet at the same junction; then horizontal bus right to U1.IN+
 elements.append(wire(50, 73.81, 50, 76.35))      # VPLUS seg1: C8.pin2 tip → junction
 elements.append(wire(50, 76.35, 50, 79.19))      # VPLUS seg2: junction → R_BIAS1.pin1 tip
-elements.append(wire(50, 76.35, 111.84, 76.35))  # horizontal to U1.IN+ column
-elements.append(label("VPLUS", 111.84, 76.35, 270))  # label at L-corner, rotated 90°
-elements.append(wire(111.84, 76.35, 111.84, 64.46))  # up to U1.IN+ stub_end
+elements.append(wire(50, 76.35, 96, 76.35))      # horizontal to R_IN1.pin2 stub_end
+elements.append(label("VPLUS", 96, 76.35, 0))    # label at the R_IN1 end of the run
 elements.append(junction(50, 76.35))             # T: vertical VPLUS + horizontal
+
+# R_IN1 (#96): series resistor between the C8/R_BIAS1 node and U1.IN+. Limits
+# the current into the op-amp input protection diodes if the capsule node is
+# discharged abruptly (C8 = 1nF charged to ~55V), and acts as an RF stopper.
+# 680R adds ~3.3 nV/rtHz, small next to the bias network and the op-amp.
+# R_IN1(96,70): pin2(D) stub_end=(96,76.35) on the VPLUS run; pin1(U) stub_end=(96,63.65)
+elements += component("Device:R", "R_IN1", "680R",
+    96, 70,
+    footprint="Resistor_SMD:R_0603_1608Metric",
+    pins={"1": "~VPLUS_IN", "2": "~VPLUS"},
+    ref_at=(-9, -2.54), val_at=(-9, 1.27))   # text on the left, clear of the VPLUS_IN detour
+# VPLUS_IN: R_IN1.pin1 stub_end → right → down → right → up to U1.IN+ stub_end
+elements.append(wire(96, 63.65, 102, 63.65))
+elements.append(wire(102, 63.65, 102, 76.35))
+elements.append(wire(102, 76.35, 111.84, 76.35))
+elements.append(label("VPLUS_IN", 111.84, 76.35, 270))  # label at L-corner, rotated 90°
+elements.append(wire(111.84, 76.35, 111.84, 64.46))     # up to U1.IN+ stub_end
 
 # ── BLOCK D: OPA1641 SIGNAL STAGE (x=88..172, y=48..102) ────────────────────
 
@@ -650,7 +668,7 @@ elements += component("Device:R", "R6", "5.6k",
 elements += component("Amplifier_Operational:OPA1641", "U1", "OPA1641",
     122, 67,
     footprint="Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
-    pins={"3": "~VPLUS", "2": "~VINV", "6": "SIG_OUT", "7": "~V_OPA", "4": "GND"},
+    pins={"3": "~VPLUS_IN", "2": "~VINV", "6": "SIG_OUT", "7": "~V_OPA", "4": "GND"},
     ref_at=(10, 4), val_at=(10, 6.5))
 
 elements += component("Device:C", "C3", "100n 25V X7R",
