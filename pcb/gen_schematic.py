@@ -86,7 +86,7 @@ LIBS = {
     "Amplifier_Operational:OPA1641": (f"{SYM_PATH}/Amplifier_Operational.kicad_sym", "OPA1641"),
     "4xxx:40106":         (f"{SYM_PATH}/4xxx.kicad_sym",                  "40106"),
     "Diode:BAT54S":       (f"{SYM_PATH}/Diode.kicad_sym",                 "BAT54S"),
-    "Diode:ESD9B5.0ST5G": (f"{SYM_PATH}/Diode.kicad_sym",                 "ESD9B5.0ST5G"),
+    "Device:D_TVS":       (f"{SYM_PATH}/Device.kicad_sym",                "D_TVS"),
     "Connector_Generic:Conn_01x02": (f"{SYM_PATH}/Connector_Generic.kicad_sym", "Conn_01x02"),
     "Connector_Generic:Conn_01x03": (f"{SYM_PATH}/Connector_Generic.kicad_sym", "Conn_01x03"),
     "power:GND":          (f"{SYM_PATH}/power.kicad_sym",                 "GND"),
@@ -284,7 +284,7 @@ PIN_OFFSETS = {
         "2": ( 7.62,  0,    "R"),   # K  cathode (right)
         "3": ( 0,     5.08, "D"),   # COM mid-node (sym y=-5.08 → sch +5.08, below)
     },
-    "Diode:ESD9B5.0ST5G": {
+    "Device:D_TVS": {
         # Bidirectional symmetric TVS, no fixed polarity: pin1=A1 (left), pin2=A2 (right)
         "1": (-3.81,  0,    "L"),
         "2": ( 3.81,  0,    "R"),
@@ -756,15 +756,18 @@ elements += component("Device:C", "C_RFI2", "100p C0G",
 # TVS1/TVS2 (#60): bidirectional ESD/TVS protection on XLR_HOT_F/XLR_COLD_F,
 # placed right at the J3 pads (closest point to the connector where ESD/
 # hot-plug transients enter). Shunt to GND, same topology as C_RFI1/C_RFI2.
-elements += component("Diode:ESD9B5.0ST5G", "TVS1", "ESD9B5.0ST5G",
+# SMF58CA (#93): these nets carry the phantom supply (~36V loaded, up to 52V
+# open-circuit per IEC 61938 P48), so the standoff voltage must be >= 52V.
+# The original ESD9B5.0 (5V standoff) clamped the phantom feed to ~7V.
+elements += component("Device:D_TVS", "TVS1", "SMF58CA",
     230, 67,
-    footprint="Diode_SMD:D_SOD-923",
+    footprint="Diode_SMD:D_SOD-123F",
     pins={"1": "~XLR_HOT_F", "2": "GND"},
     val_at=(-3.81, -2.54))
 
-elements += component("Diode:ESD9B5.0ST5G", "TVS2", "ESD9B5.0ST5G",
+elements += component("Device:D_TVS", "TVS2", "SMF58CA",
     230, 76,
-    footprint="Diode_SMD:D_SOD-923",
+    footprint="Diode_SMD:D_SOD-123F",
     pins={"1": "~XLR_COLD_F", "2": "GND"},
     val_at=(-3.81, -2.54))
 

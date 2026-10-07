@@ -590,13 +590,13 @@ def route_all(board):
     # C_RFI1 pad2 (GND, 13.53,87): connected via F.Cu GND zone fill — no stub/via needed.
     route(board, "XLR_HOT_F", F, SIG, (10.0, 86.53), (10.0, 87.0), (12.47, 87.0))
     route(board, "XLR_HOT_F", F, SIG, (10.0, 87.0), (10.0, 88.54), (20.0, 88.54), (20.0, 90.0))
-    # TVS1 shunt tap (#60): stub from the XLR_HOT_F trace to TVS1 pad1
-    # (18.08,88.1).
-    route(board, "XLR_HOT_F", F, SIG, (20.0, 88.54), (18.08, 88.54), (18.08, 88.1))
-    # TVS1 pad2 (GND, 18.92,88.1): stub + via for short ESD return path; nearest
+    # TVS1 shunt tap (#60, #93): the y=88.54 XLR_HOT_F run above passes
+    # straight through TVS1 pad1 (14.7,88.6); short stub ties it to pad centre.
+    route(board, "XLR_HOT_F", F, SIG, (14.7, 88.54), (14.7, 88.6))
+    # TVS1 pad2 (GND, 14.7,91.4): stub + via for short ESD return path; nearest
     # board stitching vias are 15-17mm away so via here keeps inductance low.
-    route(board, "GND", F, SIG, (18.92, 88.1), (18.9, 87.0))
-    via(board, "GND", 18.9, 87.0)
+    route(board, "GND", F, SIG, (14.7, 91.4), (13.3, 91.4))
+    via(board, "GND", 13.3, 91.4)
 
     # ── XLR_COLD: T1B-pad2 → R_RFI2-pad2 ───────────────────────────────
     # T1B pad2 (22.0,82.0); R_RFI2 pad2 (22.0,85.47)
@@ -615,13 +615,13 @@ def route_all(board):
     # C_RFI2 pad2 (GND, 25.53,87): connected via F.Cu GND zone fill — no stub/via needed.
     route(board, "XLR_COLD_F", F, SIG, (22.0, 86.53), (22.0, 87.0), (24.47, 87.0))
     route(board, "XLR_COLD_F", F, SIG, (22.0, 87.0), (22.0, 89.0), (22.54, 89.0), (22.54, 90.0))
-    # TVS2 shunt tap (#60): stub from the XLR_COLD_F trace to TVS2 pad1
-    # (24.08,90.0).
-    route(board, "XLR_COLD_F", F, SIG, (22.54, 90.0), (24.08, 90.0))
-    # TVS2 pad2 (GND, 24.92,90.0): stub + via for short ESD return path (same
+    # TVS2 shunt tap (#60, #93): stub from the XLR_COLD_F jog at (22.54,89)
+    # to TVS2 pad1 (25.3,88.6).
+    route(board, "XLR_COLD_F", F, SIG, (22.54, 89.0), (24.9, 89.0), (25.3, 88.6))
+    # TVS2 pad2 (GND, 25.3,91.4): stub + via for short ESD return path (same
     # reason as TVS1 above).
-    route(board, "GND", F, SIG, (24.92, 90.0), (25.9, 90.0))
-    via(board, "GND", 25.9, 90.0)
+    route(board, "GND", F, SIG, (25.3, 91.4), (26.7, 91.4))
+    via(board, "GND", 26.7, 91.4)
 
 
     # ── Dickson pump nodes ───────────────────────────────────────────────────
@@ -953,34 +953,29 @@ def main():
           "C_RFI2", "100p C0G", 25, 87, 0,
           {"1": "XLR_COLD_F", "2": "GND"})
 
-    # TVS1/TVS2 (#60): bidirectional ESD/TVS protection shunt, right at the
+    # TVS1/TVS2 (#60, #93): bidirectional TVS protection shunt, right at the
     # J3 pads (closest point to the connector where ESD/hot-plug transients
-    # enter). Positions found via exhaustive collision search against real
-    # courtyard/pad/track geometry with the standard 0.2mm Default net class
-    # clearance inflated onto every pad (not estimated by hand -- an earlier
-    # attempt placing these directly on top of the existing XLR_HOT_F/
-    # XLR_COLD_F traces was DRC-clean on courtyard/pad overlap alone but
-    # failed clearance against those same traces, since SOD-923's pad
-    # pitch (0.84mm) is tighter than the 0.2mm clearance budget allows this
-    # close to other copper).
-    # TVS1 pad1(XLR_HOT_F)=(18.08,88.1), pad2(GND)=(18.92,88.1)
-    # (Position re-checked against every other footprint's silkscreen
-    # body/label geometry, not just courtyard/pads -- the first candidate
-    # placement passed courtyard/pad checks but its own component-body silk
-    # outline overlapped J3 pin3's silk circle, a check the first search
-    # pass missed.)
+    # enter).
+    #
+    # SMF58CA / SOD-123FL (#93): replaces ESD9B5.0ST5G / SOD-923, whose 5V
+    # standoff clamped the phantom-fed XLR lines to ~7V. These nets sit at
+    # ~36V loaded and up to 52V open-circuit (IEC 61938 P48), so the standoff
+    # voltage must be >= 52V. The larger package does not fit between the J3
+    # pads, so the two parts sit vertically either side of J3, mirrored about
+    # x=20 (J3 pin 2). angle=270 puts pad1 (line side) at the top.
+    # TVS1 pad1(XLR_HOT_F)=(14.7,88.6), pad2(GND)=(14.7,91.4)
     #
     # GND pad routing: short F.Cu stub + via to B.Cu GND plane. Via provides a
     # low-inductance ESD return path; nearest board stitching vias are 15-17mm
     # away. C_RFI1/C_RFI2 GND pads do NOT use this approach — they connect
     # through the F.Cu GND zone fill, which is sufficient for RF bypass at 16MHz.
-    tvs1 = place(board, "Diode_SMD", "D_SOD-923",
-                 "TVS1", "ESD9B5.0ST5G", 18.5, 88.1, 0,
+    tvs1 = place(board, "Diode_SMD", "D_SOD-123F",
+                 "TVS1", "SMF58CA", 14.7, 90.0, 270,
                  {"1": "XLR_HOT_F", "2": "GND"})
 
-    # TVS2 pad1(XLR_COLD_F)=(24.08,90.0), pad2(GND)=(24.92,90.0)
-    tvs2 = place(board, "Diode_SMD", "D_SOD-923",
-                 "TVS2", "ESD9B5.0ST5G", 24.5, 90.0, 0,
+    # TVS2 pad1(XLR_COLD_F)=(25.3,88.6), pad2(GND)=(25.3,91.4)
+    tvs2 = place(board, "Diode_SMD", "D_SOD-123F",
+                 "TVS2", "SMF58CA", 25.3, 90.0, 270,
                  {"1": "XLR_COLD_F", "2": "GND"})
 
     # Low-Iq V_OPA supply: R_REG1 + Z_REG1 (24V) + Q1 NPN emitter follower
@@ -1276,11 +1271,10 @@ def main():
     # C9: default ref at x=38.18 cut by new board edge (x=38); move above pads
     fix_ref(board, "C9", x_mm=36.5, y_mm=75.5)
 
-    # TVS1/TVS2 (#60): default refs overlap R_RFI2's label / own component
-    # silk+J3 area respectively; moved to clean positions found via the
-    # same exhaustive text-bbox search used for R_DZ1 (#67).
-    fix_ref(board, "TVS1", x_mm=17.8, y_mm=85.7, angle_deg=90)
-    fix_ref(board, "TVS2", x_mm=25.5, y_mm=91.4, angle_deg=0)
+    # TVS1/TVS2 (#60, #93): refs placed outboard of each part (away from J3),
+    # rotated to run alongside the vertical body.
+    fix_ref(board, "TVS1", x_mm=12.6, y_mm=89.6, angle_deg=90)
+    fix_ref(board, "TVS2", x_mm=27.4, y_mm=89.6, angle_deg=90)
 
     # ZT1/ZT2 and MH1-MH4: no label needed on silk
     for ref in ("ZT1", "ZT2", "MH1", "MH2", "MH3", "MH4"):
