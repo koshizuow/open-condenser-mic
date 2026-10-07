@@ -15,8 +15,8 @@ PARAMS = {
     "R6_default":   "5.6k",   # feedback resistor, default BOM
     "R6_hi_gain":   "47k",    # feedback resistor, hi-gain BOM variant
     # ── HV bias network ──────────────────────────────────────────────────
-    "R_GBIAS":      "100Meg", # single HV bias resistor (R_GBIAS in schematic, 100MΩ 200V)
-    "R_BIAS1":      "100Meg", # IN+ bias resistor to V_MID (AC ground; not bootstrapped)
+    "R_GBIAS":      "200Meg", # HV bias resistor R_GBIAS1 (200MΩ 0805, #109)
+    "R_BIAS1":      "200Meg", # IN+ bias resistor to V_MID (AC ground; not bootstrapped), 200MΩ 0805 (#109)
     # ── Capsule model (customer-supplied; nominal for simulation) ─────────
     "Cc":           "55p",    # capsule self-capacitance (typical LDC capsule)
     "R_IN":         "680",    # R_IN1: series resistor into U1 IN+ (#96)

@@ -554,11 +554,17 @@ _SY = -60
 
 # ── BLOCK C: HV BIAS CHAIN + CAPSULE + AC COUPLING (x=20..58, y=48..95) ──────
 
-elements += component("Device:R", "R_GBIAS1", "100M 200V 1206",
+# R_GBIAS1 / R_BIAS1 are 200M 0805 (#109). The capsule is loaded by the two in
+# parallel (R_BIAS1 is not bootstrapped), and their thermal noise current into
+# the capsule capacitance sets the noise floor below a few kHz. 200M instead of
+# 100M: about -2.6 dB(A) self-noise and an input corner of ~29Hz instead of
+# ~59Hz, for 2x the sensitivity to surface leakage. 470M 0805 fits the same
+# pads for lower noise still, at ~5x the leakage sensitivity.
+elements += component("Device:R", "R_GBIAS1", "200M 0805",
     30, 57,
-    footprint="Resistor_SMD:R_1206_3216Metric",
+    footprint="Resistor_SMD:R_0805_2012Metric",
     pins={"1": "~HV_FILT", "2": "CAP_FP"},
-    ref_at=(-13, -2.54), val_at=(-18, 1.27))
+    ref_at=(-13, -2.54), val_at=(-13, 1.27))
 elements.append(wire(30, 50.65, 10, 50.65))               # stub left to label
 elements.append(label("HV_FILT", 10, 50.65, 180))         # HV_FILT net label (connects to power Block H)
 
@@ -575,9 +581,9 @@ elements += component("Device:C", "C8", "1n 100V C0G 1206",
     pins={"1": "~CAP_FP", "2": "~VPLUS"},
     val_at=(2.54, 3.81))
 
-elements += component("Device:R", "R_BIAS1", "100M 1206",
+elements += component("Device:R", "R_BIAS1", "200M 0805",
     50, 83,
-    footprint="Resistor_SMD:R_1206_3216Metric",
+    footprint="Resistor_SMD:R_0805_2012Metric",
     pins={"1": "~VPLUS", "2": "~V_MID"},
     val_at=(2.54, -6))
 

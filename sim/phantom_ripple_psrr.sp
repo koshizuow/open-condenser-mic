@@ -36,6 +36,7 @@
 .param R_REG1_val = 2.2k   ; Z_REG1 bias resistor (v3.3: 2.2k; v3.4: 1.2k; #95: 2.2k)
 .param R_TAP_val  = 6.8k   ; R1/R2 per leg (up to v3.4: 6.8k; #95: 2.2k)
 .param rz_reg     = 350    ; Z_REG1 dynamic impedance (Ohm), see assumptions above
+.param R_BIAS_val = 100Meg ; R_GBIAS1 and R_BIAS1 (up to v3.4.1: 100M; #109: 200M)
 .param rz_osc     = 100    ; Z_OSC1 dynamic impedance (Ohm): nominal 100
 
 * ────────────────────────────────────────────────────────────────────────────
@@ -95,19 +96,20 @@ C9     HVFILT   0        470n
 * CAPSULE BIAS / INPUT COUPLING
 *
 * Topology (matches the netlist):
-*   HVFILT → R_GBIAS1 (100MΩ) → CAP_FP
+*   HVFILT → R_GBIAS1 → CAP_FP
 *   CAP_FP → Cc (55pF) → backplate = V_MID (AC ground: C4 + C5 = 20µF)
-*   CAP_FP → C8 (1nF) → IN+ ;  IN+ → R_BIAS1 (100MΩ) → V_MID (AC ground)
+*   CAP_FP → C8 (1nF) → IN+ ;  IN+ → R_BIAS1 → V_MID (AC ground)
+*   R_GBIAS1 = R_BIAS1 = R_BIAS_val (100MΩ for the historical cases, 200MΩ now)
 *
 * HV ripple at HVFILT couples to IN+ through this network. The op-amp
 * closed-loop gain then amplifies the IN+ ripple to the output.
 * R_BIAS1 is not bootstrapped: V_MID is a stiff AC ground (#101). Earlier
 * revisions of this file put IN+ at CAP_FP and C8 on the backplate side.
 * ────────────────────────────────────────────────────────────────────────────
-R_GBIAS1   HVFILT    CAP_FP    {R_GBIAS}
+R_GBIAS1   HVFILT    CAP_FP    {R_BIAS_val}
 Cc_cap     CAP_FP    0         {Cc}
 C8_cap     CAP_FP    IN_PLUS   {C8}
-R_BIAS1    IN_PLUS   0         {R_BIAS1}
+R_BIAS1    IN_PLUS   0         {R_BIAS_val}
 
 * ────────────────────────────────────────────────────────────────────────────
 * BEHAVIORAL OPA1641 (closed-loop, non-inverting)
@@ -199,6 +201,17 @@ meas ac OUT4 find v(OPA_OUT) at=50
 let hum4_dbu = 20*log10(abs(OUT4)/dbu_ref)
 echo "  Output hum = $&hum4_dbu dBu"
 
+* ── Case 5: current hardware — #95 fix + 200MΩ bias resistors (#109) ───────
+echo ""
+echo "--- current: #95 fix + R_GBIAS1/R_BIAS1 = 200M, rz=100 ---"
+alterparam rz_reg     = 100
+alterparam R_BIAS_val = 200Meg
+reset
+ac dec 100 1 1k
+meas ac OUT5 find v(OPA_OUT) at=50
+let hum5_dbu = 20*log10(abs(OUT5)/dbu_ref)
+echo "  Output hum = $&hum5_dbu dBu"
+
 * ── Write transfer function from last run for plotting ──────────────────────
 wrdata _psrr_sweep.dat v(OPA_OUT) v(IN_PLUS) v(HVFILT) v(V_OPA) v(VZOSC_NODE)
 
@@ -214,11 +227,14 @@ setplot ac3
 meas ac S3 find v(opa_out) at=50
 setplot ac4
 meas ac S4 find v(opa_out) at=50
+setplot ac5
+meas ac S5 find v(opa_out) at=50
 
 let H1 = 20*log10(abs(ac1.S1)/dbu_ref)
 let H2 = 20*log10(abs(ac2.S2)/dbu_ref)
 let H3 = 20*log10(abs(ac3.S3)/dbu_ref)
 let H4 = 20*log10(abs(ac4.S4)/dbu_ref)
+let H5 = 20*log10(abs(ac5.S5)/dbu_ref)
 let improvement_nom = H2 - H3
 let improvement_wc  = H2 - H4
 
@@ -229,23 +245,24 @@ echo "  v3.3:                    $&H1 dBu"
 echo "  v3.4:                    $&H2 dBu"
 echo "  #95 fix nominal:         $&H3 dBu"
 echo "  #95 fix conservative:    $&H4 dBu"
+echo "  current (200M bias):     $&H5 dBu"
 echo "  Improvement over v3.4 (nominal):      $&improvement_nom dB"
 echo "  Improvement over v3.4 (conservative): $&improvement_wc dB"
 echo "========================================================"
 
-* ── Ripple sensitivity table: after-fix nominal, scaled by source amplitude ──
+* ── Ripple sensitivity table: current hardware, scaled by source amplitude ──
 * System is linear; output scales proportionally with phantom supply ripple.
-* Reference: AC=100m (100 mVpp in sim convention) → H3 dBu.
-* Other amplitudes: dBu = H3 + 20*log10(A/100).
-let amp_10  = H3 - 20.000
-let amp_20  = H3 - 13.979
-let amp_50  = H3 -  6.021
-let amp_100 = H3
-let amp_200 = H3 +  6.021
-let amp_500 = H3 + 13.979
+* Reference: AC=100m (100 mVpp in sim convention) → H5 dBu.
+* Other amplitudes: dBu = H5 + 20*log10(A/100).
+let amp_10  = H5 - 20.000
+let amp_20  = H5 - 13.979
+let amp_50  = H5 -  6.021
+let amp_100 = H5
+let amp_200 = H5 +  6.021
+let amp_500 = H5 + 13.979
 echo ""
 echo "========================================================"
-echo "  Ripple sensitivity (after-fix nominal, 50Hz):"
+echo "  Ripple sensitivity (current hardware, 50Hz):"
 echo "  Phantom ripple (mVpp)   Output hum (dBu)"
 echo "     10                   $&amp_10"
 echo "     20                   $&amp_20"
@@ -265,6 +282,13 @@ if H3 > hum_limit
   echo "FAIL phantom_ripple_psrr: after-fix nominal hum = $&H3 dBu (limit -125.5 dBu)"
 else
   echo "PASS phantom_ripple_psrr: after-fix nominal hum = $&H3 dBu"
+end
+* Current hardware (200MΩ bias, #109): -136.2 dBu nominal; limit -131 dBu (5.2 dB margin).
+let cur_limit = -131
+if H5 > cur_limit
+  echo "FAIL phantom_ripple_psrr: current-hardware hum = $&H5 dBu (limit -131 dBu)"
+else
+  echo "PASS phantom_ripple_psrr: current-hardware hum = $&H5 dBu"
 end
 if improvement_nom < imp_limit
   echo "FAIL phantom_ripple_psrr: fix improvement = $&improvement_nom dB (min 9 dB)"

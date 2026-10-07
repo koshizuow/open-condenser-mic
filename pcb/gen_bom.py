@@ -73,9 +73,8 @@ LCSC = {
     # Precision resistors (0603) — R1/R2 matched pair
     ("2.2k 0.1%", "R_0603_1608Metric"):            "C861295",   # YAGEO RT0603BRD072K2L thin film ±0.1% 25ppm 75V; Extended (15.7k stock 2026-10-07). #95: was 6.8k 0.1% (C2941290)
 
-    # High-value resistors (1206)
-    ("100M 1206",     "R_1206_3216Metric"):          "C5632242",  # FHF06JT-107 PSA 250mW ±5% — R_BIAS1
-    ("100M 200V 1206","R_1206_3216Metric"):         "C59781",    # 1206W4F1006T5E UNI-ROYAL 200V ±1% — R_GBIAS1
+    # High-value bias resistors (0805) — R_GBIAS1, R_BIAS1 (#109)
+    ("200M 0805",     "R_0805_2012Metric"):          "C3934221",  # Vishay CRCW0805200MJPEAHR ±5% thick film; 12.6k stock 2026-10-07. Was 100M 1206 (C5632242, C59781). Drop-in for lower noise: CRCW0805470MJPEAHR (470M, 150V)
 
     # Standard capacitors (0402)
     ("12n 25V X7R",   "C_0402_1005Metric"):        "C113786",   # YAGEO CC0402KRX7R8BB123; X7R fine — no DC bias, mV signal level
