@@ -32,7 +32,7 @@ jobs:
         run: |
           python3 -m py_compile \
             pcb/gen_project.py pcb/gen_schematic.py \
-            pcb/gen_pcb.py pcb/gen_bom.py sim/plot_all.py
+            pcb/gen_pcb.py pcb/gen_bom.py pcb/check_netclasses.py sim/plot_all.py
 
       - name: Generate KiCad files
         run: |
@@ -56,6 +56,10 @@ jobs:
 
       - name: Schematic ↔ PCB net consistency
         run: python3 pcb/check_net_consistency.py
+
+      - name: Net classes survive PCB generation
+        working-directory: pcb
+        run: python3 check_netclasses.py
 
       - name: PCB DRC report (all severities)
         if: always()
