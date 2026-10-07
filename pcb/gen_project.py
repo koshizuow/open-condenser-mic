@@ -254,6 +254,33 @@ def build_project(name: str) -> dict:
                     "via_diameter": 0.6,
                     "via_drill": 0.3,
                     "wire_width": 6
+                },
+                {
+                    # HIZ net class (#96): the 100MΩ input node and the
+                    # capsule node. Surface leakage into these nets shows up
+                    # directly as low-frequency steps at the op-amp input, so
+                    # keep all other copper, including the GND pour, at least
+                    # 0.6mm away. The pour honours a net class clearance that
+                    # is larger than its own, so it pulls back automatically
+                    # and DRC checks it. 0.6mm rather than 1mm because U1's
+                    # own pad pitch already puts pin 2 and pin 4 0.67mm from
+                    # pin 3; a wider rule could never pass there.
+                    "bus_width": 12,
+                    "clearance": 0.6,
+                    "diff_pair_gap": 0.25,
+                    "diff_pair_via_gap": 0.25,
+                    "diff_pair_width": 0.2,
+                    "line_style": 0,
+                    "microvia_diameter": 0.3,
+                    "microvia_drill": 0.1,
+                    "name": "HIZ",
+                    "pcb_color": "rgba(0, 0, 0, 0.000)",
+                    "priority": 1,
+                    "schematic_color": "rgba(0, 0, 0, 0.000)",
+                    "track_width": 0.2,
+                    "via_diameter": 0.6,
+                    "via_drill": 0.3,
+                    "wire_width": 6
                 }
             ],
             "meta": {
@@ -264,7 +291,11 @@ def build_project(name: str) -> dict:
             "netclass_patterns": [
                 {"netclass": "HV", "pattern": "VBOOST"},
                 {"netclass": "HV", "pattern": "HV_FILT"},
-                {"netclass": "HV", "pattern": "CAP_FP"},
+                # CAP_FP is ~67V but also high impedance (100MΩ source), so
+                # it takes the wider HIZ clearance rather than HV (#96).
+                {"netclass": "HIZ", "pattern": "CAP_FP"},
+                {"netclass": "HIZ", "pattern": "VPLUS"},
+                {"netclass": "HIZ", "pattern": "VPLUS_IN"},
                 # N_PUMP (#67): the Dickson pump's raw output, upstream of the
                 # new R_DZ1 series resistor. Same voltage territory as VBOOST
                 # (slightly higher, since R_DZ1 drops voltage downstream of

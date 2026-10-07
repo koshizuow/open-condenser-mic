@@ -44,7 +44,9 @@ Vhv   NET_HV  0  DC 68
 * Current noise: ~0.8 fA/rtHz at IN+ and IN- (negligible vs resistor noise)
 * ---------------------------------------------------------------------------
 
-R_vn  PIN3_NODE  PIN3_VN  {OPA_VN_REQ}
+* R_IN1 (680R, #96): series resistor into IN+; its Johnson noise adds here.
+R_in  PIN3_NODE  PIN3_IN  {R_IN}
+R_vn  PIN3_IN    PIN3_VN  {OPA_VN_REQ}
 
 * Current noise at IN+ (0.8fA/rtHz modeled as 320GΩ shunt)
 *   R_in_noise = 4kT / I_noise^2 = 4*1.38e-23*300 / (0.8e-15)^2 = 32e18 Ω
