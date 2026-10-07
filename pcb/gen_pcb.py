@@ -624,6 +624,20 @@ def route_all(board):
     via(board, "GND", 26.7, 91.4)
 
 
+    # ── U3 unused gate inputs → GND (#94) ───────────────────────────────────
+    # Pin 5 (5.53,56.27): loop outboard of pin 6 (pad left edge x=4.55) down
+    # to pin 7 (GND, 5.53,58.81). x=4.0 keeps 0.45mm to pin 6 and stays
+    # inside the F.Cu GND pour.
+    route(board, "GND", F, SIG, (5.525, 56.27), (4.0, 56.27), (4.0, 58.81), (5.525, 58.81))
+    # Pins 13 (10.47,52.46) and 11 (10.47,55.0): joined outboard of pin 12
+    # (pad right edge x=11.45) at x=12.3, with a via to the B.Cu GND plane.
+    route(board, "GND", F, SIG, (10.475, 52.46), (12.3, 52.46), (12.3, 55.0), (10.475, 55.0))
+    via(board, "GND", 12.3, 53.73)
+    # Pin 9 (10.47,57.54): separate stub + via. It cannot join the 13/11 run
+    # because the CLKA via at (12,56.51) sits between them.
+    route(board, "GND", F, SIG, (10.475, 57.54), (12.3, 57.54))
+    via(board, "GND", 12.3, 57.54)
+
     # ── Dickson pump nodes ───────────────────────────────────────────────────
     # N1: D1-pad3 (22.9375,52.0) → Cp1-pad1 (21.05,55.5)
     # Jog LEFT to x=20 to avoid N2 which will use x=22 column
@@ -1052,12 +1066,17 @@ def main():
 
     # U3: CD40106B SOIC-14 oscillator
     # Pads: 1=CLKA_IN, 2=CLKA, 3=CLKA(2nd gate in), 4=CLKB, 7=GND, 14=V_OSC
-    # Pins 5,6,8-13 are unused gate I/O — left unconnected in schematic
+    # Unused gates (#94): inputs 5, 9, 11, 13 tied to GND so they cannot float
+    # (floating CMOS inputs draw shoot-through current from the ~1.2mA V_OSC
+    # budget and behave differently per unit/humidity). Outputs 6, 8, 10, 12
+    # stay unconnected.
     place(board, "Package_SO", "SOIC-14_3.9x8.7mm_P1.27mm",
           "U3", "CD40106B", 8, 55, 0,
           {"1": "CLKA_IN", "2": "CLKA",
            "3": "CLKA",    "4": "CLKB",
-           "7": "GND",     "14": "V_OSC"})
+           "5": "GND",     "7": "GND",
+           "9": "GND",     "11": "GND",
+           "13": "GND",    "14": "V_OSC"})
 
     # C_U3: 100n bypass on V_OSC (U3 VDD rail)
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
