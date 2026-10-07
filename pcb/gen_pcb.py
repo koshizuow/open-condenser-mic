@@ -624,6 +624,14 @@ def route_all(board):
     via(board, "GND", 26.7, 91.4)
 
 
+    # ── U3 pin 5 (unused gate input) → GND (#94) ───────────────────────────
+    # The pour only reaches pin 5 (5.53,56.27) from its outboard end; the
+    # CLKB track at x=6.88 blocks the other side. One thermal spoke fails the
+    # min-2-spokes DRC rule (starved_thermal), so tie it to pin 7 (GND,
+    # 5.53,58.81) with a track looped outboard of pin 6 (pad left edge
+    # x=4.55). x=4.0 keeps 0.45mm to pin 6.
+    route(board, "GND", F, SIG, (5.525, 56.27), (4.0, 56.27), (4.0, 58.81), (5.525, 58.81))
+
     # ── Dickson pump nodes ───────────────────────────────────────────────────
     # N1: D1-pad3 (22.9375,52.0) → Cp1-pad1 (21.05,55.5)
     # Jog LEFT to x=20 to avoid N2 which will use x=22 column
@@ -1052,12 +1060,18 @@ def main():
 
     # U3: CD40106B SOIC-14 oscillator
     # Pads: 1=CLKA_IN, 2=CLKA, 3=CLKA(2nd gate in), 4=CLKB, 7=GND, 14=V_OSC
-    # Pins 5,6,8-13 are unused gate I/O — left unconnected in schematic
+    # Unused gates (#94): inputs 5, 9, 11, 13 tied to GND so they cannot float
+    # (floating CMOS inputs draw shoot-through current from the ~1.2mA V_OSC
+    # budget and behave differently per unit/humidity). Outputs 6, 8, 10, 12
+    # stay unconnected. Pins 9, 11, 13 need no tracks: the F.Cu GND pour
+    # reaches both ends of each pad. Pin 5 gets a track (see route_all).
     place(board, "Package_SO", "SOIC-14_3.9x8.7mm_P1.27mm",
           "U3", "CD40106B", 8, 55, 0,
           {"1": "CLKA_IN", "2": "CLKA",
            "3": "CLKA",    "4": "CLKB",
-           "7": "GND",     "14": "V_OSC"})
+           "5": "GND",     "7": "GND",
+           "9": "GND",     "11": "GND",
+           "13": "GND",    "14": "V_OSC"})
 
     # C_U3: 100n bypass on V_OSC (U3 VDD rail)
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
