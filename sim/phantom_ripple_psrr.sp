@@ -5,11 +5,18 @@
 * → R_GBIAS1/Cc/C8 capsule divider → op-amp IN+ → closed-loop gain → output.
 *
 * Addresses issue #73: no existing simulation covered this path.
-* Validates fixes from #71 (C1 100nF→4.7µF) and #72 (R_REG1 2.2k→1.2k).
+* Compares three hardware states: v3.3 (C1=100nF, R_REG1=2.2k), v3.4 (#71/#72:
+* C1=4.7µF, R_REG1=1.2k) and the #95 fix (R1/R2 6.8k→2.2k, R_REG1=2.2k).
 *
 * Assumptions:
 *   - Phantom supply: 100 mVpp open-circuit ripple (AC=100m).
-*   - R1||R2 source impedance: 3.405 kΩ (both 6.81 kΩ in parallel).
+*   - Source impedance is the real feed path: the interface's 6.8 kΩ per leg
+*     (3.4 kΩ in parallel) in series with R1||R2 on the board. Earlier
+*     revisions of this file used R1||R2 alone (3.405 kΩ), i.e. a stiff
+*     source at the XLR pins (#95).
+*   - Z_REG1 rz depends on its bias current (sim/supply_dc_op.sp): ~0.4 mA
+*     with R1/R2=6.8k (rz taken as 350 Ω), ~1.5 mA after #95 (100 Ω nominal,
+*     200 Ω conservative). These rz values are estimates, not measured.
 *   - HV filter: RC mode only (production PCB), R_HV=1MΩ, C9=470nF, fc=0.34Hz.
 *   - Z_REG1 rz: parametric per-case (see .control block).
 *   - Closed-loop gain: flat/hi-SPL mode (R3=2.2k, R6=5.6k → ×3.55).
@@ -25,16 +32,20 @@
 * ────────────────────────────────────────────────────────────────────────────
 * PARAMETERS — swept via .control alterparam for before/after comparison
 * ────────────────────────────────────────────────────────────────────────────
-.param C1_val     = 100n   ; V_OPA_RAW bypass (before fix: 100nF; after: 4.7µF)
-.param R_REG1_val = 2.2k   ; Z_REG1 bias resistor (before: 2.2k; after: 1.2k)
-.param rz_reg     = 150    ; Z_REG1 dynamic impedance (Ohm): nominal 150, worst 350
+.param C1_val     = 100n   ; V_OPA_RAW bypass (v3.3: 100nF; v3.4 onward: 4.7µF)
+.param R_REG1_val = 2.2k   ; Z_REG1 bias resistor (v3.3: 2.2k; v3.4: 1.2k; #95: 2.2k)
+.param R_TAP_val  = 6.8k   ; R1/R2 per leg (up to v3.4: 6.8k; #95: 2.2k)
+.param rz_reg     = 350    ; Z_REG1 dynamic impedance (Ohm), see assumptions above
 .param rz_osc     = 100    ; Z_OSC1 dynamic impedance (Ohm): nominal 100
 
 * ────────────────────────────────────────────────────────────────────────────
-* PHANTOM SUPPLY: 100 mVpp open-circuit ripple; R1||R2 series source impedance
+* PHANTOM SUPPLY: 100 mVpp open-circuit ripple; feed (interface) + tap (R1||R2)
 * ────────────────────────────────────────────────────────────────────────────
-V_ph   PH_SRC      0         DC 25.8  AC 100m
-R_src  PH_SRC      V_OPA_RAW 3.405k
+* DC value is irrelevant here: the zeners are modelled as fixed rz, so the AC
+* solution does not depend on the operating point.
+V_ph   PH_SRC      0         DC 48  AC 100m
+R_feed PH_SRC      XLR_CM    {R_PH_FEED/2}
+R_tap  XLR_CM      V_OPA_RAW {R_TAP_val/2}
 
 * C1: V_OPA_RAW bypass — the primary fix (#71)
 C1     V_OPA_RAW   0         {C1_val}
@@ -141,33 +152,35 @@ echo "  supply ripple.  Conditions: 100mVpp phantom ripple,"
 echo "  RC HV filter (R=1MΩ, C9=470nF), flat/hi-SPL mode."
 echo "========================================================"
 
-* ── Case 1: BEFORE fix — C1=100nF, R_REG1=2.2k, rz=150Ω (nominal Vz) ────
+* ── Case 1: v3.3 hardware — R1/R2=6.8k, C1=100nF, R_REG1=2.2k, rz=350Ω ───
 echo ""
-echo "--- BEFORE fix: C1=100nF, R_REG1=2.2k, rz=150Ω (nominal) ---"
+echo "--- v3.3: R1/R2=6.8k, C1=100nF, R_REG1=2.2k, rz=350 ---"
+alterparam R_TAP_val  = 6.8k
 alterparam C1_val     = 100n
 alterparam R_REG1_val = 2.2k
-alterparam rz_reg     = 150
+alterparam rz_reg     = 350
 reset
 ac dec 100 1 1k
 meas ac OUT1 find v(OPA_OUT) at=50
 let hum1_dbu = 20*log10(abs(OUT1)/dbu_ref)
 echo "  Output hum = $&hum1_dbu dBu"
 
-* ── Case 2: BEFORE fix — C1=100nF, R_REG1=2.2k, rz=350Ω (worst +5% Vz) ──
+* ── Case 2: v3.4 hardware (#71/#72) — C1=4.7µF, R_REG1=1.2k, rz=350Ω ─────
 echo ""
-echo "--- BEFORE fix, WORST CASE: C1=100nF, R_REG1=2.2k, rz=350Ω (+5% Vz) ---"
-alterparam rz_reg     = 350
+echo "--- v3.4: R1/R2=6.8k, C1=4.7uF, R_REG1=1.2k, rz=350 ---"
+alterparam C1_val     = 4.7u
+alterparam R_REG1_val = 1.2k
 reset
 ac dec 100 1 1k
 meas ac OUT2 find v(OPA_OUT) at=50
 let hum2_dbu = 20*log10(abs(OUT2)/dbu_ref)
 echo "  Output hum = $&hum2_dbu dBu"
 
-* ── Case 3: AFTER fix — C1=4.7µF, R_REG1=1.2k, rz=100Ω (nominal at 1.5mA) ─
+* ── Case 3: #95 fix, nominal — R1/R2=2.2k, R_REG1=2.2k, rz=100Ω (Iz≈1.5mA) ─
 echo ""
-echo "--- AFTER fix: C1=4.7uF, R_REG1=1.2k, rz=100Ω (nominal at 1.5mA) ---"
-alterparam C1_val     = 4.7u
-alterparam R_REG1_val = 1.2k
+echo "--- #95 fix: R1/R2=2.2k, C1=4.7uF, R_REG1=2.2k, rz=100 ---"
+alterparam R_TAP_val  = 2.2k
+alterparam R_REG1_val = 2.2k
 alterparam rz_reg     = 100
 reset
 ac dec 100 1 1k
@@ -175,9 +188,9 @@ meas ac OUT3 find v(OPA_OUT) at=50
 let hum3_dbu = 20*log10(abs(OUT3)/dbu_ref)
 echo "  Output hum = $&hum3_dbu dBu"
 
-* ── Case 4: AFTER fix, conservative — rz=200Ω (±5% Vz at 1.2k operating point) ─
+* ── Case 4: #95 fix, conservative — rz=200Ω ──────────────────────────────
 echo ""
-echo "--- AFTER fix, CONSERVATIVE: C1=4.7uF, R_REG1=1.2k, rz=200Ω ---"
+echo "--- #95 fix, CONSERVATIVE: rz=200 ---"
 alterparam rz_reg     = 200
 reset
 ac dec 100 1 1k
@@ -205,18 +218,18 @@ let H1 = 20*log10(abs(ac1.S1)/dbu_ref)
 let H2 = 20*log10(abs(ac2.S2)/dbu_ref)
 let H3 = 20*log10(abs(ac3.S3)/dbu_ref)
 let H4 = 20*log10(abs(ac4.S4)/dbu_ref)
-let improvement_nom = H1 - H3
+let improvement_nom = H2 - H3
 let improvement_wc  = H2 - H4
 
 echo ""
 echo "========================================================"
 echo "  Summary (100mVpp phantom ripple at 50Hz):"
-echo "  BEFORE nominal:     $&H1 dBu"
-echo "  BEFORE worst:       $&H2 dBu"
-echo "  AFTER nominal:      $&H3 dBu"
-echo "  AFTER conservative: $&H4 dBu"
-echo "  Improvement (nom):  $&improvement_nom dB"
-echo "  Improvement (WC):   $&improvement_wc dB"
+echo "  v3.3:                    $&H1 dBu"
+echo "  v3.4:                    $&H2 dBu"
+echo "  #95 fix nominal:         $&H3 dBu"
+echo "  #95 fix conservative:    $&H4 dBu"
+echo "  Improvement over v3.4 (nominal):      $&improvement_nom dB"
+echo "  Improvement over v3.4 (conservative): $&improvement_wc dB"
 echo "========================================================"
 
 * ── Ripple sensitivity table: after-fix nominal, scaled by source amplitude ──
@@ -242,18 +255,18 @@ echo "    500                   $&amp_500"
 echo "========================================================"
 
 * ── Pass/fail assertions ─────────────────────────────────────────────────────
-* Thresholds: after-fix nominal hum < -118 dBu (4 dB margin from -122.3 nominal);
-* improvement > 5 dB (1.6 dB margin from 6.6 dB nominal).
+* Thresholds: #95-fix nominal hum < -125.5 dBu (4.3 dB margin from -129.8);
+* improvement over v3.4 > 9 dB (1.9 dB margin from 10.9 dB).
 * "FAIL" prefix triggers CI grep-based gate in verify.yml.
-let hum_limit = -118
-let imp_limit = 5
+let hum_limit = -125.5
+let imp_limit = 9
 if H3 > hum_limit
-  echo "FAIL phantom_ripple_psrr: after-fix nominal hum = $&H3 dBu (limit -118 dBu)"
+  echo "FAIL phantom_ripple_psrr: after-fix nominal hum = $&H3 dBu (limit -125.5 dBu)"
 else
   echo "PASS phantom_ripple_psrr: after-fix nominal hum = $&H3 dBu"
 end
 if improvement_nom < imp_limit
-  echo "FAIL phantom_ripple_psrr: fix improvement = $&improvement_nom dB (min 5 dB)"
+  echo "FAIL phantom_ripple_psrr: fix improvement = $&improvement_nom dB (min 9 dB)"
 else
   echo "PASS phantom_ripple_psrr: fix improvement = $&improvement_nom dB"
 end
