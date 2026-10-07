@@ -1,7 +1,7 @@
 * OPA1641 Mic Preamp — AC Frequency Response
 * Behavioral op-amp: gain 100k open-loop, single pole at 110Hz (GBW~11MHz)
 * For audio band (10Hz-200kHz) closed-loop bandwidth = GBW/60 ~183kHz, well above audio
-* Input network: R_GBIAS=100MΩ (single R_GBIAS1) to AC-ground HV rail
+* Input network: R_GBIAS1 (200MΩ) to AC-ground HV rail
 * Output DC block: C_DC=4.7µF (C_DC in PCB)
 * ---------------------------------------------------------------------------
 .title OPA1641 Mic AC Frequency Response
@@ -31,13 +31,13 @@ Cc    CAP_BOT  0         {Cc}
 
 * ---------------------------------------------------------------------------
 * HIGH-Z INPUT NETWORK
-* R_GBIAS: 100MΩ (R_GBIAS1) from CAP_FP to the HV rail (AC ground, decoupled)
+* R_GBIAS1 (200MΩ): from CAP_FP to the HV rail (AC ground, decoupled)
 * C8 (1nF): CAP_FP → VPLUS
-* R_BIAS1 (100MΩ): VPLUS → V_MID. V_MID is AC ground (C4 + C5 = 20µF), so
+* R_BIAS1 (200MΩ): VPLUS → V_MID. V_MID is AC ground (C4 + C5 = 20µF), so
 * R_BIAS1 is NOT bootstrapped. At audio frequencies C8 is a short and the
-* capsule sees R_GBIAS || R_BIAS1 = 50MΩ, giving a corner of ~60Hz with
+* capsule sees R_GBIAS1 || R_BIAS1 = 100MΩ, giving a corner of ~29Hz with
 * Cc = 55pF. Earlier revisions omitted C8 and R_BIAS1 on the assumption that
-* R_BIAS1 was bootstrapped, which put the corner at ~30Hz (#101).
+* R_BIAS1 was bootstrapped (#101). Both resistors were 100MΩ until #109.
 * ---------------------------------------------------------------------------
 Rconn    CAP_HOT  CAP_FP     1   ; capsule hot wire to CAP_FP
 R_GBIAS  0        CAP_FP     {R_GBIAS}
@@ -114,7 +114,7 @@ wrdata _ac.dat xlr_db
 * with ω₀≈104Hz, Q≈0.49 → ~15dB drop at 100Hz in this model. That depends on
 * Lp=0.5H, an unverified estimate (#99, see passives.lib), so it is not a
 * confirmed property of the hardware. Check at 500Hz instead (~1.1dB drop
-* including the ~60Hz input corner), where the model is less sensitive to Lp.
+* including the ~29Hz input corner), where the model is less sensitive to Lp.
 meas ac G_1K   find v(xlr_diff) at=1000
 meas ac G_500  find v(xlr_diff) at=500
 meas ac G_10K  find v(xlr_diff) at=10000

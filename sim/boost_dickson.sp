@@ -81,7 +81,7 @@ C_LC  HVFILT   0       {C_LC}  IC={C_LC_IC}
 * LOAD: 100MOhm to GND (~0.7µA). The real circuit has no DC path here (see header);
 * this load makes HV_FILT sit ~0.67V below VBOOST in the sim only.
 * ---------------------------------------------------------------------------
-R_load  HVFILT  0  {R_GBIAS}
+R_load  HVFILT  0  100Meg
 
 * ---------------------------------------------------------------------------
 * CONTROL: run LC then RC, print ripple comparison

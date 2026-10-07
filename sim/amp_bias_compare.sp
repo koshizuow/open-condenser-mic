@@ -1,5 +1,5 @@
-* OPA1641 Mic — Low-Frequency Response: R_BIAS1 = 100M vs 500M
-* Full signal path: capsule Cc (55pF) → R_GBIAS (100M single) at CAP_FP
+* OPA1641 Mic — Low-Frequency Response vs R_BIAS1 value
+* Full signal path: capsule Cc (55pF) → R_GBIAS1 at CAP_FP
 *                   → C8 (1nF) → VPLUS (IN+) → R_BIAS1 → V_MID
 * Shows effect of R_BIAS1 on bass -3dB frequency.
 * ---------------------------------------------------------------------------
@@ -35,7 +35,7 @@ Cc    CAP_BOT  0         {Cc}
 Rconn  CAP_HOT  CAP_FP  1    ; 1Ω wire resistance
 
 * ---------------------------------------------------------------------------
-* HV POLARIZATION BIAS: R_GBIAS (100M single) from HV → CAP_FP
+* HV POLARIZATION BIAS: R_GBIAS1 from HV → CAP_FP
 * HV_FILT is AC-grounded (C9 decouples HV)
 * ---------------------------------------------------------------------------
 R_GBIAS  NET_HV  CAP_FP  {R_GBIAS}
@@ -47,10 +47,10 @@ C8  CAP_FP  VPLUS  {C8}
 
 * ---------------------------------------------------------------------------
 * R_BIAS1: VPLUS → V_MID  (DC bias for IN+)
-* COMPARE: 100M (current) vs 500M (proposed)
+* COMPARE: default (from params.inc) vs another value
 * Change RBIAS value here:
 * ---------------------------------------------------------------------------
-.param RBIAS = {R_BIAS1}   ; default 100Meg; override on command line to compare
+.param RBIAS = {R_BIAS1}   ; default from params.inc; edit to compare
 R_BIAS1  VPLUS  NET_VMID  {RBIAS}
 
 * ---------------------------------------------------------------------------

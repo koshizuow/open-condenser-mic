@@ -13,7 +13,7 @@ import sys
 import re
 import numpy as np
 
-LIMIT_NV = 60  # nV/rtHz; expected ~54.8 from R_GBIAS1 + R_BIAS1 (both 100M) into Cc, plus OPA1641 Vn
+LIMIT_NV = 45  # nV/rtHz; expected ~39.2 from R_GBIAS1 + R_BIAS1 (both 200M) into Cc, plus OPA1641 Vn
 
 
 def parse_table(output):
