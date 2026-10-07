@@ -800,6 +800,25 @@ def _assert_trace_clears_hole(label, px, py, hole_x, hole_y, min_dist):
         )
 
 
+def apply_netclasses(board):
+    """Copy non-Default net classes and patterns from gen_project onto board."""
+    import gen_project
+    net = gen_project.build_project(_parse_args().name)["net_settings"]
+    ns = board.GetDesignSettings().m_NetSettings
+    for c in net["classes"]:
+        if c["name"] == "Default":
+            continue
+        nc = pcbnew.NETCLASS(c["name"])
+        nc.SetClearance(MM(c["clearance"]))
+        nc.SetTrackWidth(MM(c["track_width"]))
+        nc.SetViaDiameter(MM(c["via_diameter"]))
+        nc.SetViaDrill(MM(c["via_drill"]))
+        nc.SetPriority(c["priority"])
+        ns.SetNetclass(c["name"], nc)
+    for p in net["netclass_patterns"]:
+        ns.SetNetclassPatternAssignment(p["pattern"], p["netclass"])
+
+
 def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
@@ -808,6 +827,13 @@ def main():
     # Design settings
     ds = board.GetDesignSettings()
     ds.m_TrackMinWidth = MM(0.15)
+
+    # Net classes (#98): SaveBoard() rewrites the .kicad_pro from the board's
+    # in-memory net settings, and a fresh BOARD() only has Default. Without
+    # this the HV class written by gen_project.py is silently dropped and DRC
+    # runs with Default clearance only. gen_project.py stays the single
+    # source of truth; its non-Default classes and patterns are applied here.
+    apply_netclasses(board)
 
     # Board outline: 36x93mm (shrunk 2mm each side + 2mm bottom; housing internal dia ~45mm)
     add_outline_rect(board, 2, 0, 38, 93)
