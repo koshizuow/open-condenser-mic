@@ -64,15 +64,14 @@ LCSC = {
     # Standard resistors (0402)
     ("5.6k",      "R_0402_1005Metric"):            "C25908",    # UNI-ROYAL 0402WGF5601TCE ±1% — R6 default (flat/hi-SPL)
     ("6.2k",      "R_0402_1005Metric"):            "C25915",    # UNI-ROYAL 0402WGF6201TCE ±1%
-    ("1.2k",      "R_0402_1005Metric"):            "C25867",    # YAGEO RC0402FR-071K2L ±1% — R_REG1 (#72)
-    ("2.2k",      "R_0402_1005Metric"):            "C25879",
+    ("2.2k",      "R_0402_1005Metric"):            "C25879",    # R3, R_REG1 (#95; was 1.2k C25867)
     ("6.8k",      "R_0402_1005Metric"):            "C25944",    # UNI-ROYAL 0402WGJ0682TCE ±5% 44k pcs; C144738 ±1% out of stock; C26022 maps to 4.7kΩ 0805 in JLCPCB
     ("47k",       "R_0402_1005Metric"):            "C25792",    # UNI-ROYAL 0402WGF4702TCE ±1% BASIC — R6 hi-gain variant; C25900 maps to 4.7kΩ in JLCPCB
     ("100R",      "R_0402_1005Metric"):            "C25076",
     ("470k",      "R_0402_1005Metric"):            "C137976",   # YAGEO RC0402FR-07470KL ±1%; C25905 maps to 5.1kΩ in JLCPCB
 
     # Precision resistors (0603) — R1/R2 matched pair
-    ("6.8k 0.1%", "R_0603_1608Metric"):            "C2941290",  # ARG03BTC6801 Viking 0.1%
+    ("2.2k 0.1%", "R_0603_1608Metric"):            "C861295",   # YAGEO RT0603BRD072K2L thin film ±0.1% 25ppm 75V; Extended (15.7k stock 2026-10-07). #95: was 6.8k 0.1% (C2941290)
 
     # High-value resistors (1206)
     ("100M 1206",     "R_1206_3216Metric"):          "C5632242",  # FHF06JT-107 PSA 250mW ±5% — R_BIAS1

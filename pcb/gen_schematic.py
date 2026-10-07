@@ -386,12 +386,12 @@ _SY = 85 - 9*1.27    # shift up 9 grid units: GND text at y≈278mm
 # GND pins (direction D) → power:GND symbols automatically
 # V_OPA pins (direction U) → power:+24V symbols automatically
 
-elements += component("Device:R", "R1", "6.8k 0.1%",
+elements += component("Device:R", "R1", "2.2k 0.1%",
     22, 12,
     footprint="Resistor_SMD:R_0603_1608Metric",
     pins={"1": "~XLR_HOT", "2": "V_OPA_RAW"})
 
-elements += component("Device:R", "R2", "6.8k 0.1%",
+elements += component("Device:R", "R2", "2.2k 0.1%",
     22, 31,
     footprint="Resistor_SMD:R_0603_1608Metric",
     pins={"1": "~V_OPA_RAW", "2": "~XLR_COLD"})
@@ -406,9 +406,13 @@ elements += component("Device:C", "C1", "4.7u 50V X7R",
     pins={"1": "~V_OPA_RAW", "2": "GND"})
 
 # Low-Iq V_OPA supply: R_REG1 biases Z_REG1 (24V zener) → Q1 emitter follower → V_OPA = 23.3V
-# R_REG1=1.2k raises Z_REG1 Iz to ~1.5mA (was 0.82mA at 2.2k), reducing rz spread across
-# ±5% Vz tolerance; total Iq ~4mA at 48V phantom (#72).
-elements += component("Device:R", "R_REG1", "1.2k",
+# Z_REG1 bias current is set by the whole feed path, not R_REG1 alone: 48V behind
+# the interface's 6.8k per leg, then R1/R2 (2.2k per leg), then R_REG1. With
+# R1/R2=2.2k and R_REG1=2.2k, Iz is ~1.5mA at 48V and stays above 0.3mA at 44V
+# with the op-amp at max Iq and Vz +5% (sim/supply_dc_op.sp, #95). The earlier
+# 6.8k/1.2k values gave only ~0.4mA nominal and dropped out at 44V. Phantom
+# draw is ~4.6mA.
+elements += component("Device:R", "R_REG1", "2.2k",
     55, 13,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "~V_OPA_RAW", "2": "~V_BASE_REG"})

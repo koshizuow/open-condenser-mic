@@ -933,13 +933,15 @@ def main():
 
     # ── Power supply zone (y=36..58) ─────────────────────────────────────────
 
-    # R1/R2: phantom extraction resistors 6.8k 0.1% (matched pair)
+    # R1/R2: phantom extraction resistors 2.2k 0.1% (matched pair). 2.2k (was
+    # 6.8k) gives Z_REG1 enough headroom behind the interface's own 6.8k feed
+    # resistors (#95).
     place(board, "Resistor_SMD", "R_0603_1608Metric",
-          "R1", "6.8k 0.1%", 12, 80, 90,
+          "R1", "2.2k 0.1%", 12, 80, 90,
           {"1": "XLR_HOT", "2": "V_OPA_RAW"})
 
     place(board, "Resistor_SMD", "R_0603_1608Metric",
-          "R2", "6.8k 0.1%", 12, 83, 90,
+          "R2", "2.2k 0.1%", 12, 83, 90,
           {"1": "XLR_COLD", "2": "V_OPA_RAW"})
 
     # RFI filter: 100R series + 100pF C0G shunt on each XLR leg (fc ~16 MHz)
@@ -1002,7 +1004,7 @@ def main():
     # 0402 angle=0: pad1(V_OPA_RAW) at (24.49,46.3), pad2(V_BASE_REG) at (25.51,46.3)
     # x=25.0 → courtyard right=26.08 < C5 left=26.605; y=46.3 clears CLKA top (46.9) by 0.28mm.
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R_REG1", "1.2k", 25.0, 46.3, 0,
+          "R_REG1", "2.2k", 25.0, 46.3, 0,
           {"1": "V_OPA_RAW", "2": "V_BASE_REG"})
 
     # C1/C2: V_OPA_RAW and V_OPA bypass caps (still valid with emitter-follower supply)
