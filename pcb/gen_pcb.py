@@ -960,7 +960,7 @@ def main():
     # pad2(GND) at center-0.48 = y=23.52, in open GND fill above the bus — 3+ spokes.
     # x=22.5: ~1.5mm from U1 pad8 right edge (20.95), courtyard gap ~1mm
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C3", "100n 25V X7R", 22.5, 24, 90,
+          "C3", "100n 50V X7R", 22.5, 24, 90,
           {"1": "V_OPA", "2": "GND"})
 
     # C_DC: SIG_PROT -> TX_DRV  (4.7u DC block to transformer primary)
@@ -1054,7 +1054,7 @@ def main():
           {"1": "V_OPA_RAW", "2": "GND"})
 
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C2", "100n 25V X7R", 29, 38, 180,
+          "C2", "100n 50V X7R", 29, 38, 180,
           {"1": "V_OPA", "2": "GND"})
 
     # R4/R5: V_MID = V_OPA/2 = 12V divider
