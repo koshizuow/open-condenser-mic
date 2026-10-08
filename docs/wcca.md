@@ -93,6 +93,19 @@ thresholds on each row:
 | Phantom low | 44 V | 1.8 mA | 24 V | 26.15 V | 23.39 V | 0.92 mA | 0.7 mA |
 | Phantom low, Iq max | 44 V | 2.3 mA | 24 V | 25.41 V | 23.36 V | 0.59 mA | 0.4 mA |
 | Phantom low, Iq max, V_z +5% | 44 V | 2.3 mA | 25.2 V | 25.95 V | 24.53 V | 0.30 mA | 0.15 mA |
+| Phantom low, Iq max, DZ1 clamping | 44 V | 2.3 mA | 24 V | 24.79 V | 23.33 V | 0.31 mA | 0.2 mA |
+| All four stacked (V_z +5% and DZ1 clamping) | 44 V | 2.3 mA | 25.2 V | 25.32 V | 24.46 V | 0.03 mA | V_OPA ≥ 24.2 V |
+
+**DZ1 clamp current as a load (#112).** When DZ1's actual voltage is below the
+pump's open-circuit voltage it clamps `VBOOST`, and the clamp current is drawn
+from `V_OPA`: once through the diode chain and three times through the clock
+drivers on `V_OSC`. `sim/pump_real_vosc.sp` models the pump with its real
+`V_OSC` supply and gives 0.39 mA with DZ1 at −5%, limited by R_ZEN1's budget;
+`V_OSC` sags to 14.96 V and `VBOOST` sits at DZ1's voltage. The last two rows
+above add 0.4 mA for this. With all four tolerances stacked Z_REG1 is at its
+knee (0.03 mA), but `V_OPA` has moved by only 0.07 V, so the rail still holds.
+At 46 V phantom the same stack leaves 0.32 mA. No component change is made
+for this corner.
 
 Phantom draw at the nominal point is 4.56 mA (P48 rated maximum: 10 mA).
 
@@ -130,6 +143,11 @@ dissipation.
 
 **Result: DZ1 worst-case combined dissipation is 284.5 mW, 56.9% of the
 500 mW SOD-123 package rating — comfortable margin (>1.7× headroom).**
+
+This 4.40 mA figure assumes ideal `V_OPA` and `V_OSC` sources. It is an upper
+bound for dissipation, not an operating point: with the real `V_OSC` supply
+(6.8 kΩ from `V_OPA`) the clamp current cannot exceed about 0.4 mA, which is
+about 25 mW in DZ1 (`sim/pump_real_vosc.sp`, #112).
 
 `R_DZ1` itself: worst-case dissipation 13.0 mW, 13.0% of its 100 mW 0603
 rating — ample margin.

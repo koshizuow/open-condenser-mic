@@ -10,6 +10,11 @@
 *   - R4 + R5 V_MID divider (940 kΩ)
 *   - R_ZEN1 into Z_OSC1 (15 V). U3 and the pump draw from Z_OSC1's share,
 *     so they add nothing to V_OPA's load while V_OSC stays in regulation.
+*   - DZ1 clamp current (I_DZ, #112). When DZ1's actual voltage is below the
+*     pump's open-circuit voltage it clamps VBOOST. That current comes from
+*     V_OPA through the diode chain (1x) and from V_OSC through the clock
+*     drivers (3x). A pump simulation with a real V_OSC source gives up to
+*     ~0.4 mA with DZ1 at -5%; R_ZEN1's budget limits it to about that.
 *
 * Checks (FAIL prefix triggers the CI gate in verify.yml):
 *   - Z_REG1 stays in regulation, with margin, at the low end of the phantom
@@ -24,6 +29,7 @@
 .param V_PH  = 48      ; phantom open-circuit voltage (44 / 48 / 52)
 .param I_OP  = 1.8m    ; op-amp quiescent current
 .param VZ    = 24      ; Z_REG1 breakdown (22.8 / 24 / 25.2 for ±5%)
+.param I_DZ  = 0       ; DZ1 clamp current (0 when not clamping, ~0.4m with DZ1 at -5%)
 
 * Phantom source: two feed legs in the interface, two tap legs on the board
 V_ph    PH      0        DC {V_PH}
@@ -47,6 +53,8 @@ R4      VOPA    MID      470k
 R5      MID     0        470k
 R_ZEN1  VOPA    VOSC     {R_ZEN1}
 D_zosc  0       VOSC     ZOSC
+I_pump  VOPA    0        DC {I_DZ}      ; clamp current through the diode chain
+I_clk   VOSC    0        DC {3*I_DZ}    ; clamp current through the clock drivers
 
 .control
 set filetype=ascii
@@ -101,6 +109,27 @@ let pz5 = i(Vamm_z) * v(base)
 echo "--- 52V, Iq 1.4mA, Vz 25.2V ---"
 echo "  V_OPA_RAW = $&v(raw) V   I(Z_REG1) = $&iz5 A   P(Z_REG1) = $&pz5 W"
 
+* ── Case 6: phantom low + op-amp max Iq + DZ1 clamping ───────────────────
+alterparam V_PH = 44
+alterparam I_OP = 2.3m
+alterparam VZ   = 24
+alterparam I_DZ = 0.4m
+reset
+op
+let iz6 = i(Vamm_z)
+echo "--- 44V, Iq 2.3mA, Vz 24V, DZ1 clamping 0.4mA ---"
+echo "  V_OPA_RAW = $&v(raw) V   V_OPA = $&v(vopa) V   V_OSC = $&v(vosc) V   I(Z_REG1) = $&iz6 A"
+
+* ── Case 7: all four stacked (44V, Iq max, Vz +5%, DZ1 clamping) ─────────
+* Z_REG1 is at its knee here. The check is that V_OPA still holds, not that
+* a bias-current margin remains.
+alterparam VZ = 25.2
+reset
+op
+let iz7 = i(Vamm_z)
+echo "--- 44V, Iq 2.3mA, Vz 25.2V, DZ1 clamping 0.4mA ---"
+echo "  V_OPA_RAW = $&v(raw) V   V_OPA = $&v(vopa) V   V_OSC = $&v(vosc) V   I(Z_REG1) = $&iz7 A"
+
 * ── Pass/fail assertions ─────────────────────────────────────────────────
 * Limits sit below the simulated values (1.51 / 0.92 / 0.59 / 0.30 mA and
 * 52 mW) so a change that erodes the headroom fails before regulation is lost.
@@ -114,6 +143,10 @@ setplot op4
 let a4 = i(Vamm_z)
 setplot op5
 let a5 = i(Vamm_z) * v(base)
+setplot op6
+let a6 = i(Vamm_z)
+setplot op7
+let a7 = v(vopa)
 
 if op1.a1 < 1.2m
   echo "FAIL supply_dc_op: nominal I(Z_REG1) = $&op1.a1 A (min 1.2 mA)"
@@ -139,6 +172,18 @@ if op5.a5 > 100m
   echo "FAIL supply_dc_op: 52V P(Z_REG1) = $&op5.a5 W (max 100 mW)"
 else
   echo "PASS supply_dc_op: 52V P(Z_REG1) = $&op5.a5 W"
+end
+* Case 6 simulates 0.31 mA. Case 7 simulates V_OPA = 24.46 V against
+* 24.53 V without the clamp current, so the rail has moved by 0.07 V.
+if op6.a6 < 0.2m
+  echo "FAIL supply_dc_op: 44V/Iq-max/DZ1-clamp I(Z_REG1) = $&op6.a6 A (min 0.2 mA)"
+else
+  echo "PASS supply_dc_op: 44V/Iq-max/DZ1-clamp I(Z_REG1) = $&op6.a6 A"
+end
+if op7.a7 < 24.2
+  echo "FAIL supply_dc_op: four-way worst case V_OPA = $&op7.a7 V (min 24.2 V)"
+else
+  echo "PASS supply_dc_op: four-way worst case V_OPA = $&op7.a7 V"
 end
 
 .endc
