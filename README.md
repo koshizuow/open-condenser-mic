@@ -81,6 +81,10 @@ Both are 0805 and must be the same value. A higher value lowers the noise floor 
 
 The 470 MΩ option is not a generated BOM variant; fit it by hand if wanted. Clean the area around C8, R_IN1, R_BIAS1 and U1 pin 3 thoroughly whichever value is used.
 
+## Hardware Characterisation
+
+The figures above are simulated. [docs/measurement.md](docs/measurement.md) describes how to measure the DC rails with a multimeter, and the gain, frequency response and self-noise with an audio interface by driving the board through a capacitor in place of the capsule. `tools/measure/` holds the signal generator and the analysis script.
+
 ## Hardware Requirements
 
 ### Customer-supplied (not in PCBA BOM)
