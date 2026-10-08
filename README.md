@@ -14,7 +14,8 @@ This design uses a Dickson charge pump oscillator to generate a 68 V HV rail fro
 - CD40106B Schmitt-trigger oscillator + 3-stage active Dickson charge pump
 - 55 V capsule polarization (HV_FILT ≈ 67.3 V, BZT52C68-clamped, referenced to 12 V midpoint)
 - HV rail RC filter: 1 MΩ (R_HV) + 470 nF, corner ~0.34 Hz; no LC resonance
-- Output sensitivity ~−48 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); ~−38 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×)
+- Output sensitivity (simulated, 13 mV/Pa capsule, into a 1.5 kΩ preamp input): about −38 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); about −22 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×). About 2 dB lower into 600 Ω and 1.6 dB higher unloaded; output impedance is about 310 Ω
+- Maximum SPL before the op-amp output clips (calculated): about 141 dB SPL peak at default gain, about 125 dB SPL peak at hi-gain
 - RFI filter on XLR output: differential RC network (R_RFI1/R_RFI2 + C_RFI1/C_RFI2)
 - Phantom power draw: ~4.6 mA typical at 48 V (IEC 61938 P48 rated maximum: 10 mA)
 - All SMD/THT components available from standard distributors (LCSC, Mouser, Digi-Key); capsule and transformer are customer-supplied
@@ -197,6 +198,7 @@ ngspice amp_ac.sp             # Closed-loop AC frequency response
 ngspice amp_bias_compare.sp   # Low-frequency rolloff vs R_BIAS1 value
 ngspice phantom_ripple_psrr.sp # Phantom supply ripple → output hum
 ngspice supply_dc_op.sp       # V_OPA regulator DC operating point across phantom/load corners
+ngspice pump_real_vosc.sp     # Charge pump with a real V_OSC supply: DZ1 clamp current, V_OSC sag
 ```
 
 ### Regenerating plots

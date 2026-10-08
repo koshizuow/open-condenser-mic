@@ -132,6 +132,22 @@ echo "  Gain at  1kHz:   $&gain_1k dBV  (reference)"
 echo "  Gain at 10kHz:  $&gain_10k dBV  (drop $&drop_10k dB)"
 echo "========================================================"
 
+* ── Sensitivity assertion (#111) ───────────────────────────────────────────
+* Vcap is 13.07mV (1 Pa), so the 1kHz output in dBV is the sensitivity in
+* dBV/Pa into this deck's 600Ω load: expected -40.2 (default gain). The README
+* quotes -38 into 1.5kΩ, which is the same result at a lighter load.
+let sens_lo = -41.5
+let sens_hi = -38.5
+if gain_1k < sens_lo
+  echo "FAIL amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R (min -41.5)"
+else
+  if gain_1k > sens_hi
+    echo "FAIL amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R (max -38.5)"
+  else
+    echo "PASS amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R"
+  end
+end
+
 * ── Pass/fail assertions ────────────────────────────────────────────────────
 * 500Hz limit 3.0dB: expected ~0.4dB (2.6dB margin); catches C_DC/transformer changes.
 * 10kHz limit 1.5dB: catches HF rolloff regressions from transformer or output cap.
