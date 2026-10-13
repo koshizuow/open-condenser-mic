@@ -736,7 +736,7 @@ def route_all(board):
           (22.15,  60.5))
 
 
-def fix_ref(board, ref, new_text=None, x_mm=None, y_mm=None, angle_deg=None, hide=False):
+def fix_ref(board, ref, new_text=None, x_mm=None, y_mm=None, angle_deg=None, hide=False, size_mm=None):
     for fp in board.GetFootprints():
         if fp.GetReference() == ref:
             if new_text is not None:
@@ -746,6 +746,10 @@ def fix_ref(board, ref, new_text=None, x_mm=None, y_mm=None, angle_deg=None, hid
             if angle_deg is not None:
                 fp.Reference().SetTextAngle(
                     pcbnew.EDA_ANGLE(angle_deg, pcbnew.DEGREES_T))
+            if size_mm is not None:
+                # height and width; the stroke stays in proportion (0.15 at 1 mm)
+                fp.Reference().SetTextSize(pcbnew.VECTOR2I(pcbnew.FromMM(size_mm), pcbnew.FromMM(size_mm)))
+                fp.Reference().SetTextThickness(pcbnew.FromMM(0.15 * size_mm))
             if hide:
                 fp.Reference().SetVisible(False)
             return
@@ -1271,8 +1275,14 @@ def main():
     # R_BIAS1: angle=180 rotates silk; force horizontal and place above component
     # (body top at y=26.7, 1206 half-height=0.8mm)
     fix_ref(board, "R_BIAS1", x_mm=7.9125, y_mm=25.6, angle_deg=0)
-    # R_IN1 (#96): default ref lands on R_BIAS1's; put it below the part
-    fix_ref(board, "R_IN1", x_mm=12.3, y_mm=29.0, angle_deg=0)
+    # R_IN1 (#96): default ref lands on R_BIAS1's; put it below the part. Centred
+    # under it at full size (x=12.3, y=29.0) the text ran over U1 pad 4 (pad left
+    # edge x=14.05, text reached 14.54; seen on the v3.5 boards). At full size it
+    # does not fit between U1 pad 4 and the via at (9.02, 29.7) next to R3 either
+    # (4.5 mm of text, 4.1 mm of room), so this one reference is 0.8 mm high.
+    # At (11.7, 29.2) its box is x 9.9..13.5, y 28.5..29.9: about 0.55 mm from
+    # U1 pad 4, from the via and from R_BIAS1 pad 1.
+    fix_ref(board, "R_IN1", x_mm=11.7, y_mm=29.2, angle_deg=0, size_mm=0.8)
 
     # C2: move left, clear of R_ZEN1 area
     fix_ref(board, "C2",     x_mm=31, y_mm=38, angle_deg=0)
