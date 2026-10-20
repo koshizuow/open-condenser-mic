@@ -54,3 +54,6 @@ sim/_tmp_*.sp
 # Python
 __pycache__/
 *.pyc
+
+# generated test signals (tools/measure/gen_signals.py)
+tools/measure/signals/

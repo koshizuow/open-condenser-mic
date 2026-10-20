@@ -79,7 +79,11 @@ Both are 0805 and must be the same value. A higher value lowers the noise floor 
 | **200 MΩ (default)** | **18.4 dB(A)** | **29 Hz** | **2×** |
 | 470 MΩ (drop-in, e.g. Vishay CRCW0805470MJPEAHR) | 15.7 dB(A) | 12.5 Hz | 4.7× |
 
-The 470 MΩ option is not a generated BOM variant; fit it by hand if wanted. Clean the area around C8, R_IN1, R_BIAS1 and U1 pin 3 thoroughly whichever value is used.
+The 470 MΩ option is not a generated BOM variant; fit it by hand if wanted. Clean the area around C8, R_IN1, R_BIAS1 and U1 pin 3 thoroughly whichever value is used. Clean around R_OSC1, C10 and U3 pin 1 too: leakage at the oscillator's timing node stops the charge pump (#120).
+
+## Hardware Characterisation
+
+The figures above are simulated. [docs/measurement.md](docs/measurement.md) describes how to measure the DC rails with a multimeter, and the gain, frequency response and self-noise with an audio interface by driving the board through a capacitor in place of the capsule. `tools/measure/` holds the signal generator and the analysis script.
 
 ## Hardware Requirements
 
