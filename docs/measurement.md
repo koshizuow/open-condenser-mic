@@ -23,6 +23,9 @@ Tracking issue: #114. Related: #82 (hum), #99 (transformer inductance).
   impedance is 1 MΩ to 200 MΩ and a 10 MΩ meter will read wrong and disturb them.
 - After soldering near C8, R_IN1, R_BIAS1 or the FP/BP pads, clean the flux off
   and let the board dry. Residue there shows up as noise and pops.
+- The same goes for R_OSC1, C10 and U3 pin 1, the oscillator's timing node. A
+  little leakage there stops the oscillator, and with it the polarisation
+  voltage (#120).
 
 ## Part A: DC rails
 
@@ -48,6 +51,11 @@ Derived:
   input of the same interface.
 - `VBOOST` within about 0.3 V of `V_OPA` + 3 × `V_OSC` − 0.6 V means DZ1 is not
   clamping. Lower means DZ1 is setting the rail. Both are normal.
+- `VBOOST` close to `V_OPA` − 0.7 V (about 23 V) means the pump is not running.
+  Measure U3 pin 2 and pin 4 to GND on DC volts: about half of `V_OSC` each
+  while the oscillator runs (the meter averages the square wave), 0 V or
+  `V_OSC` when it is stopped. If it is stopped, check U3 pin 1: 0 V there
+  usually means leakage to GND around R_OSC1 and C10 (#120).
 
 ## Part B: electrical sweep through a dummy capsule
 
@@ -94,6 +102,26 @@ Meter on AC volts.
 
 Both readings are taken at the same frequency with the same meter, so the
 meter's own frequency error cancels in the ratio.
+
+**S1 without a low AC range.** Many meters have nothing below 200 V AC and read
+0 here. The interface can stand in, as long as the preamp gain is the one used
+for S3 and the noise recordings (the loopback is recorded at the very end, see
+below):
+
+1. Take `v-source` from the interface's output spec: the level of 0 dBFS at the
+   line output with its volume at maximum (SSL 2: +12.5 dBu), less 20 dB for
+   the tone. Expect an error of about ±0.5 dB.
+2. After N2, with phantom off, connect the line output straight to the same mic
+   input (a balanced TRS to XLR male lead: tip to pin 2, ring to pin 3, sleeve
+   to pin 1). Play `cal_tone_400Hz_-60dBFS.wav` and record a few seconds.
+3. The 400 Hz level of `rec_tone_small.wav` less the level of this loopback
+   recording is the gain from the injection point to the XLR pins. `v-xlr` is
+   `v-source` times that ratio.
+
+If the gain knob may have been moved in between, compare the N2 recording with
+a fresh one through the 150 Ω termination: at high gain the interface noise
+follows the gain dB for dB. Turn the knob back until the 1 to 10 kHz band
+matches within about 0.2 dB, or correct by the difference.
 
 **S2. Frequency response.** Set the preamp gain so the tone peaks around
 −12 dBFS. Play `sweep_-46dBFS.wav` once and record the mic input for its whole
