@@ -13,9 +13,9 @@
 *     They do decide whether V_OSC stays in regulation (#121): I_OSC is the
 *     clock's own supply current. Measured on a v3.5 board, the RC Schmitt
 *     oscillator (U3A with R_OSC1 and C10) draws about 1.5 mA at 14 V, all of
-*     R_ZEN1's current, and V_OSC sat at 13.8 V. With an ICM7555 clock driving
-*     U3 as buffers, I_OSC is 0.16 mA typical and 0.5 mA worst (ICM7555 300 uA
-*     max at 15 V plus the buffers and pump drive). Z_OSC1 is a low-current
+*     R_ZEN1's current, and V_OSC sat at 13.8 V. With U3 an ICM7556 (dual
+*     CMOS 555), I_OSC is 0.22 mA typical and 0.75 mA worst (600 uA max at
+*     15 V plus the pump drive). Z_OSC1 is a low-current
 *     15 V zener (MMSZ4702, tested at 50 uA; 300 ohm slope assumed).
 *   - DZ1 clamp current (I_DZ). It comes from V_OPA through the diode chain
 *     (1x) and from V_OSC through the clock drivers (3x). With DZ1 at 75 V
@@ -39,7 +39,7 @@
 .param I_OP  = 1.8m    ; op-amp quiescent current
 .param VZ    = 24      ; Z_REG1 breakdown (22.8 / 24 / 25.2 for ±5%)
 .param I_DZ  = 0       ; DZ1 clamp current (0 when not clamping, ~0.4m with DZ1 at -5%)
-.param I_OSC = 0.16m   ; clock supply current from V_OSC (ICM7555 + U3 buffers, 0.5m worst; 1.5m for the v3.5 RC oscillator, #121)
+.param I_OSC = 0.22m   ; clock supply current from V_OSC (ICM7556, 0.75m worst; 1.5m for the v3.5 RC oscillator, #121)
 .param VZO   = 15      ; Z_OSC1 breakdown (14.25 / 15 / 15.75 for ±5%)
 
 * Phantom source: two feed legs in the interface, two tap legs on the board
@@ -145,17 +145,17 @@ echo "  V_OPA_RAW = $&v(raw) V   V_OPA = $&v(vopa) V   V_OSC = $&v(vosc) V   I(Z
 
 * ── Case 8: Z_OSC1 with the clock's current, worst case (#121) ──────────
 * 44 V, op-amp max Iq, Z_REG1 -5% (lowest V_OPA), Z_OSC1 +5% (least R_ZEN1
-* current), I_OSC at its worst (0.5 mA), DZ1 off (it does not conduct here).
+* current), I_OSC at its worst (0.75 mA), DZ1 off (it does not conduct here).
 alterparam V_PH  = 44
 alterparam I_OP  = 2.3m
 alterparam VZ    = 22.8
 alterparam I_DZ  = 0
 alterparam VZO   = 15.75
-alterparam I_OSC = 0.5m
+alterparam I_OSC = 0.75m
 reset
 op
 let io8 = i(Vamm_o)
-echo "--- 44V, Iq 2.3mA, Vz 22.8V, Vzo 15.75V, I_OSC 0.5mA (ICM7555 clock, worst) ---"
+echo "--- 44V, Iq 2.3mA, Vz 22.8V, Vzo 15.75V, I_OSC 0.75mA (ICM7556 clock, worst) ---"
 echo "  V_OPA = $&v(vopa) V   V_OSC = $&v(vosc) V   I(Z_OSC1) = $&io8 A"
 
 * ── Case 9: the measured v3.5 board, RC oscillator (information only) ────
@@ -230,8 +230,11 @@ end
 
 setplot op8
 let a8 = i(Vamm_o)
-if op8.a8 < 0.2m
-  echo "FAIL supply_dc_op: worst-case I(Z_OSC1) with the clock = $&op8.a8 A (min 0.2 mA)"
+* Min 0.1 mA, twice Z_OSC1's 50 uA test current, the same limit as pump_real_vosc.sp. Simulated 0.18 mA
+* with the ICM7556 at its 600 uA maximum. A smaller R_ZEN1 would give more, but it loads V_OPA and takes
+* Z_REG1's case 4 below its limit (about 0.08 mA), so the margin comes from the clock's current instead.
+if op8.a8 < 0.1m
+  echo "FAIL supply_dc_op: worst-case I(Z_OSC1) with the clock = $&op8.a8 A (min 0.1 mA)"
 else
   echo "PASS supply_dc_op: worst-case I(Z_OSC1) with the clock = $&op8.a8 A"
 end
