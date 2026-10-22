@@ -1,7 +1,7 @@
 # Worst-Case Circuit Analysis (WCCA) — Z_REG1 / DZ1 Zener Power Dissipation
 
 Addresses issue #59: document worst-case power dissipation for `Z_REG1` (24 V,
-`BZT52C24`) and `DZ1` (68 V, `BZT52C68` → BOM part `MMSZ5266BT1G`), both
+`BZT52C24`) and `DZ1` (75 V, `MMSZ5267BT1G` since #121; 68 V `MMSZ5266BT1G` before), both
 SOD-123 package, at worst-case phantom supply voltage (not just the nominal
 48 V used in the existing SPICE simulations).
 
@@ -24,8 +24,8 @@ Component tolerances used (from `pcb/bom.csv` / LCSC part datasheets):
 | R1, R2 | RT0603BRD072K2L (YAGEO) | 2.2 kΩ | ±0.1% | −0.1% (maximizes current into V_OPA_RAW); changed from 6.8 kΩ for #95 |
 | R_REG1 | 0402 thick film (LCSC C25879) | 2.2 kΩ | ±1% | −1% (maximizes current into Z_REG1); 2.2 kΩ → 1.2 kΩ in PR #75, back to 2.2 kΩ for #95 (see below) |
 | Z_REG1 | BZT52C24 (MDD) | 24 V | ±5% (22.8–25.2 V) | 25.2 V (maximizes P = Vz·Iz at fixed Iz-driving network) |
-| Z_OSC1 | MMSZ15T1G (onsemi) | 15 V | ±5% (14.25–15.75 V) | 15.75 V (drives Dickson pump harder) |
-| DZ1 | MMSZ5266BT1G (onsemi) | 68 V | ±5% (64.6–71.4 V) | 64.6 V (lowest clamp voltage → most excess pump current shunted) |
+| Z_OSC1 | MMSZ4702T1G (onsemi), specified at 50 µA (#121; MMSZ15T1G before) | 15 V | ±5% (14.25–15.75 V) | 15.75 V (drives Dickson pump harder) |
+| DZ1 | MMSZ5267BT1G (onsemi) since #121; the 68 V MMSZ5266BT1G analysis below is kept as history | 75 V | ±5% (71.25–78.75 V) | 71.25 V (lowest clamp voltage → most excess pump current shunted) |
 | R_DZ1 | 0603WAF6800T5E (UNI-ROYAL) | 680 Ω | ±1% (673.2–686.8 Ω) | 673.2 Ω (lower resistance → more current reaches DZ1; see #67 Resolution below) |
 
 SOD-123 package thermal/power ratings (onsemi `MMSZ52xxxT1G` series
@@ -119,7 +119,18 @@ into `V_BASE_REG` and keeps the stiff-source dissipation bound in section 1
 inside the thermal limit (1.2 kΩ would give 295 mW and T_j ≈ 160 °C at 60 °C
 ambient under that bound).
 
-## DZ1 (68 V) — active Dickson charge-pump clamp, with R_DZ1 series resistor
+## DZ1 — active Dickson charge-pump clamp, with R_DZ1 series resistor
+
+**Update (#121).** On v3.5 boards the RC Schmitt oscillator drew about 1.5 mA from `V_OSC`, all of R_ZEN1's
+current, so `V_OSC` sat at 13.8 V and `VBOOST` at 63 V: DZ1 was not clamping at all. The clock is now an ICM7555
+with U3 only buffering it (0.42 mA typical, 0.75 mA worst; `sim/clock_icm7555.sp`), Z_OSC1 a 50 µA-rated 15 V
+zener, and `VBOOST` follows `V_OSC` (65.0 / 68.8 / 71.3 V at the low / nominal / high corners, 61.5 to 74.1 V
+from −20 to +60 °C; `sim/pump_real_vosc.sp`). At those voltages a 68 V DZ1 would clamp on most boards, so DZ1
+is now 75 V and only protects: it conducts at the high corners only, at most 0.18 mA (high corner at −20 °C,
+about 12 mW). As before (#112), the real `V_OSC` supply bounds the clamp current below about 0.4 mA, about
+30 mW at 75 V. The 68 V analysis below is kept for the record; its ideal-source bound no longer applies.
+
+### History: DZ1 (68 V)
 
 DZ1 does not sit behind a large resistive bias network like Z_REG1 — it
 clamps the Dickson pump's output (`VBOOST`) through a 680 Ω series resistor
