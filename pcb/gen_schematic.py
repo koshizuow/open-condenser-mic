@@ -883,17 +883,17 @@ _SY = 85 - 9*1.27
 
 elements += component("4xxx:40106", "U3", "CD40106B",
     28, 118, unit=1,
-    footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+    footprint="Package_SO:TSSOP-14_4.4x5mm_P0.65mm",
     pins={"1": "OSC_OUT", "2": "CLKA"})
 
 elements += component("4xxx:40106", "U3", "CD40106B",
     52, 118, unit=2,
-    footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+    footprint="Package_SO:TSSOP-14_4.4x5mm_P0.65mm",
     pins={"3": "~CLKA", "4": "CLKB"})
 
 elements += component("4xxx:40106", "U3", "CD40106B",
     28, 148, unit=7,
-    footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+    footprint="Package_SO:TSSOP-14_4.4x5mm_P0.65mm",
     pins={"14": "~V_OSC", "7": "GND"},
     ref_at=(-5, -2.54), val_at=(-5, 1.27))
 
@@ -906,7 +906,7 @@ elements += component("4xxx:40106", "U3", "CD40106B",
 for _unit, _gx, _gy in ((3, 235, 98), (4, 262, 98), (5, 235, 116), (6, 262, 116)):
     elements += component("4xxx:40106", "U3", "CD40106B",
         _gx, _gy, unit=_unit,
-        footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+        footprint="Package_SO:TSSOP-14_4.4x5mm_P0.65mm",
         ref_at=(0, -5.08), val_at=(0, 5.08))
     elements.append(wire(_gx - 7.62, _gy, _gx - 10.16, _gy))        # input stub
     elements.append(power_sym("power:GND", _gx - 10.16, _gy, 0))    # input → GND
