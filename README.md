@@ -12,7 +12,7 @@ This design uses a Dickson charge pump oscillator to generate a 68 V HV rail fro
 - Op-amp output stage; reference design uses OPA1641 (2.5 nV/√Hz voltage noise)
 - NTE10/3 audio transformer, 3:1 step-down, transformer-coupled output
 - CD40106B Schmitt-trigger oscillator + 3-stage active Dickson charge pump
-- 55 V capsule polarization (HV_FILT ≈ 67.3 V, BZT52C68-clamped, referenced to 12 V midpoint)
+- About 57 V capsule polarization (HV_FILT ≈ 69 V, set by the 15 V clock rail; a 75 V zener only protects it), referenced to the 12 V midpoint
 - HV rail RC filter: 1 MΩ (R_HV) + 470 nF, corner ~0.34 Hz; no LC resonance
 - Output sensitivity (simulated, 13 mV/Pa capsule, into a 1.5 kΩ preamp input): about −38 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); about −22 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×). About 2 dB lower into 600 Ω and 1.6 dB higher unloaded; output impedance is about 310 Ω
 - Maximum SPL before the op-amp output clips (calculated): about 141 dB SPL peak at default gain, about 125 dB SPL peak at hi-gain
@@ -79,7 +79,7 @@ Both are 0805 and must be the same value. A higher value lowers the noise floor 
 | **200 MΩ (default)** | **18.4 dB(A)** | **29 Hz** | **2×** |
 | 470 MΩ (drop-in, e.g. Vishay CRCW0805470MJPEAHR) | 15.7 dB(A) | 12.5 Hz | 4.7× |
 
-The 470 MΩ option is not a generated BOM variant; fit it by hand if wanted. Clean the area around C8, R_IN1, R_BIAS1 and U1 pin 3 thoroughly whichever value is used. Clean around R_OSC1, C10 and U3 pin 1 too: leakage at the oscillator's timing node stops the charge pump (#120).
+The 470 MΩ option is not a generated BOM variant; fit it by hand if wanted. Clean the area around C8, R_IN1, R_BIAS1 and U1 pin 3 thoroughly whichever value is used. Clean around R_OSC1, C10 and U4 pins 2 and 6 too: leakage at the oscillator's timing node stops the charge pump (#120).
 
 ## Hardware Characterisation
 
