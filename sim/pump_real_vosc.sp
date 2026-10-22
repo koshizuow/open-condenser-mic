@@ -32,10 +32,13 @@
 * typical temperature coefficients, all positive): Z_OSC1 15 V +9..+13 mV/C
 * (MMSZ47xx curve about +10), Z_REG1 24 V (BZT52C24) +18..+25 mV/C, DZ1 75 V
 * about +75 mV/C, Q1's Vbe -2 mV/C (V_OPA follows Z_REG1 less Vbe). The diodes'
-* own temperature comes from `option temp`. Each corner takes the coefficients
+* own temperature comes from `option temp` (set after each reset, which clears
+* it), with the BAT54 given a Schottky EG. Each corner takes the coefficients
 * that are harshest for what it checks:
 *   high-cold: DZ1 drops most, VBOOST least: does DZ1 starve Z_OSC1.
 *   low-cold:  everything at its lowest: how low VBOOST, does Z_OSC1 keep a current.
+*              I_OSC 0.85 mA: the ICM7555's 300 uA maximum is given at 25 C only, and
+*              its supply current curve is about 30 % higher at -20 C (0.69 + 0.09).
 *   high-hot:  everything at its highest: V_OSC under the ICM7555's 18 V, VBOOST.
 *   low-hot:   the low corner warm, for the record.
 * Each corner is a 40 ms transient (about 5 s).
@@ -50,7 +53,7 @@
 .param I_OSC   = 0.42m   ; clock supply current from V_OSC (0.1m / 0.42m / 0.75m)
 .param R_DRV   = 300     ; CD40106B output resistance at 15 V (estimate)
 
-.model BAT  D  (IS=1e-6 N=1.05 BV=100 RS=3)
+.model BAT  D  (IS=1e-6 N=1.05 BV=100 RS=3 EG=0.69 XTI=2)   ; Schottky barrier: leakage x19 at 60 C, not the silicon default x96
 .model ZOSC D  (Is=1n N=1 Rs=300 Bv={VZO} Ibv=50u)
 .model ZHV  D  (Is=1n N=1 Rs=10 Bv={DZ1_BV} Ibv=10u)
 .model SW   SW (Ron={R_DRV} Roff=1G Vt=0.5 Vh=0.1)
@@ -132,12 +135,12 @@ echo "--- nom: V_OPA 23.4 V, Z_OSC1 15 V, I_OSC 0.42m, DZ1 75 V ---"
 echo "  V_OSC = $&vosc_nom V   I(Z_OSC1) = $&izo_nom A   VBOOST = $&vb_nom V   I(DZ1) = $&idz_nom A"
 * ── temperature corners (tran4 high-cold, tran5 low-cold, tran6 high-hot, tran7 low-hot) ──
 * high-cold, -20 C: V_OPA 24.6 - 45*0.018 - 0.09, Z_OSC1 15.75 - 45*0.009, DZ1 71.25 - 45*0.075
-option temp=-20
 alterparam V_OPA_R = 23.70
 alterparam VZO = 15.345
 alterparam I_OSC = 0.1m
 alterparam DZ1_BV = 67.875
 reset
+option temp=-20
 tran 50n 40m 0 50n uic
 meas tran vosc_hc avg v(vosc)   from=35m to=40m
 meas tran vb_hc   avg v(vboost) from=35m to=40m
@@ -148,23 +151,24 @@ echo "  V_OSC = $&vosc_hc V   I(Z_OSC1) = $&izo_hc A   VBOOST = $&vb_hc V   I(DZ
 * low-cold, -20 C: V_OPA 22.2 - 45*0.025 - 0.09, Z_OSC1 14.25 - 45*0.013, DZ1 78.75 - 45*0.075
 alterparam V_OPA_R = 20.985
 alterparam VZO = 13.665
-alterparam I_OSC = 0.75m
+alterparam I_OSC = 0.85m
 alterparam DZ1_BV = 75.375
 reset
+option temp=-20
 tran 50n 40m 0 50n uic
 meas tran vosc_lc avg v(vosc)   from=35m to=40m
 meas tran vb_lc   avg v(vboost) from=35m to=40m
 meas tran idz_lc  avg i(Vamm)   from=35m to=40m
 meas tran izo_lc  avg i(Vamm_o) from=35m to=40m
-echo "--- low-cold -20 C: V_OPA 20.99 V, Z_OSC1 13.67 V, I_OSC 0.75m, DZ1 75.38 V ---"
+echo "--- low-cold -20 C: V_OPA 20.99 V, Z_OSC1 13.67 V, I_OSC 0.85m, DZ1 75.38 V ---"
 echo "  V_OSC = $&vosc_lc V   I(Z_OSC1) = $&izo_lc A   VBOOST = $&vb_lc V   I(DZ1) = $&idz_lc A"
 * high-hot, +60 C: V_OPA 24.6 + 35*0.025 + 0.07, Z_OSC1 15.75 + 35*0.013, DZ1 71.25 + 35*0.075
-option temp=60
 alterparam V_OPA_R = 25.545
 alterparam VZO = 16.205
 alterparam I_OSC = 0.1m
 alterparam DZ1_BV = 73.875
 reset
+option temp=60
 tran 50n 40m 0 50n uic
 meas tran vosc_hh avg v(vosc)   from=35m to=40m
 meas tran vb_hh   avg v(vboost) from=35m to=40m
@@ -178,6 +182,7 @@ alterparam VZO = 14.565
 alterparam I_OSC = 0.75m
 alterparam DZ1_BV = 81.375
 reset
+option temp=60
 tran 50n 40m 0 50n uic
 meas tran vosc_lh avg v(vosc)   from=35m to=40m
 meas tran vb_lh   avg v(vboost) from=35m to=40m
