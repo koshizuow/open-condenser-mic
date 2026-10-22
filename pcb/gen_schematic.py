@@ -262,16 +262,6 @@ PIN_OFFSETS = {
         "2": ( 0,     7.62, "D"),   # GND (sym y=-7.62 → sch +7.62)
         "3": (-7.62,  0,    "L"),   # IN
     },
-    "Timer:NE555D": {
-        "1": (0, 10.16, "D"),        # GND
-        "8": (2.54, -10.16, "U"),    # VCC
-        "5": (0, -10.16, "U"),       # CONT
-        "4": (-10.16, -5.08, "L"),   # ~RST
-        "7": (-10.16, -2.54, "L"),   # DISCH
-        "6": (-10.16, 2.54, "L"),    # THRES
-        "2": (-10.16, 5.08, "L"),    # TRIG
-        "3": (10.16, 0, "R"),        # OUT
-    },
     "4xxx:40106": {
         # All gate units share the same visual pin layout, just different pin numbers
         "1":  (-7.62, 0, "L"),   # A1 input  (unit 1)
@@ -323,6 +313,21 @@ _POWER_SYMBOL_NETS = {
     "GND": {"D": ("power:GND", 0), "R": ("power:GND", 0)},
     # V_OPA is drawn as an explicit bus spine + local wires (see Block A / Block D wires)
 }
+
+def lib_pin_offsets(lib_id):
+    """Pin tips of a library symbol as PIN_OFFSETS entries, read from the installed library. For symbols whose
+    layout differs between KiCad library versions (NE555D: the CI runner's library has another pin order than
+    KiCad 9.0.9's), so the labels land on the right pins wherever the schematic is generated."""
+    path, name = LIBS[lib_id]
+    out = {}
+    for x, y, a, num in re.findall(r'\(pin \w+ \w+\s*\(at ([-\d.]+) ([-\d.]+) (\d+)\).*?\(number "([^"]+)"',
+                                   extract_sym(path, name), re.S):
+        out[num] = (float(x), -float(y), {0: "L", 180: "R", 90: "D", 270: "U"}[int(a)])
+    return out
+
+
+PIN_OFFSETS["Timer:NE555D"] = lib_pin_offsets("Timer:NE555D")     # ICM7555 (#121)
+
 
 def stub_and_label(lib_id, cx, cy, pin_num, net_name, angle=0):
     """Return (wire_str, label_or_power_str) for one pin.
@@ -940,10 +945,11 @@ elements += component("Timer:NE555D", "U4", "ICM7555",
     footprint="Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
     pins={"1": "GND", "8": "V_OSC", "4": "V_OSC", "6": "CLKA_IN", "2": "CLKA_IN", "3": "OSC_OUT"},
     ref_at=(5.08, -7.62), val_at=(5.08, 7.62))
-elements.append(no_connect(150 - 10.16, 150 - 2.54))   # DISCH: unused in the output-fed astable
-elements.append(no_connect(150, 150 - 10.16))          # CONT: left open (CMOS 555, threshold noise only moves f)
+for _pin in ("7", "5"):        # DISCH: unused in the output-fed astable; CONT: left open (threshold noise only moves f)
+    _dx, _dy, _ = PIN_OFFSETS["Timer:NE555D"][_pin]
+    elements.append(no_connect(150 + _dx, 150 + _dy))
 elements += component("Device:C", "C_U4", "100n 25V X7R",
-    172, 150,
+    180, 150,
     footprint="Capacitor_SMD:C_0402_1005Metric",
     pins={"1": "V_OSC", "2": "GND"})
 
