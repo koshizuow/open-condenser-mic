@@ -73,6 +73,11 @@ S_ah VOSC CLKA P 0 SW
 S_al CLKA 0    N 0 SW
 S_bh VOSC CLKB N 0 SW
 S_bl CLKB 0    P 0 SW
+* A few pF on the switch-driven clock nodes so that they are never without capacitance: ngspice 44.2 (CI, KLU)
+* aborted the high-cold run with "Timestep too small" at clka without them. The real 50 pF line load is already in
+* I_OSC (clock_icm7555.sp charges it from U3's supply), so only 5 pF here (about 15 uA more, well inside the margin).
+C_clka CLKA 0 5p
+C_clkb CLKB 0 5p
 
 * 3-stage pump, R_DZ1, DZ1, reservoir and HV filter
 D1    VOPA  N1     BAT
