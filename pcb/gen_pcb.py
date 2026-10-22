@@ -455,22 +455,34 @@ def route_all(board):
           (31.8, 44.5),
           (31.8, 43.0))
 
-    # ── V_OSC: R_ZEN-pad2 → Z_OSC-pad1 → U3-pad14 → C_U3-pad1 ─────────────
+    # ── V_OSC: R_ZEN-pad2 → Z_OSC-pad1 → U3-pad14 → C_U3-pad1 → U4 ────────
     # R_ZEN pad2 (29.1,33.5) aligned to Z_OSC pad1 (29.1,28.5): straight vertical.
     # Horizontal bus at y=30 taps off the vertical at (29.1,30).
-    # U3 pad14 (10.475,51.19); C_U3 pad1 (13.52,52.0)
+    # U3 (TSSOP-14) pad14 (10.8625,49.65), pad x 10.125..11.6: the x=10.475 vertical ends inside it.
     route(board, "V_OSC", F, PWR,
           (29.1,   33.5 ),
           (29.1,   28.5 ))
     route(board, "V_OSC", F, PWR,
           (29.1,   30.0 ),
           (10.475, 30.0 ),
-          (10.475, 51.19))
-    # C_U3 tap: go RIGHT from U3 pad14 to avoid U3 pads below y=51.19
+          (10.475, 49.65))
+    # C_U3 tap: RIGHT along the pad14 row (pad13 top edge 50.1, gap 0.15+), then down to C_U3 pad1 (13.52,52.0)
+    # and on to U4: RST pad4 (10.475,55.695) from the right, C_U4 pad1 (14.4,54.72) on the way.
+    # y=53.0 passes C_U3 pad2 (GND, bottom edge 52.27) by 0.58mm.
     route(board, "V_OSC", F, PWR,
-          (10.475, 51.19),
-          (13.52,  51.19),
-          (13.52,  52.0 ))
+          (10.475, 49.65),
+          (13.52,  49.65),
+          (13.52,  52.0 ),
+          (13.52,  55.695),
+          (10.475, 55.695))
+    route(board, "V_OSC", F, PWR, (13.52, 54.72), (14.4, 54.72))
+    # U4 VCC pad8 (5.525,59.505) is on the far side of the THRES-TRIG link: B.Cu from (15.6,53.0) to a via under
+    # U4's body (7.1,59.505; pad8 inboard edge 6.5) with a short F.Cu stub.
+    route(board, "V_OSC", F, PWR, (13.52, 53.0), (15.6, 53.0))
+    via(board, "V_OSC", 15.6, 53.0)
+    route(board, "V_OSC", B, PWR, (15.6, 53.0), (15.6, 59.505), (7.1, 59.505))
+    via(board, "V_OSC", 7.1, 59.505)
+    route(board, "V_OSC", F, PWR, (7.1, 59.505), (5.525, 59.505))
 
     # ════════════════════════════════════════════════════════════════════════
     # SIGNAL NETS  (0.2mm)
@@ -626,13 +638,12 @@ def route_all(board):
     via(board, "GND", 26.7, 91.4)
 
 
-    # ── U3 pin 5 (unused gate input) → GND (#94) ───────────────────────────
-    # The pour only reaches pin 5 (5.53,56.27) from its outboard end; the
-    # CLKB track at x=6.88 blocks the other side. One thermal spoke fails the
-    # min-2-spokes DRC rule (starved_thermal), so tie it to pin 7 (GND,
-    # 5.53,58.81) with a track looped outboard of pin 6 (pad left edge
-    # x=4.55). x=4.0 keeps 0.45mm to pin 6.
-    route(board, "GND", F, SIG, (5.525, 56.27), (4.0, 56.27), (4.0, 58.81), (5.525, 58.81))
+    # ── U3 pins 5, 7 (unused gate input, VSS) → GND (#94, #121) ────────────
+    # CLKB runs outboard of U3's left pads (x=3.7), so the pour cannot reach pins 5 and 7 from that end:
+    # tie them inboard (x=6.6, pad inboard edge 5.875) and drop to the B.Cu plane under the body.
+    route(board, "GND", F, SIG, (5.1375, 52.25), (6.6, 52.25), (6.6, 53.55), (5.1375, 53.55))
+    route(board, "GND", F, SIG, (6.6, 52.9), (7.3, 52.9))
+    via(board, "GND", 7.3, 52.9)
 
     # ── Dickson pump nodes ───────────────────────────────────────────────────
     # N1: D1-pad3 (22.9375,52.0) → Cp1-pad1 (21.05,55.5)
@@ -664,49 +675,34 @@ def route_all(board):
           (27.9375, 49.0),
           (30.05,   49.0))
 
-    # ── Clock nets (B.Cu — shielded under U3) ───────────────────────────────
-    # CLKA_IN: U3-pad1 (5.525,51.19) → R_OSC-pad2 (16.0,55.49) → C_OSC-pad1 (18.0,58.52)
-    # Route on B.Cu to shield from input; vias offset from pads with F.Cu stubs.
-    # U3 pad1: via moved right to (7.0,51.19); F.Cu stub to pad.
-    # R_OSC1 pad2: via moved right to (17.5,55.49); F.Cu stub to pad.
-    via(board, "CLKA_IN", 7.0, 51.19)
-    route(board, "CLKA_IN", F, SIG, (7.0, 51.19), (5.525, 51.19))
-    route(board, "CLKA_IN", B, SIG,
-          (7.0,  51.19),
-          (16.0, 51.19),
-          (16.0, 55.49),
-          (15.0, 55.49))
-    via(board, "CLKA_IN", 15.0, 55.49)
-    route(board, "CLKA_IN", F, SIG, (15.0, 55.49), (16.0, 55.49))
-    # B.Cu bypass; via at (18.0,57.0) offset above C10 pad1 (18.0,58.52); F.Cu stub to pad.
-    # C10 at angle=270: pad1(CLKA_IN) at (18,58.52), pad2(GND) at (18,59.48).
-    # Stub goes (18,57.0)→(18,58.52) — does NOT cross pad2.
-    route(board, "CLKA_IN", B, SIG,
-          (15.0, 55.49),
-          (15.0, 57.0 ),
-          (18.0, 57.0 ))
-    via(board, "CLKA_IN", 18.0, 57.0)
-    route(board, "CLKA_IN", F, SIG, (18.0, 57.0), (18.0, 58.52))
+    # ── Clock nets (#121: ICM7555 U4 oscillates, U3 only buffers) ───────────
+    # U3 TSSOP-14 at (8,51.6): pads x 5.1375 (left, 1..7) / 10.8625 (right, 14..8), y 49.65 + 0.65*(n-1).
+    # U4 SOIC-8 at (8,57.6) rot 180: right column x=10.475 RST 55.695, OUT 56.965, TRIG 58.235, GND 59.505;
+    # left column x=5.525 CONT 55.695, THRES 56.965, DISCH 58.235, VCC 59.505. Pad inboard edges 6.5 / 9.5.
 
-    # CLKA: U3-pad2 (5.525,52.46) → U3-pad3 (5.525,53.73) → R_OSC-pad1 (16.0,56.51)
-    #       → Cp1-pad2 (22.95,59.0) → Cp3-pad2 (32.95,52.0)
-    # Connect pad2→pad3 on F.Cu, then jog RIGHT to x=8 before going down.
-    # Avoids x=5.525 below y=53.73 (CLKB pad4 at y=55); x=8 clears CLKB at x=7 by 0.8mm.
-    # Seg A: B.Cu bypass under U3-pad10; via at x=12.0 (gap to pad10 right copper 11.442mm: 0.258mm)
-    route(board, "CLKA", F, SIG,
-          (5.525, 52.46),
-          (5.525, 53.73),
-          (8.0,   53.73),
-          (8.0,   56.51),
-          (9.0,   56.51))
-    via(board, "CLKA", 9.0, 56.51)
-    route(board, "CLKA", B, SIG, (9.0, 56.51), (12.0, 56.51))
-    via(board, "CLKA", 12.0, 56.51)
-    route(board, "CLKA", F, SIG, (12.0, 56.51), (17.0, 56.51))
-    # Seg B: via at (22.95,57.5) above Cp1 pad2; B.Cu detour at y=60.15 clears CLKA_IN via
-    # (18,59.48) bottom copper (59.78) by 0.27mm. Cannot use F.Cu at x=22.95,y>60.3 (CLKB
-    # horizontal at y=60.3) so approach from above via (22.95,57.5) with B.Cu coming from below.
-    route(board, "CLKA", F, SIG, (17.0, 56.51), (17.0, 58.0))
+    # CLKA_IN (timing node): TRIG pad2 → R_OSC1 pad2 (12.4,58.11) → C10 pad1 (13.5,58.24); THRES pad6
+    # joins under U4's body (x=7.6 clears DISCH pad7 by 1.0mm, the y=58.235 run clears OUT pad3 by 0.97mm).
+    route(board, "CLKA_IN", F, SIG, (10.475, 58.235), (13.5, 58.235))
+    route(board, "CLKA_IN", F, SIG, (5.525, 56.965), (7.6, 56.965), (7.6, 58.235), (10.475, 58.235))
+
+    # OSC_OUT: OUT pad3 → R_OSC1 pad1 (12.4,57.09) on the right; to U3 pad1 (5.1375,49.65) via B.Cu,
+    # vias under U4's body (8.7,56.965) and under U3's body (6.5,49.65; pad1 inboard edge 5.875).
+    route(board, "OSC_OUT", F, SIG, (10.475, 56.965), (12.4, 56.965), (12.4, 57.09))
+    route(board, "OSC_OUT", F, SIG, (10.475, 56.965), (8.7, 56.965))
+    via(board, "OSC_OUT", 8.7, 56.965)
+    route(board, "OSC_OUT", B, SIG, (8.7, 56.965), (8.7, 54.6), (6.5, 54.6), (6.5, 49.65))
+    via(board, "OSC_OUT", 6.5, 49.65)
+    route(board, "OSC_OUT", F, SIG, (6.5, 49.65), (5.1375, 49.65))
+
+    # CLKA: U3 pad2 (50.3) + pad3 (50.95) → via under the body (8.4,50.95) → B.Cu → x=17 bus (Cp3 above,
+    # Cp1 through the y=60.15 B.Cu detour below).
+    route(board, "CLKA", F, SIG, (5.1375, 50.3), (5.1375, 50.95), (8.4, 50.95))
+    via(board, "CLKA", 8.4, 50.95)
+    route(board, "CLKA", B, SIG, (8.4, 50.95), (17.0, 50.95))
+    via(board, "CLKA", 17.0, 50.95)
+    # Seg B: via at (22.95,57.5) above Cp1 pad2; B.Cu detour at y=60.15. Cannot use F.Cu at x=22.95,y>60.3
+    # (CLKB horizontal at y=60.25) so approach from above via (22.95,57.5) with B.Cu coming from below.
+    route(board, "CLKA", F, SIG, (17.0, 50.95), (17.0, 58.0))
     via(board, "CLKA", 17.0, 58.0)
     route(board, "CLKA", B, SIG,
           (17.0, 58.0 ),
@@ -715,24 +711,20 @@ def route_all(board):
           (22.95, 57.5))
     via(board, "CLKA", 22.95, 57.5)
     route(board, "CLKA", F, SIG, (22.95, 57.5), (22.95, 55.5))
-    # Seg C: x=17 avoids CLKA_IN via/pad at (16,55.49); y=47 above N2(y=48.05), VBOOST(y=49.95)
-    # Cp3 at (31,49): pad2(CLKA) at (31.95,49)
+    # Seg C: y=47 above N2(y=48.05), VBOOST(y=49.95). Cp3 at (31,49): pad2(CLKA) at (31.95,49)
     route(board, "CLKA", F, SIG,
-          (17.0,  56.51),
+          (17.0,  50.95),
           (17.0,  47.0 ),
           (31.95, 47.0 ),
           (31.95, 49.0 ))
 
-    # CLKB: U3-pad4 (5.525,55.0) → Cp2-pad2 (22.15,64.0)
-    # Cp2 flipped 180°: pad2(CLKB) now at left (22.15,64) — no y=65.5 detour needed
-    # y=60.3 horizontal: T1A pads top=61.25mm; gap=61.25-60.45=0.8mm ✓
-    # x=6.875: U3 pad right edge=6.5mm; gap=6.875-0.15-6.5=0.225mm ✓
-    #           T1A.2 left edge=7.25mm; gap=7.25-6.875-0.15=0.225mm ✓
+    # CLKB: U3 pad4 (5.1375,51.6) → outboard x=3.7 (U3 pads 0.6mm, U4 pads 0.75mm, via (3,60) 0.3mm)
+    # → y=60.25 under U4 (pads bottom 59.805, gap 0.345mm; S1 top 61.25) → Cp2 pad2 (22.15,60.5).
     route(board, "CLKB", F, SIG,
-          (5.525,  55.0),
-          (6.875,  55.0),
-          (6.875,  60.3),
-          (22.15,  60.3),
+          (5.1375, 51.6),
+          (3.7,    51.6),
+          (3.7,    60.25),
+          (22.15,  60.25),
           (22.15,  60.5))
 
 
@@ -1097,21 +1089,21 @@ def main():
           {"1": "V_OPA", "2": "V_OSC"})
 
     place(board, "Diode_SMD", "D_SOD-123",
-          "Z_OSC1", "15V MMSZ15", 30.75, 28.5, 0,
+          "Z_OSC1", "15V MMSZ4702", 30.75, 28.5, 0,
           {"1": "V_OSC", "2": "GND"})
 
     # ── Boost section (y=48..66, above transformer cutout) ───────────────────
 
-    # U3: CD40106B SOIC-14 oscillator
-    # Pads: 1=CLKA_IN, 2=CLKA, 3=CLKA(2nd gate in), 4=CLKB, 7=GND, 14=V_OSC
+    # U3: CD40106B TSSOP-14 clock buffers (#121: SOIC-14 → TSSOP-14 to make room for U4)
+    # Pads: 1=OSC_OUT, 2=CLKA, 3=CLKA(2nd gate in), 4=CLKB, 7=GND, 14=V_OSC
     # Unused gates (#94): inputs 5, 9, 11, 13 tied to GND so they cannot float
     # (floating CMOS inputs draw shoot-through current from the ~1.2mA V_OSC
     # budget and behave differently per unit/humidity). Outputs 6, 8, 10, 12
     # stay unconnected. Pins 9, 11, 13 need no tracks: the F.Cu GND pour
-    # reaches both ends of each pad. Pin 5 gets a track (see route_all).
-    place(board, "Package_SO", "SOIC-14_3.9x8.7mm_P1.27mm",
-          "U3", "CD40106B", 8, 55, 0,
-          {"1": "CLKA_IN", "2": "CLKA",
+    # reaches both ends of each pad. Pins 5 and 7 get tracks (see route_all).
+    place(board, "Package_SO", "TSSOP-14_4.4x5mm_P0.65mm",
+          "U3", "CD40106B", 8, 51.6, 0,
+          {"1": "OSC_OUT", "2": "CLKA",
            "3": "CLKA",    "4": "CLKB",
            "5": "GND",     "7": "GND",
            "9": "GND",     "11": "GND",
@@ -1122,16 +1114,27 @@ def main():
           "C_U3", "100n 25V X7R", 14, 52, 0,
           {"1": "V_OSC", "2": "GND"})
 
-    # R_OSC / C_OSC: RC timing network (47k + 100pF ~ 100 kHz)
-    place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R_OSC1", "47k", 16, 56, 90,
-          {"1": "CLKA", "2": "CLKA_IN"})
+    # U4: ICM7555 CMOS 555 astable (#121), rot 180 so OUT, TRIG and GND face R_OSC1 and C10 on the right.
+    # OUT → R_OSC1 → THRES/TRIG with C10 to GND: ~105 kHz, 50 % duty. DISCH and CONT unconnected.
+    place(board, "Package_SO", "SOIC-8_3.9x4.9mm_P1.27mm",
+          "U4", "ICM7555", 8, 57.6, 180,
+          {"1": "GND", "2": "CLKA_IN", "3": "OSC_OUT", "4": "V_OSC",
+           "6": "CLKA_IN", "8": "V_OSC"})
 
-    # C_OSC moved to x=18 to clear T1A courtyard (T1A x_max=15.80, C_OSC x_min=17.54)
-    # angle=270: pad1(CLKA_IN) at (18,58.52) above center, pad2(GND) at (18,59.48) below;
-    # avoids via-in-pad — CLKA_IN via at (18,57.0) stubs to pad1 without crossing pad2.
+    # C_U4: 100n on V_OSC at U4's RST tap (VCC pad8 is on the far side, fed through B.Cu)
     place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C10", "100p C0G", 18, 59, 270,
+          "C_U4", "100n 25V X7R", 14.4, 55.2, 270,
+          {"1": "V_OSC", "2": "GND"})
+
+    # R_OSC / C_OSC: RC timing network (68k + 100pF ~ 105 kHz with the ICM7555)
+    # angle=270: pad1 above the centre. R_OSC1 pad1 (OSC_OUT) at y=57.09 by OUT, pad2 (CLKA_IN) at 58.11 by TRIG.
+    place(board, "Resistor_SMD", "R_0402_1005Metric",
+          "R_OSC1", "68k", 12.4, 57.6, 270,
+          {"1": "OSC_OUT", "2": "CLKA_IN"})
+
+    # C10 pad1 (CLKA_IN) at (13.5,58.24) on the TRIG row, pad2 (GND) at (13.5,59.2).
+    place(board, "Capacitor_SMD", "C_0402_1005Metric",
+          "C10", "100p C0G", 13.5, 58.72, 270,
           {"1": "CLKA_IN", "2": "GND"})
 
     # D1/D2: BAT54S series dual Schottky (SOT-23 pad1=A, pad2=K, pad3=COM)
@@ -1194,7 +1197,7 @@ def main():
 
     # DZ1: 68V zener clamp on VBOOST (K=pad1=VBOOST, A=pad2=GND)
     place(board, "Diode_SMD", "D_SOD-123",
-          "DZ1", "68V BZT52C68", 32, 65.5, 90,
+          "DZ1", "75V MMSZ5267B", 32, 65.5, 90,
           {"1": "VBOOST", "2": "GND"})
     _assert_cy_clears_hole("DZ1", _cy_corners(32.0, 65.5, 90, _D_SOD123_CY), _ZT2_X, _ZT2_Y, _MH_M3_CY_R)
 
@@ -1233,9 +1236,11 @@ def main():
     for old, new, x in [("J2.1","BP",15.23),("J2.2","FP",19.04)]:
         fix_ref(board, old, new_text=new, x_mm=x, y_mm=5)
 
-    # R_OSC1: footprint at 90° rotates silk vertical — force horizontal (angle=0).
-    # Place above component at (16,54): clears top pad (~y=55.5) and via(15,55.49).
-    fix_ref(board, "R_OSC1", x_mm=16, y_mm=54.0, angle_deg=0)
+    # Clock (#121): R_OSC1, C10, C_U4 labels right of the parts; U3, U4 on their bodies (no pads there).
+    fix_ref(board, "R_OSC1", x_mm=15.9, y_mm=57.0, angle_deg=0)
+    fix_ref(board, "C_U4", x_mm=17.9, y_mm=55.2, angle_deg=0, size_mm=0.8)
+    fix_ref(board, "U3", x_mm=8.0, y_mm=51.6, angle_deg=0)
+    fix_ref(board, "U4", x_mm=8.0, y_mm=57.6, angle_deg=0)
 
     # D1: default silk lands left of component; move right of body (SOT-23 right edge ~x=23.8).
     fix_ref(board, "D1", x_mm=25, y_mm=52)
@@ -1251,9 +1256,8 @@ def main():
     # R_REG1: 0402 at (25.5,46.3); label right of body (right edge ~x=26.5)
     fix_ref(board, "R_REG1", x_mm=29.0, y_mm=46.3, angle_deg=0)
 
-    # C10 (osc timing cap): place directly above component at (18,59); old
-    # position (25,56.5) was 7mm away and appeared disconnected from component.
-    fix_ref(board, "C10", x_mm=20, y_mm=59, angle_deg=0)
+    # C10 (osc timing cap): right of the part, on the TRIG row.
+    fix_ref(board, "C10", x_mm=15.6, y_mm=58.8, angle_deg=0)
 
     # Z_OSC1: default ref text at ~(30,27.5) sits over R7 pad2 at (27,27.8).
     # Shift slightly right; keep above pads (pad2 copper reaches y=28.35).

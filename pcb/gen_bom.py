@@ -53,12 +53,13 @@ LCSC = {
     # ICs
     ("OPA1641",   "SOIC-8_3.9x4.9mm_P1.27mm"):   "C2057597",  # TI OPA1641AIDR SOIC-8; C328784 maps to wrong part in JLCPCB
     ("MMBT5551",  "SOT-23"):                       "C2145",     # MMBT5551 NPN 160V hFE≥75 Basic; emitter follower for V_OPA rail
-    ("CD40106B",  "SOIC-14_3.9x8.7mm_P1.27mm"):   "C38184",    # TI CD40106BM96; C5993 low stock
+    ("CD40106B",  "TSSOP-14_4.4x5mm_P0.65mm"):    "C58834",    # TI CD40106BPWR TSSOP-14 (#121: SOIC-14 C38184 left no room for U4); 10.4k JLCPCB stock 2026-10-22
+    ("ICM7555",   "SOIC-8_3.9x4.9mm_P1.27mm"):    "C357816",   # Renesas ICM7555IBAZ-T CMOS 555, clock (#121); 2.9k JLCPCB stock 2026-10-22
 
     # Diodes
     ("BAT54S",    "SOT-23"):                       "C83935",    # Semtech BAT54S SOT-23; C8541 maps to SS8550 PNP TH in JLCPCB
-    ("15V MMSZ15","D_SOD-123"):                    "C27754",    # MMSZ15T1G onsemi 15V zener SOD-123; C460671 maps to wrong part in JLCPCB
-    ("68V BZT52C68","D_SOD-123"):                  "C242416",   # MMSZ5266BT1G onsemi 68V 500mW SOD-123; C7427990 has no 3D model in JLCPCB viewer
+    ("15V MMSZ4702","D_SOD-123"):                  "C242274",   # MMSZ4702T1G onsemi 15V +-5% at 50 uA (#121: regulates on the few hundred uA left); 6.5k JLCPCB stock 2026-10-22 (LCSC site showed none). Alt: MCC MMSZ4702-TP C2975467, Vishay C241967
+    ("75V MMSZ5267B","D_SOD-123"):                 "C80160",    # MMSZ5267BT1G onsemi 75V 500mW SOD-123 (#121: 75V so it only protects; with V_OSC regulated VBOOST reaches 69V, the 68V C242416 would clamp); 6.0k JLCPCB stock
     ("24V BZT52C24","D_SOD-123"):                  "C173422",   # MDD BZT52C24 24V 500mW SOD-123; zener reference for V_OPA emitter follower
 
     # Standard resistors (0402)
@@ -66,6 +67,7 @@ LCSC = {
     ("6.2k",      "R_0402_1005Metric"):            "C25915",    # UNI-ROYAL 0402WGF6201TCE ±1%
     ("2.2k",      "R_0402_1005Metric"):            "C25879",    # R3, R_REG1 (#95; was 1.2k C25867)
     ("6.8k",      "R_0402_1005Metric"):            "C25944",    # UNI-ROYAL 0402WGJ0682TCE ±5% 44k pcs; C144738 ±1% out of stock; C26022 maps to 4.7kΩ 0805 in JLCPCB
+    ("68k",       "R_0402_1005Metric"):            "C36871",    # UNI-ROYAL 0402WGF6802TCE ±1% — R_OSC1 (#121, ICM7555 timing with C10 100p, ~105 kHz); 120k stock
     ("47k",       "R_0402_1005Metric"):            "C25792",    # UNI-ROYAL 0402WGF4702TCE ±1% BASIC — R6 hi-gain variant; C25900 maps to 4.7kΩ in JLCPCB
     ("100R",      "R_0402_1005Metric"):            "C25076",
     ("470k",      "R_0402_1005Metric"):            "C137976",   # YAGEO RC0402FR-07470KL ±1%; C25905 maps to 5.1kΩ in JLCPCB
