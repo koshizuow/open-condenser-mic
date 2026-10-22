@@ -85,6 +85,7 @@ LIBS = {
     "Device:Q_NPN":       (f"{SYM_PATH}/Device.kicad_sym",                "Q_NPN"),
     "Amplifier_Operational:OPA1641": (f"{SYM_PATH}/Amplifier_Operational.kicad_sym", "OPA1641"),
     "4xxx:40106":         (f"{SYM_PATH}/4xxx.kicad_sym",                  "40106"),
+    "Timer:NE555D":       (f"{SYM_PATH}/Timer.kicad_sym",                 "NE555D"),   # ICM7555 (#121): same pinout, the ICM7555xB symbol only extends this one
     "Diode:BAT54S":       (f"{SYM_PATH}/Diode.kicad_sym",                 "BAT54S"),
     "Device:D_TVS":       (f"{SYM_PATH}/Device.kicad_sym",                "D_TVS"),
     "Connector_Generic:Conn_01x02": (f"{SYM_PATH}/Connector_Generic.kicad_sym", "Conn_01x02"),
@@ -313,6 +314,21 @@ _POWER_SYMBOL_NETS = {
     # V_OPA is drawn as an explicit bus spine + local wires (see Block A / Block D wires)
 }
 
+def lib_pin_offsets(lib_id):
+    """Pin tips of a library symbol as PIN_OFFSETS entries, read from the installed library. For symbols whose
+    layout differs between KiCad library versions (NE555D: the CI runner's library has another pin order than
+    KiCad 9.0.9's), so the labels land on the right pins wherever the schematic is generated."""
+    path, name = LIBS[lib_id]
+    out = {}
+    for x, y, a, num in re.findall(r'\(pin \w+ \w+\s*\(at ([-\d.]+) ([-\d.]+) (\d+)\).*?\(number "([^"]+)"',
+                                   extract_sym(path, name), re.S):
+        out[num] = (float(x), -float(y), {0: "L", 180: "R", 90: "D", 270: "U"}[int(a)])
+    return out
+
+
+PIN_OFFSETS["Timer:NE555D"] = lib_pin_offsets("Timer:NE555D")     # ICM7555 (#121)
+
+
 def stub_and_label(lib_id, cx, cy, pin_num, net_name, angle=0):
     """Return (wire_str, label_or_power_str) for one pin.
 
@@ -463,7 +479,7 @@ elements += component("Device:R", "R_ZEN1", "6.8k",
     pins={"1": "~V_OPA", "2": "~V_OSC"},
     ref_at=(2.54, -5))
 
-elements += component("Device:D_Zener", "Z_OSC1", "15V MMSZ15VT1G",
+elements += component("Device:D_Zener", "Z_OSC1", "15V MMSZ4702",
     125, 20,
     footprint="Diode_SMD:D_SOD-123",
     pins={"1": "~V_OSC", "2": "GND"},
@@ -865,21 +881,24 @@ elements.append(label("XLR_COLD_F", 222, 69.54, 180)) # label at approach left e
 _SX = -80 + 6*1.27
 _SY = 85 - 9*1.27
 
-# ── BLOCK F: SCHMITT OSCILLATOR (x=15..67, y=108..160) ───────────────────────
+# ── BLOCK F: CLOCK (x=15..67, y=108..160; U4 below the pump) ──────────────────
+# #121: the RC Schmitt oscillator (U3A with R_OSC1/C10 around it) sat mid-rail and drew ~1.5 mA from V_OSC.
+# U4 (ICM7555, CMOS 555, no crowbar current) is the oscillator: OUT -> R_OSC1 -> THRES/TRIG with C10,
+# ~105 kHz, 50 % duty. U3A and U3B only buffer its square wave into CLKA and CLKB.
 
 elements += component("4xxx:40106", "U3", "CD40106B",
     28, 118, unit=1,
-    footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
-    pins={"1": "~CLKA_IN", "2": "CLKA"})
+    footprint="Package_SO:TSSOP-14_4.4x5mm_P0.65mm",
+    pins={"1": "OSC_OUT", "2": "CLKA"})
 
 elements += component("4xxx:40106", "U3", "CD40106B",
     52, 118, unit=2,
-    footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+    footprint="Package_SO:TSSOP-14_4.4x5mm_P0.65mm",
     pins={"3": "~CLKA", "4": "CLKB"})
 
 elements += component("4xxx:40106", "U3", "CD40106B",
     28, 148, unit=7,
-    footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+    footprint="Package_SO:TSSOP-14_4.4x5mm_P0.65mm",
     pins={"14": "~V_OSC", "7": "GND"},
     ref_at=(-5, -2.54), val_at=(-5, 1.27))
 
@@ -892,16 +911,16 @@ elements += component("4xxx:40106", "U3", "CD40106B",
 for _unit, _gx, _gy in ((3, 235, 98), (4, 262, 98), (5, 235, 116), (6, 262, 116)):
     elements += component("4xxx:40106", "U3", "CD40106B",
         _gx, _gy, unit=_unit,
-        footprint="Package_SO:SOIC-14_3.9x8.7mm_P1.27mm",
+        footprint="Package_SO:TSSOP-14_4.4x5mm_P0.65mm",
         ref_at=(0, -5.08), val_at=(0, 5.08))
     elements.append(wire(_gx - 7.62, _gy, _gx - 10.16, _gy))        # input stub
     elements.append(power_sym("power:GND", _gx - 10.16, _gy, 0))    # input → GND
     elements.append(no_connect(_gx + 7.62, _gy))                    # output open
 
-elements += component("Device:R", "R_OSC1", "47k",
+elements += component("Device:R", "R_OSC1", "68k",
     40, 106,
     footprint="Resistor_SMD:R_0402_1005Metric",
-    pins={"1": "~CLKA", "2": "~CLKA_IN"})
+    pins={"1": "OSC_OUT", "2": "~CLKA_IN"})
 
 # R_OSC1(40,106): pin1(CLKA,U) tip=(40,102.19) stub→(40,99.65)
 #                 pin2(CLKA_IN,D) tip=(40,109.81) stub→(40,112.35)
@@ -916,19 +935,23 @@ elements += component("Device:C", "C10", "100p C0G",
 elements.append(wire(40, 112.35, 40, 118.65))
 
 # CLKA horizontal bus: U3A(28,118).pin2 stub(38.16,118) ↔ U3B(52,118).pin3 stub(41.84,118)
-# CLKA branch routes via x=44 (L-shape) so it does not pass through CLKA_IN junction at (40,112.35)
-# or the CLKA_IN vertical at (40,118); CLKA and CLKA_IN are thus physically separate nets.
 elements.append(wire(38.16, 118, 41.84, 118))  # CLKA bus U3A→U3B
-elements.append(wire(41.84, 118, 44, 118))      # extend bus to branch point
-elements.append(wire(44, 118, 44, 99.65))       # CLKA branch up at x=44
-elements.append(wire(44, 99.65, 40, 99.65))     # connect to R_OSC1.pin1 stub_end
+# CLKA_IN (timing node): R_OSC1.pin2 stub (40,112.35) ↔ C10, and by label to U4 THRES/TRIG
+elements.append(label("CLKA_IN", 40, 112.35, 0))
 
-# CLKA_IN feedback: R_OSC1.pin2 stub (40,112.35) → left → down to U3A.pin1 stub (17.84,118)
-# horizontal at y=112.35 is above gate bodies (gates at y=118, body top ≈ y=114)
-elements.append(wire(40, 112.35, 17.84, 112.35))
-elements.append(label("CLKA_IN", 17.84, 112.35, 180))  # at L-corner before bend down
-elements.append(wire(17.84, 112.35, 17.84, 118))
-elements.append(junction(40, 112.35))
+# U4 ICM7555 astable, in the free area below the pump (Cp wires end at y≈146, x≤118; C9 at x≈203)
+elements += component("Timer:NE555D", "U4", "ICM7555",
+    150, 150,
+    footprint="Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+    pins={"1": "GND", "8": "V_OSC", "4": "V_OSC", "6": "CLKA_IN", "2": "CLKA_IN", "3": "OSC_OUT"},
+    ref_at=(5.08, -7.62), val_at=(5.08, 7.62))
+for _pin in ("7", "5"):        # DISCH: unused in the output-fed astable; CONT: left open (threshold noise only moves f)
+    _dx, _dy, _ = PIN_OFFSETS["Timer:NE555D"][_pin]
+    elements.append(no_connect(150 + _dx, 150 + _dy))
+elements += component("Device:C", "C_U4", "100n 25V X7R",
+    180, 150,
+    footprint="Capacitor_SMD:C_0402_1005Metric",
+    pins={"1": "V_OSC", "2": "GND"})
 
 elements += component("Device:C", "C_U3", "100n 25V X7R",
     38, 140,
@@ -1027,7 +1050,7 @@ elements += component("Device:C", "Cres1", "470n 100V X7R",
     footprint="Capacitor_SMD:C_0805_2012Metric",
     pins={"1": "~VBOOST", "2": "GND"})
 
-elements += component("Device:D_Zener", "DZ1", "68V BZT52C68",
+elements += component("Device:D_Zener", "DZ1", "75V MMSZ5267B",
     166, 128,
     footprint="Diode_SMD:D_SOD-123",
     pins={"1": "~VBOOST", "2": "GND"},
