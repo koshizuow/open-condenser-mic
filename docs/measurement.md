@@ -8,10 +8,11 @@ with data. Neither needs an oscilloscope.
 | A. DC rails | multimeter | regulator operating point, which regime the HV clamp is in |
 | B. Electrical sweep through a dummy capsule | audio interface with a line output and a phantom-powered mic input, multimeter, one capacitor | gain, frequency response, transformer inductance, self-noise |
 
-Written for a v3.5 board at default gain (R6 = 5.6 kΩ). For a hi-gain board
+Written for a board at default gain (R6 = 5.6 kΩ). For a hi-gain board
 (R6 = 47 kΩ) pass `--hi-gain` to both scripts. Tell `analyze.py` about the
 other options too: `--presence` with R_PRES1 and C_PRES1 fitted,
-`--full-winding` with the transformer on its full winding.
+`--full-winding` with the transformer on its full winding, and `--no-cg` for a
+board without C_G1 (v3.5.x, v3.6).
 
 Tracking issue: #114. Related: #82 (hum), #99 (transformer inductance).
 
@@ -43,6 +44,7 @@ three pads marked 1 2 3 at the XLR end) or a mounting-hole pad at that end.
 | `V_OSC` | Z_OSC1, left pad (cathode, band end) | about 15.0 V | below about 14.7 V: Z_OSC1 is starved, by U3's supply current or by DZ1 clamping |
 | `VBOOST` | DZ1, lower pad (cathode, toward the XLR end) | 64.6 to 68.2 V | this is the capsule polarisation rail |
 | Phantom at the mic | J3 pad 2 and pad 3 | about 32 V each | lower: the supply is below 48 V or the mic draws more than expected |
+| `SIG_OUT` | R7, lower pad (toward the XLR end), or U1 pin 6 | half of `V_OPA`, within about 0.3 V | the amplifier's operating point; see below |
 
 Derived:
 
@@ -62,6 +64,26 @@ Derived:
 - `V_OSC` should sit at 15 V ±5%. Below about 14.2 V Z_OSC1 is out of
   regulation: the clock is drawing too much (#121; the v3.5 RC oscillator
   drew about 1.5 mA and held it at 13.8 V).
+
+The amplifier's operating point:
+
+- Read it at `SIG_OUT` only. `SIG_OUT` is the op-amp's output, so the meter
+  does not load it.
+- Do not judge it from `V_MID` (C4, C5, the BP pad). `V_MID` comes from a
+  470 kΩ + 470 kΩ divider, 235 kΩ at DC. A 10 MΩ meter reads it about 0.3 V
+  low, and `SIG_OUT` follows it down for as long as the meter is connected.
+- Do not probe `VINV` (U1 pin 2, R3, the upper pad of R6). The probe's
+  capacitance on the inverting input can upset the amplifier, and the reading
+  is not reliable.
+- `SIG_OUT` sits at `V_MID` plus the DC error at the input: the op-amp's
+  offset, and bias current and board leakage into `VPLUS` times 200 MΩ.
+  100 pA is 20 mV. More than about 0.3 V from half of `V_OPA` means leakage:
+  clean around C8, R_IN1, R_BIAS1 and U1 pin 3.
+- Boards without C_G1 (v3.5.x, v3.6) multiply that error by about 107: R3
+  returns it to `V_MID` as a current (#123). 10 mV of error moves `SIG_OUT` by
+  1 V, so a reading 1 V or more from half of `V_OPA` is possible on a board
+  that records normally (13.2 V measured on one v3.6 board). Cleaning the same
+  area brings it closer.
 
 ## Part B: electrical sweep through a dummy capsule
 
@@ -216,6 +238,7 @@ Dummy capacitor:          pF
 
 A. DC rails (V)
   V_OPA_RAW ______  V_BASE_REG ______  V_OPA ______  V_OSC ______  VBOOST ______
+  SIG_OUT ______
   J3 pad 2 ______   J3 pad 3 ______    open-circuit phantom ______
 
 B. S1  v-source ______ V   v-xlr ______ V   (400 Hz, AC rms)

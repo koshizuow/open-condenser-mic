@@ -5,7 +5,8 @@
         --sweep-ref tools/measure/signals/sweep_-46dBFS.wav --sweep-rec rec_sweep.wav \\
         --v-source 0.412 --v-xlr 0.455 \\
         --tone-rec rec_tone_small.wav --noise-rec rec_noise.wav \\
-        [--iface-noise-rec rec_iface_noise.wav] [--rload 4000] [--cdummy 56e-12] [--hi-gain] [--presence] [--full-winding] [--plot out.png]
+        [--iface-noise-rec rec_iface_noise.wav] [--rload 4000] [--cdummy 56e-12] [--hi-gain] [--presence]
+        [--full-winding] [--no-cg] [--plot out.png]
 
 Every group of inputs is optional; the report covers whatever is given:
 
@@ -63,15 +64,17 @@ def par(a, b):
     return a * b / (a + b)
 
 
-def model(f, lp, r6=None, cdummy=56e-12, rload=4000.0, c7=None, winding="tap", presence=False):
+def model(f, lp, r6=None, cdummy=56e-12, rload=4000.0, c7=None, cg=None, winding="tap", presence=False):
     """Complex transfer function, dummy-capacitor source voltage -> voltage across the preamp input.
-    lp is the inductance of the driven winding in use (it scales with the turns squared)."""
+    lp is the inductance of the driven winding in use (it scales with the turns squared).
+    cg: C_G1 in series with R3 (#123); None takes the design value, 0 is a board without it."""
     w = 2j * np.pi * np.asarray(f, dtype=float)
     rg, rb = val(PARAMS["R_GBIAS"]), val(PARAMS["R_BIAS1"])
     c8 = val(PARAMS["C8"])
     c7 = c7 or val(PARAMS["C_DC"])
     N, RP = WINDINGS[winding]
-    z3 = val(PARAMS["R3"])
+    cg = val(PARAMS["C_G"]) if cg is None else cg
+    z3 = val(PARAMS["R3"]) + (1 / (w * cg) if cg else 0)
     if presence:
         z3 = par(z3, R_PRES + 1 / (w * C_PRES))
     gain = 1 + (r6 or val(PARAMS["R6_default"])) / z3
@@ -191,7 +194,7 @@ def report(a):
 
     fr = None
     kw = dict(cdummy=a.cdummy, rload=a.rload, r6=val(PARAMS["R6_hi_gain"]) if a.hi_gain else None,
-              winding="full" if a.full_winding else "tap", presence=a.presence)
+              cg=0 if a.no_cg else None, winding="full" if a.full_winding else "tap", presence=a.presence)
     if a.sweep_ref and a.sweep_rec:
         fs, ref = read_wav(a.sweep_ref)
         fs2, rec = read_wav(a.sweep_rec, a.channel)
@@ -338,7 +341,7 @@ def self_test():
     a = argparse.Namespace(sweep_ref=os.path.join(tmp, "ref.wav"), sweep_rec=os.path.join(tmp, "rec.wav"),
                            loopback_rec=None, v_source=v_source, v_xlr=v_xlr, tone_rec=os.path.join(tmp, "tone.wav"),
                            noise_rec=os.path.join(tmp, "noise.wav"), iface_noise_rec=None, rload=rload,
-                           cdummy=56e-12, hi_gain=False, full_winding=False, presence=False,
+                           cdummy=56e-12, hi_gain=False, no_cg=False, full_winding=False, presence=False,
                            channel=0, plot=None)
     out = report(a)
     checks = [
@@ -369,6 +372,7 @@ def main():
     p.add_argument("--rload", type=float, default=4000.0, help="preamp input impedance in ohm (default 4000)")
     p.add_argument("--cdummy", type=float, default=56e-12, help="dummy capacitor in farad (default 56e-12)")
     p.add_argument("--hi-gain", action="store_true", help="board has R6 = 47k")
+    p.add_argument("--no-cg", action="store_true", help="board has no C_G1 in series with R3 (v3.5.x, v3.6)")
     p.add_argument("--presence", action="store_true", help="board has R_PRES1 and C_PRES1 fitted")
     p.add_argument("--full-winding", action="store_true", help="transformer wired on its full winding (10:1)")
     p.add_argument("--channel", type=int, default=0, help="channel index in the recordings (default 0)")
