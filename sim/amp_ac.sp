@@ -17,9 +17,9 @@ V48   N48_SRC  0  DC 48
 R1    N48_SRC  NET_48V  {R_PH_TAP}
 R2    N48_SRC  NET_48V  {R_PH_TAP}
 Vreg  NET_24V  0  DC 24
-R5    NET_24V  NET_VBIAS  470k
-R6    NET_VBIAS  0  470k
-C3    NET_VBIAS  0  10u  IC=12
+R5    NET_24V  NET_VBIAS  {R_MID}
+R6    NET_VBIAS  0  {R_MID}
+C3    NET_VBIAS  0  {C_MID}  IC=12   ; C4 + C5 in schematic
 
 * ---------------------------------------------------------------------------
 * CAPSULE MODEL
@@ -66,7 +66,9 @@ Vmid  MIDPOINT_DC  0  DC 12    ; DC operating point for output
 R_oout  NET_OPA_IDEAL  NET_OPA_OUT  50
 
 * Feedback: output to IN-
-R4    NET_VBIAS  PIN2_NODE  {R3}          ; R3 in schematic: gain resistor
+* C_G1 in series with R3 (#123): the DC gain is 1, the corner with R3 is 7.2Hz.
+C_G1  NET_VBIAS  RG_MID     {C_G}
+R4    RG_MID     PIN2_NODE  {R3}          ; R3 in schematic: gain resistor
 R7    NET_OPA_OUT  PIN2_NODE  {R6_default} ; R6 in schematic: default flat/hi-SPL variant (5.6k)
 
 * ---------------------------------------------------------------------------

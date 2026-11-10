@@ -430,7 +430,7 @@ def route_all(board):
 
     # ── V_MID: bus at x=7 (left of R_BIAS1 VPLUS pad at x=9.925) ───────────
     # R5 pad1 (7.0,48) on bus; C4 via stub; C5 via B.Cu branch
-    # R4 pad2 (7.0,41) on bus; R3 pad1 (7.0,29.7) on bus; R_BIAS1 pad2 (7.0,27.5) on bus
+    # R4 pad2 (7.0,41) on bus; C_G1 pad1 (7.0,32.0) on bus; R_BIAS1 pad2 (7.0,27.5) on bus
     route(board, "V_MID", F, PWR,
           (7.0, 44.775),
           (4.0, 44.775))
@@ -522,6 +522,9 @@ def route_all(board):
           (16.6, 26.365),
           (16.6, 29.7  ),
           (9.02, 29.7  ))
+
+    # RG_MID: R3.pad1 (8.02,30.72) down and right into C_G1.pad2 (8.55,32.0)
+    route(board, "RG_MID", F, SIG, (8.02, 30.72), (8.02, 31.47), (8.55, 32.0))
 
     # ── Presence peak: V_MID tap + RS_MID link + VINV branch ─────────────────
     # V_MID bus at x=7; V_OSC blocks F.Cu at x=10.475, so tap via B.Cu
@@ -922,14 +925,21 @@ def main():
           "R_IN1", "680R", 12.3, 27.635, 0,
           {"1": "VPLUS", "2": "VPLUS_IN"})
 
-    # R3: V_MID -> VINV  (2.2k, sets IN- DC level = IN+ for balance)
-    # angle=0: pad1(V_MID) at left (7.0,29.7) on bus; pad2(VINV) at right (8.02,29.7)
+    # R3: RG_MID -> VINV  (2.2k gain resistor), in series with C_G1 to V_MID (#123)
+    # angle=90: pad2(VINV) above at (8.02,29.7), where it was; pad1(RG_MID) below at (8.02,30.72).
+    # Its pads are 0.55mm right of the V_MID bus (x=7).
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R3", "2.2k", 7.51, 29.7, 0,
-          {"1": "V_MID", "2": "VINV"})
+          "R3", "2.2k", 8.02, 30.21, 90,
+          {"1": "RG_MID", "2": "VINV"})
+
+    # C_G1: V_MID -> RG_MID  (10u, no DC across it; makes the DC gain 1, #123)
+    # angle=0: pad1(V_MID) at left (7.0,32.0) on the bus; pad2(RG_MID) at right (8.55,32.0)
+    place(board, "Capacitor_SMD", "C_0603_1608Metric",
+          "C_G1", "10u 25V X5R", 7.775, 32.0, 0,
+          {"1": "V_MID", "2": "RG_MID"})
 
     # Presence-peak network: Rs (6.2k) + C (12nF) in series, parallel with R3
-    # At DC: C blocks → Z = R3 = 2.2k, gain = 22.4x (0 dB reference)
+    # Below the presence corner: C blocks → Z = R3 = 2.2k, gain = 22.4x (0 dB reference)
     # At HF: C shorts → Z = R3‖Rs = 1.61k, gain = 30.2x (+2.6 dB)
     # Corner f = 1/(2π·6.2k·12nF) ≈ 2.1 kHz — targets M149-style presence peak
     # R_PRES1 at x=16 clears V_OSC F.Cu at x=10.475 (y=30..51); C_PRES1 at x=19
@@ -1271,8 +1281,10 @@ def main():
     fix_ref(board, "R7", x_mm=27.0, y_mm=29, angle_deg=0)
     # R4: angle=180 rotates silk; force horizontal and place above component
     fix_ref(board, "R4", x_mm=7.51, y_mm=39.5, angle_deg=0)
-    # R3: place below component (center y=29.7, body bottom ~29.95)
-    fix_ref(board, "R3", x_mm=7.51, y_mm=31.2)
+    # R3 (vertical) and C_G1 (#123): references left of the V_MID bus (x=7), where the board is empty.
+    # C_G1's is 0.8 mm high so it stays 1 mm inside the board edge.
+    fix_ref(board, "R3", x_mm=5.2, y_mm=30.2, angle_deg=0)
+    fix_ref(board, "C_G1", x_mm=4.6, y_mm=32.0, angle_deg=0, size_mm=0.8)
     # R_PRES1 above, C_PRES1 below — staggered to avoid silk_overlap
     fix_ref(board, "R_PRES1", x_mm=16.0, y_mm=31.5, angle_deg=0)
     fix_ref(board, "C_PRES1", x_mm=19.0, y_mm=34.5, angle_deg=0)

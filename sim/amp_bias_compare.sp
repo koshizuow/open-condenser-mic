@@ -64,9 +64,10 @@ C_gbw   VPOLE     0        1.447u   ; f_pole = 1/(2π*1k*1.447µ) ≈ 110 Hz
 Eamp    NET_OPA_IDEAL  0          VPOLE   0   100k
 R_oout  NET_OPA_IDEAL  SIG_OUT    50
 
-* Feedback: 130k (R7) from output to IN-; 2.2k (R3) from V_MID to IN-
+* Feedback: R6 from output to IN-; R3 in series with C_G1 (#123) from V_MID to IN-
 R_fb    SIG_OUT   VINV    {R6_default}  ; was 130k (stale); now tracks gen_params.py
-R_in_m  NET_VMID  VINV    {R3}
+C_G1    NET_VMID  RG_MID  {C_G}
+R_in_m  RG_MID    VINV    {R3}
 
 * ---------------------------------------------------------------------------
 * OUTPUT

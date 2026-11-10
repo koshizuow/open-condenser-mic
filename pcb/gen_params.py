@@ -14,6 +14,9 @@ PARAMS = {
     "R3":           "2.2k",   # gain resistor (R3 in schematic)
     "R6_default":   "5.6k",   # feedback resistor, default BOM
     "R6_hi_gain":   "47k",    # feedback resistor, hi-gain BOM variant
+    "C_G":          "10u",    # C_G1: in series with R3, so the DC gain is 1 (#123)
+    "R_MID":        "470k",   # R4, R5: V_MID divider, each
+    "C_MID":        "20u",    # C4 + C5: V_MID bypass
     # ── HV bias network ──────────────────────────────────────────────────
     "R_GBIAS":      "200Meg", # HV bias resistor R_GBIAS1 (200MΩ 0805, #109)
     "R_BIAS1":      "200Meg", # IN+ bias resistor to V_MID (AC ground; not bootstrapped), 200MΩ 0805 (#109)
