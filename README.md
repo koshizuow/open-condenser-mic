@@ -6,16 +6,16 @@ A code-driven open true condenser microphone. PCB layout, schematic, BOM, and CP
 
 ## Overview
 
-This design uses a Dickson charge pump oscillator to generate a 68 V HV rail from 48 V phantom power, providing ~55 V capsule polarization (HV_FILT − 12 V midpoint), and feeds a transformer-coupled output stage built around a low-noise op-amp. The reference implementation uses the **OPA1641** (2.5 nV/√Hz, JFET input), chosen for its low voltage noise and LCSC availability. The circuit fits on a 36 × 93 mm 2-layer PCB.
+This design uses a Dickson charge pump oscillator to generate a 68 V HV rail from 48 V phantom power, providing ~55 V capsule polarization (HV_FILT − 12 V midpoint), and feeds a transformer-coupled output stage built around a low-noise op-amp. The reference implementation uses the **OPA1641** (5.1 nV/√Hz, JFET input), chosen for its low voltage noise and LCSC availability. The circuit fits on a 36 × 93 mm 2-layer PCB.
 
 **Key design points:**
-- Op-amp output stage; reference design uses OPA1641 (2.5 nV/√Hz voltage noise)
+- Op-amp output stage; reference design uses OPA1641 (5.1 nV/√Hz voltage noise)
 - NTE10/3 audio transformer, 3:1 step-down, transformer-coupled output
 - CD40106B Schmitt-trigger oscillator + 3-stage active Dickson charge pump
 - About 57 V capsule polarization (HV_FILT ≈ 69 V, set by the 15 V clock rail; a 75 V zener only protects it), referenced to the 12 V midpoint
 - HV rail RC filter: 1 MΩ (R_HV) + 470 nF, corner ~0.34 Hz; no LC resonance
-- Output sensitivity (simulated, 13 mV/Pa capsule, into a 1.5 kΩ preamp input): about −38 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); about −22 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×). About 2 dB lower into 600 Ω and 1.6 dB higher unloaded; output impedance is about 310 Ω
-- Maximum SPL before the op-amp output clips (calculated): about 141 dB SPL peak at default gain, about 125 dB SPL peak at hi-gain
+- Output sensitivity (simulated, 13 mV/Pa capsule, into a 1.5 kΩ preamp input): about −40 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); about −24 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×). About 2 dB lower into 600 Ω and 1.6 dB higher unloaded; output impedance is about 310 Ω
+- Maximum SPL before the op-amp output clips (calculated): about 143 dB SPL peak at default gain, about 127 dB SPL peak at hi-gain
 - RFI filter on XLR output: differential RC network (R_RFI1/R_RFI2 + C_RFI1/C_RFI2)
 - Phantom power draw: ~4.6 mA typical at 48 V (IEC 61938 P48 rated maximum: 10 mA)
 - All SMD/THT components available from standard distributors (LCSC, Mouser, Digi-Key); capsule and transformer are customer-supplied
@@ -67,7 +67,9 @@ R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, parallel with R3 (2.2 kΩ), are
 
 ![Noise spectrum](img/noise_spectrum.png)
 
-SPICE input-referred noise, computed by dividing total output noise by the signal transfer function at each frequency. The slope reflects the signal path's high-pass characteristic (coupling caps attenuate low-frequency signal more than noise), not a real frequency-dependent noise source. Below a few kHz the noise is set by the two 200 MΩ bias resistors (R_GBIAS1 and R_BIAS1): their thermal noise current flows into the capsule capacitance, so it falls with frequency. Simulated input-referred noise is 39 nV/√Hz at 1 kHz and about 9 nV/√Hz at 10 kHz, where the OPA1641 and R_IN1 take over. A-weighted over 20 Hz–20 kHz this is about 2.2 µV, equivalent to roughly 18 dB(A) SPL for a 13 mV/Pa, 55 pF capsule. These are simulated figures, not measurements.
+SPICE input-referred noise, computed by dividing total output noise by the signal transfer function at each frequency. The slope reflects the signal path's high-pass characteristic (coupling caps attenuate low-frequency signal more than noise), not a real frequency-dependent noise source. Below a few kHz the noise is set by the two 200 MΩ bias resistors (R_GBIAS1 and R_BIAS1): their thermal noise current flows into the capsule capacitance, so it falls with frequency. Simulated input-referred noise is 40 nV/√Hz at 1 kHz and about 12 nV/√Hz at 10 kHz, where the OPA1641 (5.1 nV/√Hz) and R_IN1 take over. The capacitance at the op-amp input (its own 6 pF plus strays, about 12 pF in all) divides the capsule signal but not the op-amp's noise, which raises the high-frequency part. A-weighted over 20 Hz–20 kHz this is about 2.3 µV, equivalent to roughly 19 dB(A) SPL for a 13 mV/Pa, 55 pF capsule.
+
+Measured on a v3.5 board through a 47 pF dummy capsule: 21.4 dB(A), 44 nV/√Hz at 1 kHz and 13 nV/√Hz at 10 kHz, against 20.0 dB(A), 46 and 12 simulated for that capacitance (#114). A smaller capacitance shunts less of the bias resistors' noise, so a 47 pF dummy reads about 1 dB higher than a 55 pF capsule.
 
 #### Bias resistor value (R_GBIAS1, R_BIAS1)
 
@@ -75,9 +77,9 @@ Both are 0805 and must be the same value. A higher value lowers the noise floor 
 
 | Value (both) | Simulated self-noise | Input corner | Leakage sensitivity |
 |---|---|---|---|
-| 100 MΩ (up to v3.4.1, 1206) | 21.0 dB(A) | 59 Hz | 1× |
-| **200 MΩ (default)** | **18.4 dB(A)** | **29 Hz** | **2×** |
-| 470 MΩ (drop-in, e.g. Vishay CRCW0805470MJPEAHR) | 15.7 dB(A) | 12.5 Hz | 4.7× |
+| 100 MΩ (up to v3.4.1, 1206) | 21.4 dB(A) | 59 Hz | 1× |
+| **200 MΩ (default)** | **19.1 dB(A)** | **29 Hz** | **2×** |
+| 470 MΩ (drop-in, e.g. Vishay CRCW0805470MJPEAHR) | 16.8 dB(A) | 12.5 Hz | 4.7× |
 
 The 470 MΩ option is not a generated BOM variant; fit it by hand if wanted. Clean the area around C8, R_IN1, R_BIAS1 and U1 pin 3 thoroughly whichever value is used. Clean around R_OSC1, C10 and U4 pins 2 and 6 too: leakage at the oscillator's timing node stops the charge pump (#120).
 

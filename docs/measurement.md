@@ -189,10 +189,10 @@ group of inputs is optional, so a partial session still gives a partial report.
 
 | Result | Simulation | What a difference means |
 |---|---|---|
-| Gain at 1 kHz | about −0.5 dB into 4 kΩ (sensitivity about −38 dBV/Pa with a 13 mV/Pa capsule) | more than ±1.5 dB off: check R3, R6, the load value and the meter readings |
+| Gain at 1 kHz | about −1.2 dB into 4 kΩ with a 56 pF dummy (sensitivity about −39 dBV/Pa with a 13 mV/Pa capsule) | more than ±1.5 dB off: check R3, R6, the load value and the meter readings |
 | Low-frequency −3 dB corner | 150 Hz if `Lp` = 0.5 H; 20 to 50 Hz if `Lp` is several henries | this is the main unknown (#99). The fitted `Lp` goes into `sim/models/passives.lib` |
 | Fit error | below about 1 dB | larger: the low end is not behaving like the model. Compare with the hot sweep for saturation |
-| Self-noise | 18.4 dB(A) equivalent; 39 nV/√Hz at 1 kHz, 9 nV/√Hz at 10 kHz | higher at low frequency only: leakage or hum. Higher everywhere: supply or interface noise. Check the interface margin line |
+| Self-noise | about 20 dB(A) equivalent with a 47 to 56 pF dummy (19.1 with a 55 pF capsule); about 45 nV/√Hz at 1 kHz, 12 nV/√Hz at 10 kHz | higher at low frequency only: leakage or hum. Higher everywhere: supply or interface noise. Check the interface margin line |
 | Interface margin | 10 dB or more | less: raise the preamp gain and repeat S3, N1, N2 |
 
 Limits of the method:

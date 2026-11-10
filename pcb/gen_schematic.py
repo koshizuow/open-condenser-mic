@@ -573,7 +573,7 @@ _SY = -60
 # R_GBIAS1 / R_BIAS1 are 200M 0805 (#109). The capsule is loaded by the two in
 # parallel (R_BIAS1 is not bootstrapped), and their thermal noise current into
 # the capsule capacitance sets the noise floor below a few kHz. 200M instead of
-# 100M: about -2.6 dB(A) self-noise and an input corner of ~29Hz instead of
+# 100M: about -2.3 dB(A) self-noise and an input corner of ~29Hz instead of
 # ~59Hz, for 2x the sensitivity to surface leakage. 470M 0805 fits the same
 # pads for lower noise still, at ~5x the leakage sensitivity.
 elements += component("Device:R", "R_GBIAS1", "200M 0805",
