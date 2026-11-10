@@ -214,7 +214,8 @@ def report(a):
         if err > 1.5:
             say("  NOTE fit error is large: the model does not describe this response well. Check levels,")
             say("       the load value (--rload) and that the low-level sweep was used.")
-        say(f"  model in the repo uses Lp = 0.5 H, which predicts a corner near 150 Hz")
+        say("  the repo's model uses 1 H for the 3-turn section (10 / 3 squared = 11 H on the full winding),")
+        say("  a lower bound: a fit that runs high only says the inductance is at least that much")
         if a.plot:
             import matplotlib
             matplotlib.use("Agg")

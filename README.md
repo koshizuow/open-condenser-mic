@@ -44,7 +44,14 @@ Charge pump settles to ~68 V within ~1 ms. HV_FILT is RC-filtered (1 MΩ + 470 n
 
 Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within about ±1 dB from ~500 Hz to ~20 kHz. Two high-pass mechanisms shape the low end: the input network (R_GBIAS1 ∥ R_BIAS1 = 100 MΩ against the 55 pF capsule, corner ~29 Hz) and the output DC block (C_DC = 4.7 µF) with the transformer.
 
-> **The response below about 500 Hz is not verified.** The transformer model uses `Lp = 0.5 H` for the driven winding, which is an estimate; the Neutrik datasheet gives no inductance. The winding resistances (521 Ω and 42 Ω) are measured. The real low-frequency corner may be lower than plotted.
+> **Below about 100 Hz the default wiring's response is known only within a range.** The plot uses `Lp = 1 H` for the driven 3-turn section, which is a lower bound from a measurement (#114): a sweep on a board wired on the full winding fits for any full-winding inductance above about 10 H, which is 0.9 H for the 3-turn section, and cannot tell how much higher it is. With the 3-turn section the transformer's inductance against its own 521 Ω winding resistance sets a low corner, so the low end depends strongly on `Lp`:
+>
+> | `Lp` (3-turn section) | 20 Hz | 30 Hz | 50 Hz | 100 Hz |
+> |---|---|---|---|---|
+> | 1 H (lower bound, plotted) | −27 dB | −18 dB | −8 dB | −1 dB |
+> | 4.5 H (earlier estimate) | −12 dB | −1 dB | +1 dB | 0 dB |
+>
+> A larger C_DC does not help: the corner is set by the inductance and the winding resistance. On the full winding (inductance above 10 H) the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
  The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
 
 #### Optional presence-peak network (R_PRES1, C_PRES1)
