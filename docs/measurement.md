@@ -23,9 +23,9 @@ Tracking issue: #114. Related: #82 (hum), #99 (transformer inductance).
   impedance is 1 MΩ to 200 MΩ and a 10 MΩ meter will read wrong and disturb them.
 - After soldering near C8, R_IN1, R_BIAS1 or the FP/BP pads, clean the flux off
   and let the board dry. Residue there shows up as noise and pops.
-- The same goes for R_OSC1, C10 and U3 pin 1, the oscillator's timing node. A
-  little leakage there stops the oscillator, and with it the polarisation
-  voltage (#120).
+- The same goes for R_OSC1, C10 and U4 pins 2 and 6, the oscillator's timing
+  node. A little leakage there stops the oscillator, and with it the
+  polarisation voltage (#120).
 
 ## Part A: DC rails
 
@@ -54,8 +54,12 @@ Derived:
 - `VBOOST` close to `V_OPA` − 0.7 V (about 23 V) means the pump is not running.
   Measure U3 pin 2 and pin 4 to GND on DC volts: about half of `V_OSC` each
   while the oscillator runs (the meter averages the square wave), 0 V or
-  `V_OSC` when it is stopped. If it is stopped, check U3 pin 1: 0 V there
+  `V_OSC` when it is stopped. If it is stopped, check U4 pin 3 (OUT, also
+  about half of `V_OSC` while running) and U4 pins 2 and 6: stuck at 0 V there
   usually means leakage to GND around R_OSC1 and C10 (#120).
+- `V_OSC` should sit at 15 V ±5%. Below about 14.2 V Z_OSC1 is out of
+  regulation: the clock is drawing too much (#121; the v3.5 RC oscillator
+  drew about 1.5 mA and held it at 13.8 V).
 
 ## Part B: electrical sweep through a dummy capsule
 
