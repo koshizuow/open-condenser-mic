@@ -43,6 +43,7 @@ Rconn    CAP_HOT  CAP_FP     1   ; capsule hot wire to CAP_FP
 R_GBIAS  0        CAP_FP     {R_GBIAS}
 C8       CAP_FP   PIN3_NODE  {C8}
 R_BIAS1  PIN3_NODE  NET_VBIAS  {R_BIAS1}
+C_in     PIN3_NODE  0          {C_IN}   ; op-amp input plus strays: divides the capsule signal (#114)
 
 * ---------------------------------------------------------------------------
 * BEHAVIORAL OPA1641 (single-supply, V_MID=12V bias)
@@ -134,15 +135,16 @@ echo "========================================================"
 
 * ── Sensitivity assertion (#111) ───────────────────────────────────────────
 * Vcap is 13.07mV (1 Pa), so the 1kHz output in dBV is the sensitivity in
-* dBV/Pa into this deck's 600Ω load: expected -40.2 (default gain). The README
-* quotes -38 into 1.5kΩ, which is the same result at a lighter load.
-let sens_lo = -41.5
-let sens_hi = -38.5
+* dBV/Pa into this deck's 600Ω load: expected -42.0 (default gain; -40.2 before
+* C_IN was added, #114). The README quotes -40 into 1.5kΩ, which is the same
+* result at a lighter load.
+let sens_lo = -43.3
+let sens_hi = -40.3
 if gain_1k < sens_lo
-  echo "FAIL amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R (min -41.5)"
+  echo "FAIL amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R (min -43.3)"
 else
   if gain_1k > sens_hi
-    echo "FAIL amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R (max -38.5)"
+    echo "FAIL amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R (max -40.3)"
   else
     echo "PASS amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R"
   end

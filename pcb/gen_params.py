@@ -41,7 +41,10 @@ PARAMS = {
     "V_MID":        "12",     # V_OPA/2 midpoint (R4/R5 divider)
     # ── OPA1641 behavioral model (from datasheet) ─────────────────────────
     "OPA_OL_GAIN":  "100k",   # open-loop gain (100 dB)
-    "OPA_VN_REQ":   "377",    # voltage noise equiv. resistor (2.5 nV/√Hz → 377 Ω)
+    "OPA_VN_REQ":   "1570",   # voltage noise equiv. resistor (5.1 nV/√Hz at 1 kHz → 1570 Ω; was 2.5 nV, #114)
+    "C_IN":         "12p",    # capacitance at IN+: OPA1641 6 pF common mode plus board and lead strays.
+                              # Estimate: the gain measured through a 47 pF dummy is 0.67 dB below a model
+                              # with 7 pF, which 12 pF accounts for (#114).
 }
 
 _OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "sim", "params.inc")

@@ -36,7 +36,6 @@ CAPSULE_V_PER_PA = 13.07e-3  # vendor sheet, see working notes; only used to exp
 # Transformer and output parts not in gen_params (sim/models/passives.lib, gen_schematic.py)
 RS = 42.0                    # XLR-side winding DC resistance, measured
 R7, R_RFI = 100.0, 100.0
-C_IN = 7e-12                 # OPA1641 input capacitance, approx.
 # Driven winding of the NTE10/3: (step-down ratio, DC resistance)
 #   tap   red to blue, the default wiring: 3:1, 521 ohm measured
 #   full  red to black (README, "Full winding option"): 10:1, about 10.5 dB lower.
@@ -55,6 +54,9 @@ def val(s):
         if s.endswith(suf):
             return float(s[:-len(suf)]) * m
     return float(s)
+
+
+C_IN = val(PARAMS["C_IN"])   # capacitance at IN+: op-amp plus strays
 
 
 def par(a, b):
@@ -277,7 +279,8 @@ def report(a):
         say(f"    (with the 1 kHz gain at every frequency: {20 * np.log10(in_a_flat / CAPSULE_V_PER_PA) + 94:.1f} dB(A);"
             f" referred with the {'measured sweep' if fr else 'model'})")
         say(f"  input-referred density: {d(1000.0):.1f} nV/rtHz at 1 kHz, {d(10000.0):.1f} nV/rtHz at 10 kHz")
-        say("  simulation (200M bias):  18.4 dB(A), 39.2 nV/rtHz at 1 kHz, 9.1 nV/rtHz at 10 kHz")
+        say("  simulation, 55 pF capsule: 19.1 dB(A), 40 nV/rtHz at 1 kHz, 12 nV/rtHz at 10 kHz")
+        say("  (a smaller dummy reads higher: run sim/amp_noise_opa1641.sp with Cc set to its value)")
         if not gain_1k:
             say("  NOTE no measured gain given: referred to input with the model gain")
         if a.iface_noise_rec:

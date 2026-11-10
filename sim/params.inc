@@ -24,4 +24,5 @@
 .param V_HV_clamp       = 68
 .param V_MID            = 12
 .param OPA_OL_GAIN      = 100k
-.param OPA_VN_REQ       = 377
+.param OPA_VN_REQ       = 1570
+.param C_IN             = 12p

@@ -1,6 +1,10 @@
 * OPA1641 Mic Preamp — Noise Analysis
 * Behavioral op-amp noise model for OPA1641:
-*   Voltage noise: 2.5 nV/rtHz (OPA1641 datasheet)
+*   Voltage noise: 5.1 nV/rtHz at 1 kHz (OPA1641 datasheet, SBOS484; this deck
+*   used 2.5 until #114)
+*   Input capacitance C_IN (op-amp plus strays, estimated from a measurement in
+*   #114): it divides the capsule signal but not the op-amp's own noise, so it
+*   raises the input-referred noise where the op-amp dominates, above ~5 kHz
 *   Current noise: ~0.8 fA/rtHz (JFET input, negligible vs resistor noise)
 *   GBW: 11 MHz (behavioral single-pole at 110Hz -> GBW=11MHz with gain 100k)
 * Input network: R_GBIAS1=200MΩ and R_BIAS1=200MΩ both contribute; they
@@ -45,13 +49,14 @@ Vhv   NET_HV  0  DC 68
 
 * ---------------------------------------------------------------------------
 * BEHAVIORAL OPA1641 — voltage noise + input current noise sources
-* Voltage noise: 2.5 nV/rtHz → Req = (2.5e-9)^2/(4kT) = 6.25e-18/1.656e-20 ≈ 377Ω
+* Voltage noise: 5.1 nV/rtHz → Req = (5.1e-9)^2/(4kT) = 26.0e-18/1.656e-20 ≈ 1570Ω
 * Current noise: ~0.8 fA/rtHz at IN+ and IN- (negligible vs resistor noise)
 * ---------------------------------------------------------------------------
 
 * R_IN1 (680R, #96): series resistor into IN+; its Johnson noise adds here.
 R_in  PIN3_NODE  PIN3_IN  {R_IN}
 R_vn  PIN3_IN    PIN3_VN  {OPA_VN_REQ}
+C_in  PIN3_IN    0          {C_IN}
 
 * Current noise at IN+ (0.8fA/rtHz modeled as 320GΩ shunt)
 *   R_in_noise = 4kT / I_noise^2 = 4*1.38e-23*300 / (0.8e-15)^2 = 32e18 Ω
