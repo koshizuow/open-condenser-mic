@@ -119,8 +119,8 @@ below):
    the tone. Expect an error of about ±0.5 dB. The spec is tip to ring. The
    capacitor is driven tip to sleeve with the ring unconnected, which on a
    truly balanced output is half of it: subtract another 6 dB. The SSL 2 and
-   SSL 2+ outputs are truly balanced (SSL's MK I FAQ: "true, fully balanced
-   outputs"), so `v-source` is 0.163 V for the −20 dBFS tone, not 0.327 V.
+   SSL 2+ outputs are truly balanced ([SSL's MK I FAQ](https://support.solidstatelogic.com/hc/en-gb/articles/4416629685009-SSL-2-2-MK-I-General-FAQ):
+   "true, fully balanced outputs"), so `v-source` is 0.163 V for the −20 dBFS tone, not 0.327 V.
 2. After N2, with phantom off, connect the line output straight to the same mic
    input, **wired the way it drove the capacitor**: tip to pin 2, sleeve to
    pins 1 and 3, with the same plug (TS or TRS) in the line output. Do not use
