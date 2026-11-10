@@ -603,9 +603,9 @@ def route_all(board):
           (10.0,  85.47))   # to R_RFI1 pad2
 
     # ── XLR_HOT_F: R_RFI1-pad1 → C_RFI1-pad1 + J3-pad2 ─────────────
-    # R_RFI1 pad1 (10.0,86.53); T-junction at (10,87); C_RFI1 pad1 (12.47,87)
-    # C_RFI1 pad2 (GND, 13.53,87): connected via F.Cu GND zone fill — no stub/via needed.
-    route(board, "XLR_HOT_F", F, SIG, (10.0, 86.53), (10.0, 87.0), (12.47, 87.0))
+    # R_RFI1 pad1 (10.0,86.53); T-junction at (10,87); C_RFI1 pad1 (12.225,87)
+    # C_RFI1 pad2 (GND, 13.775,87): connected via F.Cu GND zone fill — no stub/via needed.
+    route(board, "XLR_HOT_F", F, SIG, (10.0, 86.53), (10.0, 87.0), (12.225, 87.0))
     route(board, "XLR_HOT_F", F, SIG, (10.0, 87.0), (10.0, 88.54), (20.0, 88.54), (20.0, 90.0))
     # TVS1 shunt tap (#60, #93): the y=88.54 XLR_HOT_F run above passes
     # straight through TVS1 pad1 (14.7,88.6); short stub ties it to pad centre.
@@ -628,9 +628,9 @@ def route_all(board):
           (22.0,  85.47))   # to R_RFI2 pad2
 
     # ── XLR_COLD_F: R_RFI2-pad1 → C_RFI2-pad1 + J3-pad3 ───────────
-    # R_RFI2 pad1 (22.0,86.53); T-junction at (22,87); C_RFI2 pad1 (24.47,87)
-    # C_RFI2 pad2 (GND, 25.53,87): connected via F.Cu GND zone fill — no stub/via needed.
-    route(board, "XLR_COLD_F", F, SIG, (22.0, 86.53), (22.0, 87.0), (24.47, 87.0))
+    # R_RFI2 pad1 (22.0,86.53); T-junction at (22,87); C_RFI2 pad1 (24.225,87)
+    # C_RFI2 pad2 (GND, 25.775,87): connected via F.Cu GND zone fill — no stub/via needed.
+    route(board, "XLR_COLD_F", F, SIG, (22.0, 86.53), (22.0, 87.0), (24.225, 87.0))
     route(board, "XLR_COLD_F", F, SIG, (22.0, 87.0), (22.0, 89.0), (22.54, 89.0), (22.54, 90.0))
     # TVS2 shunt tap (#60, #93): stub from the XLR_COLD_F jog at (22.54,89)
     # to TVS2 pad1 (25.3,88.6).
@@ -992,19 +992,20 @@ def main():
     # Placed in-line with XLR_HOT/COLD verticals (x=10, x=22) at y=86
     # Shunt caps at y=87, 1.5mm right of series R; GND via below each cap
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R_RFI1", "100R", 10, 86, 90,
+          "R_RFI1", "47R", 10, 86, 90,
           {"1": "XLR_HOT_F", "2": "XLR_HOT"})
 
     place(board, "Resistor_SMD", "R_0402_1005Metric",
-          "R_RFI2", "100R", 22, 86, 90,
+          "R_RFI2", "47R", 22, 86, 90,
           {"1": "XLR_COLD_F", "2": "XLR_COLD"})
 
-    place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C_RFI1", "100p C0G", 13, 87, 0,
+    # C_RFI1/C_RFI2: 220p 100V C0G 0603 (#113): pad1 (12.225,87) / (24.225,87), pad2 on the GND fill
+    place(board, "Capacitor_SMD", "C_0603_1608Metric",
+          "C_RFI1", "220p 100V C0G", 13, 87, 0,
           {"1": "XLR_HOT_F", "2": "GND"})
 
-    place(board, "Capacitor_SMD", "C_0402_1005Metric",
-          "C_RFI2", "100p C0G", 25, 87, 0,
+    place(board, "Capacitor_SMD", "C_0603_1608Metric",
+          "C_RFI2", "220p 100V C0G", 25, 87, 0,
           {"1": "XLR_COLD_F", "2": "GND"})
 
     # TVS1/TVS2 (#60, #93): bidirectional TVS protection shunt, right at the

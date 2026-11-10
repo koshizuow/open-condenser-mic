@@ -70,6 +70,7 @@ LCSC = {
     ("68k",       "R_0402_1005Metric"):            "C36871",    # UNI-ROYAL 0402WGF6802TCE ±1% — R_OSC1 (#121, ICM7555 timing with C10 100p, ~105 kHz); 120k stock
     ("47k",       "R_0402_1005Metric"):            "C25792",    # UNI-ROYAL 0402WGF4702TCE ±1% BASIC — R6 hi-gain variant; C25900 maps to 4.7kΩ in JLCPCB
     ("100R",      "R_0402_1005Metric"):            "C25076",
+    ("47R",       "R_0402_1005Metric"):            "C25118",    # UNI-ROYAL 0402WGF470JTCE ±1%; R_RFI1/2 (#113); Extended (promotional), checked 2026-11-11
     ("470k",      "R_0402_1005Metric"):            "C137976",   # YAGEO RC0402FR-07470KL ±1%; C25905 maps to 5.1kΩ in JLCPCB
 
     # Precision resistors (0603) — R1/R2 matched pair
@@ -83,7 +84,8 @@ LCSC = {
     ("100n 25V X7R",  "C_0402_1005Metric"):        "C77014",    # GRM155R71E104KE14D Murata; C307331 out of stock — C_U3 (15V rail)
     ("100n 50V X7R",  "C_0402_1005Metric"):        "C131394",   # YAGEO CC0402KRX7R9BB104 ±10% 50V — C2/C3 on V_OPA (up to 24.6V), same margin reasoning as C5/C6 in #54 (#100). Not C60474: that is the 16V CC0402KRX7R7BB104
     ("100n 63V X7R",  "C_0402_1005Metric"):        "C162178",   # GRM155R62A104KE14D muRata 100V X5R
-    ("100p C0G",      "C_0402_1005Metric"):        "C445763",   # TDK C1005C0G1H101JT000F 100pF 50V C0G; C1554 maps to 20pF in JLCPCB
+    ("100p C0G",      "C_0402_1005Metric"):        "C445763",
+    ("220p 100V C0G", "C_0603_1608Metric"):        "C327164",   # YAGEO CC0603JRNPO0BN221 220pF 100V NP0 ±5%; C_RFI1/2 (#113): phantom-fed pins need > 52V. Extended, 864 in stock 2026-11-11   # TDK C1005C0G1H101JT000F 100pF 50V C0G; C1554 maps to 20pF in JLCPCB
 
     # Standard capacitors (0603/0805/1206)
     ("10u 25V X5R",   "C_0603_1608Metric"):        "C344022",   # GRM188R61E106KA73D muRata
