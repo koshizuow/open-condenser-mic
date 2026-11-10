@@ -116,8 +116,11 @@ below):
 
 1. Take `v-source` from the interface's output spec: the level of 0 dBFS at the
    line output with its volume at maximum (SSL 2: +12.5 dBu), less 20 dB for
-   the tone. Expect an error of about ±0.5 dB. Only the noise figures in
-   absolute terms depend on this; the gain comes from the ratio in step 3.
+   the tone. Expect an error of about ±0.5 dB. The spec is tip to ring. The
+   capacitor is driven tip to sleeve with the ring unconnected, which on a
+   truly balanced output is half of it: subtract another 6 dB. The SSL 2 and
+   SSL 2+ outputs are truly balanced (SSL's MK I FAQ: "true, fully balanced
+   outputs"), so `v-source` is 0.163 V for the −20 dBFS tone, not 0.327 V.
 2. After N2, with phantom off, connect the line output straight to the same mic
    input, **wired the way it drove the capacitor**: tip to pin 2, sleeve to
    pins 1 and 3, with the same plug (TS or TRS) in the line output. Do not use
