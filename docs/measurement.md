@@ -9,7 +9,9 @@ with data. Neither needs an oscilloscope.
 | B. Electrical sweep through a dummy capsule | audio interface with a line output and a phantom-powered mic input, multimeter, one capacitor | gain, frequency response, transformer inductance, self-noise |
 
 Written for a v3.5 board at default gain (R6 = 5.6 kΩ). For a hi-gain board
-(R6 = 47 kΩ) pass `--hi-gain` to both scripts.
+(R6 = 47 kΩ) pass `--hi-gain` to both scripts. Tell `analyze.py` about the
+other options too: `--presence` with R_PRES1 and C_PRES1 fitted,
+`--full-winding` with the transformer on its full winding.
 
 Tracking issue: #114. Related: #82 (hum), #99 (transformer inductance).
 
@@ -114,10 +116,18 @@ below):
 
 1. Take `v-source` from the interface's output spec: the level of 0 dBFS at the
    line output with its volume at maximum (SSL 2: +12.5 dBu), less 20 dB for
-   the tone. Expect an error of about ±0.5 dB.
+   the tone. Expect an error of about ±0.5 dB. The spec is tip to ring. The
+   capacitor is driven tip to sleeve with the ring unconnected, which on a
+   truly balanced output is half of it: subtract another 6 dB. The SSL 2 and
+   SSL 2+ outputs are truly balanced ([SSL's MK I FAQ](https://support.solidstatelogic.com/hc/en-gb/articles/4416629685009-SSL-2-2-MK-I-General-FAQ):
+   "true, fully balanced outputs"), so `v-source` is 0.163 V for the −20 dBFS tone, not 0.327 V.
 2. After N2, with phantom off, connect the line output straight to the same mic
-   input (a balanced TRS to XLR male lead: tip to pin 2, ring to pin 3, sleeve
-   to pin 1). Play `cal_tone_400Hz_-60dBFS.wav` and record a few seconds.
+   input, **wired the way it drove the capacitor**: tip to pin 2, sleeve to
+   pins 1 and 3, with the same plug (TS or TRS) in the line output. Do not use
+   a balanced TRS to XLR lead. On a truly differential output, tip to sleeve
+   is half of tip to ring, so a balanced loopback reads 6 dB more than the
+   capacitor was driven with, and the gain comes out 6 dB low. Play
+   `cal_tone_400Hz_-60dBFS.wav` and record a few seconds.
 3. The 400 Hz level of `rec_tone_small.wav` less the level of this loopback
    recording is the gain from the injection point to the XLR pins. `v-xlr` is
    `v-source` times that ratio.
