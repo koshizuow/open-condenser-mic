@@ -6,9 +6,11 @@
 *
 * Up to v3.6, R3 returned straight to V_MID. V_MID is the R4/R5 divider, which
 * is R4 || R5 = 235 kΩ at DC, so e pushed a current e / R3 into it and moved
-* V_MID, and with it VPLUS, VINV and SIG_OUT, by 235k / 2.2k = 107 times e.
-* 0.5 nA of leakage put SIG_OUT on the rail. A meter on V_MID did the same in
-* the other direction, which is why V_MID and SIG_OUT read differently.
+* V_MID, and with it VPLUS and VINV, by 235k / 2.2k = 107 times e. SIG_OUT
+* sits a further (1 + R6 / R3) times e above V_MID: 111 times e in all at
+* default gain, 129 times on the hi-gain variant. 0.5 nA of leakage put
+* SIG_OUT on the rail. A meter on V_MID pulls the whole operating point down
+* while it is connected, so V_MID and SIG_OUT read differently.
 *
 * C_G1 in series with R3 takes the DC out of that path: SIG_OUT moves by e and
 * V_MID does not move. This deck solves the old and the new circuit side by

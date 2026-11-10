@@ -72,18 +72,22 @@ The amplifier's operating point:
 - Do not judge it from `V_MID` (C4, C5, the BP pad). `V_MID` comes from a
   470 kΩ + 470 kΩ divider, 235 kΩ at DC. A 10 MΩ meter reads it about 0.3 V
   low, and `SIG_OUT` follows it down for as long as the meter is connected.
-- Do not probe `VINV` (U1 pin 2, R3, the upper pad of R6). The probe's
-  capacitance on the inverting input can upset the amplifier, and the reading
-  is not reliable.
+- Do not probe `VINV` (U1 pin 2, R3, the upper pad of R6). It shows nothing
+  that `SIG_OUT` does not, and the probe adds its capacitance to the
+  inverting input.
 - `SIG_OUT` sits at `V_MID` plus the DC error at the input: the op-amp's
   offset, and bias current and board leakage into `VPLUS` times 200 MΩ.
   100 pA is 20 mV. More than about 0.3 V from half of `V_OPA` means leakage:
   clean around C8, R_IN1, R_BIAS1 and U1 pin 3.
-- Boards without C_G1 (v3.5.x, v3.6) multiply that error by about 107: R3
-  returns it to `V_MID` as a current (#123). 10 mV of error moves `SIG_OUT` by
-  1 V, so a reading 1 V or more from half of `V_OPA` is possible on a board
-  that records normally (13.2 V measured on one v3.6 board). Cleaning the same
-  area brings it closer.
+- Boards without C_G1 (v3.5.x, v3.6) multiply that error: R3 returns it to
+  `V_MID` as a current, which moves `V_MID` by about 107 times the error, and
+  `SIG_OUT` sits a further 1 + R6 / R3 times the error above `V_MID` (#123).
+  At `SIG_OUT` that is about 111 times at default gain and 129 times on a
+  hi-gain board: 10 mV of error moves `SIG_OUT` by 1.1 to 1.3 V. A reading
+  1 V or more from half of `V_OPA` is possible on a board that records
+  normally (13.2 V measured on one hi-gain v3.6 board). The error drifts as
+  leakage changes, so readings taken minutes apart can differ by tenths of a
+  volt. Cleaning the same area brings it closer.
 
 ## Part B: electrical sweep through a dummy capsule
 
