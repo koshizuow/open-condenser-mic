@@ -111,11 +111,10 @@ wrdata _ac.dat xlr_db
 
 * ── Passband flatness measurements ─────────────────────────────────────────
 * Relative gains: all measurements against 1kHz mid-band reference.
-* LF note: NTE10/3 primary (0.5H, Rp=521Ω) + C_DC(4.7µF) form a 2nd-order HPF
-* with ω₀≈104Hz, Q≈0.49 → ~15dB drop at 100Hz in this model. That depends on
-* Lp=0.5H, an unverified estimate (#99, see passives.lib), so it is not a
-* confirmed property of the hardware. Check at 500Hz instead (~1.1dB drop
-* including the ~29Hz input corner), where the model is less sensitive to Lp.
+* LF note: the low end depends on the NTE10/3 primary inductance, which the
+* model sets to its measured lower bound, 1H (passives.lib, #114): about -8dB
+* at 50Hz with 1H, about +1dB with 4.5H. Check at 500Hz instead, where the
+* model is insensitive to Lp.
 meas ac G_1K   find v(xlr_diff) at=1000
 meas ac G_500  find v(xlr_diff) at=500
 meas ac G_10K  find v(xlr_diff) at=10000

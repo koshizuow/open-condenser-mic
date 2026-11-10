@@ -11,20 +11,26 @@
 .model BZX55C56 D (Is=1n N=1 Rs=10 Cj0=50p Bv=56 Ibv=5m Vj=0.6 M=0.4)
 
 * NTE10/3 transformer model (used reversed: 3-turn section as primary)
-* Primary inductance (red-blue, 3-turn section): 0.5H. UNVERIFIED ESTIMATE (#99).
-*   The Neutrik datasheet gives only the 1:3:10 ratio. An earlier note argues
-*   0.5H belongs to the 1-turn winding, which would make this section ~4.5H.
-*   Until it is measured, treat the simulated response below ~500Hz as uncertain.
-* Secondary inductance (white-yellow, 1-turn): 0.5 / 9 = 55.6mH  (Ls = Lp/n^2, n=3)
-* Coupling k=0.99 (high quality audio transformer)
+* Primary inductance (red-blue, 3-turn section): 1H, a LOWER BOUND from a
+*   measurement (#114, #99). A sweep through a dummy capsule on a board wired on
+*   the full winding fits equally well for any full-winding inductance above
+*   about 10 H, which is 0.9 H for this section (inductance goes with turns
+*   squared, 3/10). Below that the fit falls apart (8 H: 6 dB off at 20 Hz).
+*   The measured low corner, 33 Hz, is set by the input network, so the sweep
+*   cannot say how much higher Lp is; an earlier note put it near 4.5H. With 1H
+*   the plotted low end is the least it can be, not a prediction of it.
+* Secondary inductance (white-yellow, 1-turn): 1 / 9 = 111mH  (Ls = Lp/n^2, n=3)
+* Coupling k=0.995: keeps the leakage inductance, (1 - k^2) x Lp = 10mH, where it
+*   was with Lp = 0.5H and k = 0.99, so the change of Lp leaves the top end alone.
+*   The measured sweep matches a model without leakage within 0.2dB to 15kHz.
 * Primary DC resistance: 521Ω measured (Red-Blue, S1-S2)
 * Secondary DC resistance: 42Ω measured (White-Yellow, P1-P2)
 .subckt NTE10_3 PRI_A PRI_B SEC_P SEC_N
 Rp1  PRI_A    PRI_A2   521
-Lp   PRI_A2   PRI_B    0.5
-Ls   SEC_P2   SEC_N    55.6m
+Lp   PRI_A2   PRI_B    1
+Ls   SEC_P2   SEC_N    111m
 Rs1  SEC_P    SEC_P2   42
-K1   Lp Ls    0.99
+K1   Lp Ls    0.995
 .ends NTE10_3
 
 * L78L24 simplified model: ideal 24V regulator with dropout
