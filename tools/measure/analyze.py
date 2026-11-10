@@ -5,7 +5,7 @@
         --sweep-ref tools/measure/signals/sweep_-46dBFS.wav --sweep-rec rec_sweep.wav \\
         --v-source 0.412 --v-xlr 0.455 \\
         --tone-rec rec_tone_small.wav --noise-rec rec_noise.wav \\
-        [--iface-noise-rec rec_iface_noise.wav] [--rload 4000] [--cdummy 56e-12] [--plot out.png]
+        [--iface-noise-rec rec_iface_noise.wav] [--rload 4000] [--cdummy 56e-12] [--hi-gain] [--presence] [--full-winding] [--plot out.png]
 
 Every group of inputs is optional; the report covers whatever is given:
 
@@ -34,10 +34,18 @@ SMALL_TONE_DB = -40.0        # cal_tone -60 dBFS relative to cal_tone -20 dBFS
 CAPSULE_V_PER_PA = 13.07e-3  # vendor sheet, see working notes; only used to express results in SPL
 
 # Transformer and output parts not in gen_params (sim/models/passives.lib, gen_schematic.py)
-RP, RS = 521.0, 42.0         # winding DC resistance, measured
+RS = 42.0                    # XLR-side winding DC resistance, measured
 R7, R_RFI = 100.0, 100.0
-N = 3.0                      # step-down ratio
 C_IN = 7e-12                 # OPA1641 input capacitance, approx.
+# Driven winding of the NTE10/3: (step-down ratio, DC resistance)
+#   tap   red to blue, the default wiring: 3:1, 521 ohm measured
+#   full  red to black (README, "Full winding option"): 10:1, about 10.5 dB lower.
+#         Its resistance is not measured; scaled from the tap by the turns
+#         (10/3), so likely higher. It hardly matters: the reflected load is
+#         N^2 times the XLR side, about 100 kohm against 1.7 kohm.
+WINDINGS = {"tap": (3.0, 521.0), "full": (10.0, 521.0 * 10 / 3)}
+# Presence network, fitted with the --presence BOM variant: R_PRES1 + C_PRES1 in parallel with R3
+R_PRES, C_PRES = 6.2e3, 12e-9
 
 
 def val(s):
@@ -53,13 +61,18 @@ def par(a, b):
     return a * b / (a + b)
 
 
-def model(f, lp, r6=None, cdummy=56e-12, rload=4000.0, c7=None):
-    """Complex transfer function, dummy-capacitor source voltage -> voltage across the preamp input."""
+def model(f, lp, r6=None, cdummy=56e-12, rload=4000.0, c7=None, winding="tap", presence=False):
+    """Complex transfer function, dummy-capacitor source voltage -> voltage across the preamp input.
+    lp is the inductance of the driven winding in use (it scales with the turns squared)."""
     w = 2j * np.pi * np.asarray(f, dtype=float)
     rg, rb = val(PARAMS["R_GBIAS"]), val(PARAMS["R_BIAS1"])
     c8 = val(PARAMS["C8"])
     c7 = c7 or val(PARAMS["C_DC"])
-    gain = 1 + (r6 or val(PARAMS["R6_default"])) / val(PARAMS["R3"])
+    N, RP = WINDINGS[winding]
+    z3 = val(PARAMS["R3"])
+    if presence:
+        z3 = par(z3, R_PRES + 1 / (w * C_PRES))
+    gain = 1 + (r6 or val(PARAMS["R6_default"])) / z3
     r12 = 2 * val(PARAMS["R_PH_TAP"])
     # input network
     zb = par(rb, 1 / (w * C_IN))
@@ -175,7 +188,8 @@ def report(a):
         lines.append(s)
 
     fr = None
-    kw = dict(cdummy=a.cdummy, rload=a.rload, r6=val(PARAMS["R6_hi_gain"]) if a.hi_gain else None)
+    kw = dict(cdummy=a.cdummy, rload=a.rload, r6=val(PARAMS["R6_hi_gain"]) if a.hi_gain else None,
+              winding="full" if a.full_winding else "tap", presence=a.presence)
     if a.sweep_ref and a.sweep_rec:
         fs, ref = read_wav(a.sweep_ref)
         fs2, rec = read_wav(a.sweep_rec, a.channel)
@@ -242,13 +256,26 @@ def report(a):
         g = gain_1k or abs(model(1000.0, out.get("lp", 4.5), **kw))
         out_a, f, dens = band_rms(nr, fs2, a_weight)
         out_a *= v_per_fs
-        in_a = out_a / g
+        # Refer each frequency to the input with the gain at that frequency: the measured
+        # sweep if given, else the model, both relative to 1 kHz. A flat 1 kHz gain overstates
+        # the input noise wherever the gain is higher, as above 2 kHz with the presence network.
+        m = (f >= 20) & (f <= 20000)
+        if fr:
+            shape_db = np.interp(np.log(f[m]), np.log(fr[0]), fr[1]) - at(*fr, 1000.0)
+        else:
+            h = np.abs(model(np.append(f[m], 1000.0), out.get("lp", 4.5), **kw))
+            shape_db = 20 * np.log10(h[:-1] / h[-1])
+        dens_in = dens[m] * v_per_fs / (g * 10 ** (shape_db / 20))
+        in_a = float(np.sqrt(np.sum((dens_in * a_weight(f[m])) ** 2) * (f[1] - f[0])))
+        in_a_flat = out_a / g
         spl = 20 * np.log10(in_a / CAPSULE_V_PER_PA) + 94
-        d = lambda fx: float(np.interp(fx, f, dens)) * v_per_fs / g * 1e9   # noqa: E731
+        d = lambda fx: float(np.interp(fx, f[m], dens_in)) * 1e9   # noqa: E731
         out.update(noise_dba=spl, n1k=d(1000.0), n10k=d(10000.0))
         say("SELF-NOISE (dummy capacitor in place of the capsule, housing closed)")
         say(f"  output, A-weighted 20 Hz-20 kHz: {out_a * 1e6:.2f} uV  ({20 * np.log10(out_a / 0.775):.1f} dBu)")
         say(f"  input-referred, A-weighted:      {in_a * 1e6:.2f} uV  = {spl:.1f} dB(A) SPL equivalent")
+        say(f"    (with the 1 kHz gain at every frequency: {20 * np.log10(in_a_flat / CAPSULE_V_PER_PA) + 94:.1f} dB(A);"
+            f" referred with the {'measured sweep' if fr else 'model'})")
         say(f"  input-referred density: {d(1000.0):.1f} nV/rtHz at 1 kHz, {d(10000.0):.1f} nV/rtHz at 10 kHz")
         say("  simulation (200M bias):  18.4 dB(A), 39.2 nV/rtHz at 1 kHz, 9.1 nV/rtHz at 10 kHz")
         if not gain_1k:
@@ -294,7 +321,11 @@ def self_test():
     write_wav(os.path.join(tmp, "tone.wav"), tone(-60) / 10 ** (-60 / 20) * np.sqrt(2) * v_xlr * 10 ** (SMALL_TONE_DB / 20) * hi, FS)
     # noise: white at the input, 30 nV/rtHz, through the model gain at 1 kHz (flat), 20 s
     dens_in = 30e-9
-    n = rng.normal(0, dens_in * np.sqrt(FS / 2), 20 * FS) * g1k * hi
+    n = rng.normal(0, dens_in * np.sqrt(FS / 2), 20 * FS) * hi
+    fn = np.fft.rfftfreq(len(n), 1 / FS)
+    hn = np.zeros(len(fn))
+    hn[1:] = np.abs(model(fn[1:], lp_true, rload=rload))
+    n = np.fft.irfft(np.fft.rfft(n) * hn, len(n))
     write_wav(os.path.join(tmp, "noise.wav"), n, FS)
     fw = np.linspace(20, 20000, 200000)
     exp_in_a = dens_in * np.sqrt(np.trapz(a_weight(fw) ** 2, fw))
@@ -303,7 +334,8 @@ def self_test():
     a = argparse.Namespace(sweep_ref=os.path.join(tmp, "ref.wav"), sweep_rec=os.path.join(tmp, "rec.wav"),
                            loopback_rec=None, v_source=v_source, v_xlr=v_xlr, tone_rec=os.path.join(tmp, "tone.wav"),
                            noise_rec=os.path.join(tmp, "noise.wav"), iface_noise_rec=None, rload=rload,
-                           cdummy=56e-12, hi_gain=False, channel=0, plot=None)
+                           cdummy=56e-12, hi_gain=False, full_winding=False, presence=False,
+                           channel=0, plot=None)
     out = report(a)
     checks = [
         ("fitted Lp", out["lp"], lp_true, 0.07 * lp_true),
@@ -333,6 +365,8 @@ def main():
     p.add_argument("--rload", type=float, default=4000.0, help="preamp input impedance in ohm (default 4000)")
     p.add_argument("--cdummy", type=float, default=56e-12, help="dummy capacitor in farad (default 56e-12)")
     p.add_argument("--hi-gain", action="store_true", help="board has R6 = 47k")
+    p.add_argument("--presence", action="store_true", help="board has R_PRES1 and C_PRES1 fitted")
+    p.add_argument("--full-winding", action="store_true", help="transformer wired on its full winding (10:1)")
     p.add_argument("--channel", type=int, default=0, help="channel index in the recordings (default 0)")
     p.add_argument("--plot", help="write a frequency response plot to this PNG")
     p.add_argument("--self-test", action="store_true", help="run the built-in check on synthetic data")
