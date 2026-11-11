@@ -11,8 +11,9 @@ with data. Neither needs an oscilloscope.
 Written for a board at default gain (R6 = 5.6 kΩ). For a hi-gain board
 (R6 = 47 kΩ) pass `--hi-gain` to both scripts. Tell `analyze.py` about the
 other options too: `--presence` with R_PRES1 and C_PRES1 fitted,
-`--full-winding` with the transformer on its full winding, and `--no-cg` for a
-board without C_G1 (v3.5.x, v3.6).
+`--full-winding` with the transformer on its full winding. A board up to v3.6
+needs `--no-cg` (no C_G1, #123) and `--rfi-ohms 100` (100 Ω RFI resistors; 47 Ω
+since #113).
 
 Tracking issue: #114. Related: #82 (hum), #99 (transformer inductance).
 
@@ -215,7 +216,7 @@ group of inputs is optional, so a partial session still gives a partial report.
 
 | Result | Simulation | What a difference means |
 |---|---|---|
-| Gain at 1 kHz | about −1.2 dB into 4 kΩ with a 56 pF dummy (sensitivity about −39 dBV/Pa with a 13 mV/Pa capsule) | more than ±1.5 dB off: check R3, R6, the load value and the meter readings |
+| Gain at 1 kHz | about −1.0 dB into 4 kΩ with a 56 pF dummy (sensitivity about −39 dBV/Pa with a 13 mV/Pa capsule); about 0.2 dB lower on boards up to v3.6 (100 Ω RFI resistors) | more than ±1.5 dB off: check R3, R6, the load value and the meter readings |
 | Low-frequency −3 dB corner | about 30 Hz on the full winding (set by the input network); on the 3-turn section anywhere from about 25 to 80 Hz, depending on `Lp` | on the 3-turn section the fitted `Lp` is the useful result: `sim/models/passives.lib` uses its lower bound, 1 H (#114) |
 | Fit error | below about 1 dB | larger: the low end is not behaving like the model. Compare with the hot sweep for saturation |
 | Self-noise | about 20 dB(A) equivalent with a 47 to 56 pF dummy (19.1 with a 55 pF capsule); about 45 nV/√Hz at 1 kHz, 12 nV/√Hz at 10 kHz | higher at low frequency only: leakage or hum. Higher everywhere: supply or interface noise. Check the interface margin line |
