@@ -791,26 +791,28 @@ elements.append(wire(239.38, 64.46, 239.38, 57))
 elements.append(wire(239.38, 57, 235, 57))
 elements.append(power_sym("power:GND", 235, 57, 0))
 
-# RFI filter: 100R series + 100pF C0G shunt on each XLR leg (fc ~16 MHz)
+# RFI filter: 47R series + 220pF C0G shunt on each XLR leg (fc ~15 MHz). Was 100R + 100pF
+# (16 MHz), which put 200 ohm of the ~310 ohm output impedance in the signal path (#113).
+# C_RFI is 100V 0603: it sits on the phantom-fed pins (up to 52V open circuit, TVS clamp 93.6V).
 # Placed between TS1 and J3 so signal flow reads left-to-right: TS1→R_RFI→C_RFI→J3
-elements += component("Device:R", "R_RFI1", "100R",
+elements += component("Device:R", "R_RFI1", "47R",
     210, 58,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "~XLR_HOT", "2": "~XLR_HOT_F"})
 
-elements += component("Device:C", "C_RFI1", "100p C0G",
+elements += component("Device:C", "C_RFI1", "220p 100V C0G",
     222, 54,
-    footprint="Capacitor_SMD:C_0402_1005Metric",
+    footprint="Capacitor_SMD:C_0603_1608Metric",
     pins={"1": "~XLR_HOT_F", "2": "GND"})
 
-elements += component("Device:R", "R_RFI2", "100R",
+elements += component("Device:R", "R_RFI2", "47R",
     210, 76,
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "~XLR_COLD", "2": "~XLR_COLD_F"})
 
-elements += component("Device:C", "C_RFI2", "100p C0G",
+elements += component("Device:C", "C_RFI2", "220p 100V C0G",
     222, 76,
-    footprint="Capacitor_SMD:C_0402_1005Metric",
+    footprint="Capacitor_SMD:C_0603_1608Metric",
     pins={"1": "~XLR_COLD_F", "2": "GND"})
 
 # TVS1/TVS2 (#60): bidirectional ESD/TVS protection on XLR_HOT_F/XLR_COLD_F,

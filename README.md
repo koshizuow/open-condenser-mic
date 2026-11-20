@@ -14,9 +14,9 @@ This design uses a Dickson charge pump oscillator to generate a 68 V HV rail fro
 - CD40106B Schmitt-trigger oscillator + 3-stage active Dickson charge pump
 - About 57 V capsule polarization (HV_FILT ≈ 69 V, set by the 15 V clock rail; a 75 V zener only protects it), referenced to the 12 V midpoint
 - HV rail RC filter: 1 MΩ (R_HV) + 470 nF, corner ~0.34 Hz; no LC resonance
-- Output sensitivity (simulated, 13 mV/Pa capsule, into a 1.5 kΩ preamp input): about −40 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); about −24 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×). About 2 dB lower into 600 Ω and 1.6 dB higher unloaded; output impedance is about 310 Ω
+- Output sensitivity (simulated, 13 mV/Pa capsule, into a 1.5 kΩ preamp input): about −39 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); about −23 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×). About 1.4 dB lower into 600 Ω and 1.1 dB higher unloaded; output impedance is about 200 Ω (about 310 Ω up to v3.6, with 100 Ω RFI resistors; #113)
 - Maximum SPL before the op-amp output clips (calculated): about 143 dB SPL peak at default gain, about 127 dB SPL peak at hi-gain
-- RFI filter on XLR output: differential RC network (R_RFI1/R_RFI2 + C_RFI1/C_RFI2)
+- RFI filter on XLR output: 47 Ω + 220 pF on each leg (R_RFI1/R_RFI2, C_RFI1/C_RFI2; corner about 15 MHz). C_RFI is rated 100 V because it sits on the phantom-fed pins
 - Phantom power draw: ~4.6 mA typical at 48 V (IEC 61938 P48 rated maximum: 10 mA)
 - All SMD/THT components available from standard distributors (LCSC, Mouser, Digi-Key); capsule and transformer are customer-supplied
 

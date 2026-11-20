@@ -80,12 +80,12 @@ C6    OPA_OUT_R8  XFMR_PRI_IN  {C_DC}
 * NTE10/3 transformer (reversed: red-blue as primary, white-yellow as secondary)
 X_XFMR  XFMR_PRI_IN  0  XLR_P2  XLR_P3  NTE10_3
 
-* RFI filter: 100Ω series + 100pF C0G shunt on each XLR leg (fc ~16 MHz)
-* Creates -2.5 dB drop at 600Ω load; negligible at typical 2k+ preamp input
-R_RFI1  XLR_P2  XLR_HOT_F  100
-R_RFI2  XLR_P3  XLR_COLD_F  100
-C_RFI1  XLR_HOT_F  0  100p
-C_RFI2  XLR_COLD_F  0  100p
+* RFI filter: 47Ω series + 220pF C0G shunt on each XLR leg (fc ~15 MHz; was 100Ω
+* + 100pF until #113). The series resistors cost about 1.3 dB into 600Ω.
+R_RFI1  XLR_P2  XLR_HOT_F  47
+R_RFI2  XLR_P3  XLR_COLD_F  47
+C_RFI1  XLR_HOT_F  0  220p
+C_RFI2  XLR_COLD_F  0  220p
 
 * Load: 600Ω typical XLR/preamp input (differential, so 600Ω across HOT/COLD)
 R_load  XLR_HOT_F  XLR_COLD_F  600
@@ -136,16 +136,16 @@ echo "========================================================"
 
 * ── Sensitivity assertion (#111) ───────────────────────────────────────────
 * Vcap is 13.07mV (1 Pa), so the 1kHz output in dBV is the sensitivity in
-* dBV/Pa into this deck's 600Ω load: expected -42.0 (default gain; -40.2 before
-* C_IN was added, #114). The README quotes -40 into 1.5kΩ, which is the same
-* result at a lighter load.
-let sens_lo = -43.3
-let sens_hi = -40.3
+* dBV/Pa into this deck's 600Ω load: expected -40.7 (default gain; -42.0 with
+* R_RFI 100Ω before #113, -40.2 before C_IN was added in #114). The README
+* quotes -39 into 1.5kΩ, which is the same result at a lighter load.
+let sens_lo = -42.0
+let sens_hi = -39.0
 if gain_1k < sens_lo
-  echo "FAIL amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R (min -43.3)"
+  echo "FAIL amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R (min -42.0)"
 else
   if gain_1k > sens_hi
-    echo "FAIL amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R (max -40.3)"
+    echo "FAIL amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R (max -39.0)"
   else
     echo "PASS amp_ac: sensitivity = $&gain_1k dBV/Pa into 600R"
   end

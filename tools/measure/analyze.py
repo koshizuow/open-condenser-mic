@@ -6,7 +6,7 @@
         --v-source 0.412 --v-xlr 0.455 \\
         --tone-rec rec_tone_small.wav --noise-rec rec_noise.wav \\
         [--iface-noise-rec rec_iface_noise.wav] [--rload 4000] [--cdummy 56e-12] [--hi-gain] [--presence]
-        [--full-winding] [--no-cg] [--plot out.png]
+        [--full-winding] [--no-cg] [--rfi-ohms 100] [--plot out.png]
 
 Every group of inputs is optional; the report covers whatever is given:
 
@@ -36,7 +36,7 @@ CAPSULE_V_PER_PA = 13.07e-3  # vendor sheet, see working notes; only used to exp
 
 # Transformer and output parts not in gen_params (sim/models/passives.lib, gen_schematic.py)
 RS = 42.0                    # XLR-side winding DC resistance, measured
-R7, R_RFI = 100.0, 100.0
+R7, R_RFI = 100.0, 47.0      # R_RFI 100 ohm up to v3.6 (#113)
 # Driven winding of the NTE10/3: (step-down ratio, DC resistance)
 #   tap   red to blue, the default wiring: 3:1, 521 ohm measured
 #   full  red to black (README, "Full winding option"): 10:1, about 10.5 dB lower.
@@ -64,7 +64,7 @@ def par(a, b):
     return a * b / (a + b)
 
 
-def model(f, lp, r6=None, cdummy=56e-12, rload=4000.0, c7=None, cg=None, winding="tap", presence=False):
+def model(f, lp, r6=None, cdummy=56e-12, rload=4000.0, c7=None, cg=None, winding="tap", presence=False, r_rfi=R_RFI):
     """Complex transfer function, dummy-capacitor source voltage -> voltage across the preamp input.
     lp is the inductance of the driven winding in use (it scales with the turns squared).
     cg: C_G1 in series with R3 (#123); None takes the design value, 0 is a board without it."""
@@ -84,11 +84,11 @@ def model(f, lp, r6=None, cdummy=56e-12, rload=4000.0, c7=None, cg=None, winding
     zl = par(rg, 1 / (w * c8) + zb)
     v_in = zl / (zl + 1 / (w * cdummy)) * zb / (zb + 1 / (w * c8))
     # output network
-    z_out = par(r12, 2 * R_RFI + rload)
+    z_out = par(r12, 2 * r_rfi + rload)
     z2 = RS + z_out
     zm = par(w * lp, N * N * z2)
     v_p = zm / (R7 + 1 / (w * c7) + RP + zm)
-    v_load = v_p / N * z_out / z2 * rload / (2 * R_RFI + rload)
+    v_load = v_p / N * z_out / z2 * rload / (2 * r_rfi + rload)
     return v_in * gain * v_load
 
 
@@ -194,7 +194,8 @@ def report(a):
 
     fr = None
     kw = dict(cdummy=a.cdummy, rload=a.rload, r6=val(PARAMS["R6_hi_gain"]) if a.hi_gain else None,
-              cg=0 if a.no_cg else None, winding="full" if a.full_winding else "tap", presence=a.presence)
+              cg=0 if a.no_cg else None, winding="full" if a.full_winding else "tap", presence=a.presence,
+              r_rfi=a.rfi_ohms)
     if a.sweep_ref and a.sweep_rec:
         fs, ref = read_wav(a.sweep_ref)
         fs2, rec = read_wav(a.sweep_rec, a.channel)
@@ -341,7 +342,7 @@ def self_test():
     a = argparse.Namespace(sweep_ref=os.path.join(tmp, "ref.wav"), sweep_rec=os.path.join(tmp, "rec.wav"),
                            loopback_rec=None, v_source=v_source, v_xlr=v_xlr, tone_rec=os.path.join(tmp, "tone.wav"),
                            noise_rec=os.path.join(tmp, "noise.wav"), iface_noise_rec=None, rload=rload,
-                           cdummy=56e-12, hi_gain=False, no_cg=False, full_winding=False, presence=False,
+                           cdummy=56e-12, hi_gain=False, no_cg=False, full_winding=False, presence=False, rfi_ohms=R_RFI,
                            channel=0, plot=None)
     out = report(a)
     checks = [
@@ -375,6 +376,7 @@ def main():
     p.add_argument("--no-cg", action="store_true", help="board has no C_G1 in series with R3 (v3.5.x, v3.6)")
     p.add_argument("--presence", action="store_true", help="board has R_PRES1 and C_PRES1 fitted")
     p.add_argument("--full-winding", action="store_true", help="transformer wired on its full winding (10:1)")
+    p.add_argument("--rfi-ohms", type=float, default=R_RFI, help=f"R_RFI1/R_RFI2 value (default {R_RFI:g}; 100 on boards up to v3.6)")
     p.add_argument("--channel", type=int, default=0, help="channel index in the recordings (default 0)")
     p.add_argument("--plot", help="write a frequency response plot to this PNG")
     p.add_argument("--self-test", action="store_true", help="run the built-in check on synthetic data")
