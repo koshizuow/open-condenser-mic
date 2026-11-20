@@ -42,7 +42,7 @@ Charge pump settles to ~68 V within ~1 ms. HV_FILT is RC-filtered (1 MΩ + 470 n
 
 ![Frequency response](img/freq_response.png)
 
-Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within about ±1 dB from ~500 Hz to ~20 kHz. Two high-pass mechanisms shape the low end: the input network (R_GBIAS1 ∥ R_BIAS1 = 100 MΩ against the 55 pF capsule, corner ~29 Hz) and the output DC block (C_DC = 4.7 µF) with the transformer.
+Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within about ±1 dB from ~500 Hz to ~20 kHz. Two high-pass mechanisms shape the low end: the input network (R_GBIAS1 ∥ R_BIAS1 = 100 MΩ against the 55 pF capsule, corner ~29 Hz) and the output DC block (C_DC = 4.7 µF) with the transformer. A third sits below them: C_G1 (10 µF) in series with R3, corner 7.2 Hz, about 0.7 dB at 20 Hz. It makes the amplifier's gain 1 at DC, so offset and leakage at the 200 MΩ input do not move the operating point (`amp_dc_offset.sp`, #123).
 
 > **Below about 100 Hz the default wiring's response is known only within a range.** The plot uses `Lp = 1 H` for the driven 3-turn section, which is a lower bound from a measurement (#114): a sweep on a board wired on the full winding fits for any full-winding inductance above about 10 H, which is 0.9 H for the 3-turn section, and cannot tell how much higher it is. With the 3-turn section the transformer's inductance against its own 521 Ω winding resistance sets a low corner, so the low end depends strongly on `Lp`:
 >
@@ -208,6 +208,7 @@ cd sim
 ngspice boost_dickson.sp      # HV rail: VBOOST steady-state + ripple
 ngspice amp_noise_opa1641.sp  # Input-referred noise, OPA1641 model
 ngspice amp_ac.sp             # Closed-loop AC frequency response
+ngspice amp_dc_offset.sp      # DC operating point against input offset and leakage (C_G1)
 ngspice amp_bias_compare.sp   # Low-frequency rolloff vs R_BIAS1 value
 ngspice phantom_ripple_psrr.sp # Phantom supply ripple → output hum
 ngspice supply_dc_op.sp       # V_OPA regulator DC operating point across phantom/load corners

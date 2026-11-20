@@ -604,9 +604,9 @@ elements += component("Device:R", "R_BIAS1", "200M 0805",
     val_at=(2.54, -6))
 
 # V_MID audio bus: net label connects to power Block B.
-# Serves R3.pin1, R_PRES1.pin1 (Block D), R_BIAS1.pin2, J2.pin2 (Block C).
+# Serves C_G1.pin1, R_PRES1.pin1 (Block D), R_BIAS1.pin2, J2.pin2 (Block C).
 elements.append(label("V_MID", 70, 83, 180))              # V_MID net label (connects to power Block B)
-elements.append(wire(80, 77.65, 92, 77.65))              # right to R3.pin1 stub_end
+elements.append(wire(80, 77.65, 90.73, 77.65))             # right to C_G1.pin1 stub_end
 elements.append(wire(80, 77.65, 80, 83))                 # down to R_PRES1 level
 elements.append(wire(80, 83, 70, 83))                    # left bus extended to label AT
 elements.append(wire(77, 83, 53, 83))                    # continue left to J2 branch junction
@@ -657,13 +657,29 @@ elements.append(wire(111.84, 76.35, 111.84, 64.46))     # up to U1.IN+ stub_end
 
 # ── BLOCK D: OPA1641 SIGNAL STAGE (x=88..172, y=48..102) ────────────────────
 
+# C_G1 in series with R3 (#123). R3 used to return straight to V_MID, which is
+# 235k at DC (R4 || R5): the DC error at the input (offset, bias current and
+# leakage into the 200M node) pushed a current through R3 into V_MID and moved
+# the whole operating point by 235k / 2.2k = 107 times that error. With C_G1
+# the DC gain is 1 and no DC flows into V_MID. It has no DC across it, so the
+# X5R part keeps its value. Corner 1/(2π × 2.2k × 10µ) = 7.2 Hz, below the
+# 29 Hz input corner. Same part as C4.
+# Both sit at x=90.73 (one grid step left of where R3 was) so C_G1's value text clears the VINV bus at x=107.
+# C_G1(90.73,84): pin1 stub_end=(90.73,77.65) on the V_MID wire; pin2 stub_end=(90.73,90.35)
+# R3(90.73,96.7): pin1 stub_end=(90.73,90.35) meets C_G1.pin2 (net RG_MID); pin2 stub_end=(90.73,103.05)
+elements += component("Device:C", "C_G1", "10u 25V X5R",
+    90.73, 84,
+    footprint="Capacitor_SMD:C_0603_1608Metric",
+    pins={"1": "~V_MID", "2": "~RG_MID"},
+    val_at=(2.54, 3.81))
+
 elements += component("Device:R", "R3", "2.2k",
-    92, 84,
+    90.73, 96.7,
     footprint="Resistor_SMD:R_0402_1005Metric",
-    pins={"1": "~V_MID", "2": "~VINV"})
+    pins={"1": "~RG_MID", "2": "~VINV"})
 
 # Presence-peak network: Rs (6.2k) + C (12nF) in series, parallel with R3.
-# At DC: C blocks → Z = R3 = 2.2k (gain unchanged).
+# Below the presence corner: C blocks → Z = R3 = 2.2k (gain unchanged).
 # At HF: C shorts → Z = R3‖Rs = 1.61k → +2.6 dB above f_c = 1/(2π×6.2k×12nF) ≈ 2.1 kHz.
 # Placed at x=77, left of R3, clear of VPLUS wire (y=76.35) and all Block B components.
 elements += component("Device:R", "R_PRES1", "6.2k",
@@ -711,16 +727,16 @@ elements += component("Device:C", "C7", "4.7u 50V X7R 1206",
 
 # VINV node: R6.pin2 → vertical bus → R3.pin2 branch + U1.IN− branch
 # R6(107,52) pin2 tip=(107,55.81) stub D→(107,58.35)
-# R3(92,84) pin2 tip=(92,87.81) stub D→(92,90.35)   [VINV,D → NOT GND, keeps stub]
+# R3(90.73,96.7) pin2 tip=(90.73,100.51) stub D→(90.73,103.05)   [VINV,D → NOT GND, keeps stub]
 # U1(122,67) IN− tip=(114.38,69.54) stub L→(111.84,69.54)
 elements.append(wire(107, 58.35, 107, 69.54))    # VINV bus seg1: R6.pin2 → U1.IN− junction
-elements.append(wire(107, 69.54, 107, 90.35))    # VINV bus seg2: U1.IN− → R3 junction
-elements.append(wire(107, 90.35, 107, 116.35))   # VINV bus seg3: R3 → C_PRES1.pin2
-elements.append(wire(92, 90.35, 107, 90.35))     # R3.pin2 stub_end → right to bus
+elements.append(wire(107, 69.54, 107, 103.05))   # VINV bus seg2: U1.IN− → R3 junction
+elements.append(wire(107, 103.05, 107, 116.35))  # VINV bus seg3: R3 → C_PRES1.pin2
+elements.append(wire(90.73, 103.05, 107, 103.05))   # R3.pin2 stub_end → right to bus
 elements.append(wire(107, 69.54, 111.84, 69.54)) # bus → U1.IN− stub_end
 elements.append(wire(77, 116.35, 107, 116.35))   # C_PRES1.pin2 stub_end → bus bottom
 elements.append(junction(107, 69.54))            # T: bus + U1.IN− branch
-elements.append(junction(107, 90.35))            # T: bus + R3 branch
+elements.append(junction(107, 103.05))           # T: bus + R3 branch
 
 # SIG_OUT node: U1.OUT → feedback arc to R6.pin1 + output to R7.pin1
 # U1(122,67) OUT tip=(129.62,67) stub R→(132.16,67)

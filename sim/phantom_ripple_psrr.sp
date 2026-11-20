@@ -125,7 +125,8 @@ Eamp    OPA_IDEAL   MIDPT        VPOLE  0    {OPA_OL_GAIN}
 R_oout  OPA_IDEAL   OPA_OUT      50
 
 * Feedback network (non-inverting: IN- between R3 to MIDPT and R6 to output)
-R3_fb   MIDPT       IN_MINUS     {R3}
+C_G1    MIDPT       RG_MID       {C_G}   ; in series with R3 (#123)
+R3_fb   RG_MID      IN_MINUS     {R3}
 R6_fb   OPA_OUT     IN_MINUS     {R6_default}
 
 * Output load (600Ω differential referred to single-ended OPA_OUT)
