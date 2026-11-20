@@ -415,18 +415,19 @@ def route_all(board):
     # F.Cu horizontal from x=20.7 to x=25.7 spans Q1.B in both directions.
     # Left x=20.7: clears V_OPA vertical (right=20.15, gap=0.40mm) and Q1.E left=21.3245 (gap=0.47mm).
     # Right x=25.7: clears V_OPA_RAW via at (25.0,45.5) right edge=25.3 (gap=0.25mm).
-    # CLKA F.Cu at y=47 (x=17-32) blocks F.Cu verticals → B.Cu dive via pair at (20.7,44)/(22.7,48).
+    # CLKA F.Cu at y=47 (x=17-32) blocks F.Cu verticals → B.Cu dive via pair at (20.7,44)/(23.0,48).
     route(board, "V_BASE_REG", F, PWR, (20.7, 43.05), (25.7, 43.05))
     # Right branch: down to R_REG1.pad2(26.01,46.3); stops at y=46.3 (CLKA top=46.9, gap=0.28mm)
     route(board, "V_BASE_REG", F, PWR, (25.7, 43.05), (25.7, 46.3))
     route(board, "V_BASE_REG", F, PWR, (25.7, 46.3), (25.51, 46.3))
     # Z_REG1 branch: go left+down to via at (20.7,44) [clears V_MID B.Cu at y=43 by 0.85mm],
-    # B.Cu passes under CLKA, via at (22.7,48) clears Z_REG1.K pad right edge=22.1 by 0.3mm.
+    # B.Cu passes under CLKA, via at (23.0,48) clears Z_REG1.K pad right edge=22.1 by 0.6mm and the
+    # end of Z_REG1's silk outline (x=22.36) by 0.28mm.
     route(board, "V_BASE_REG", F, PWR, (20.7, 43.05), (20.7, 44.0))
     via(board, "V_BASE_REG", 20.7, 44.0)
-    route(board, "V_BASE_REG", B, PWR, (20.7, 44.0), (20.7, 48.0), (22.7, 48.0))
-    via(board, "V_BASE_REG", 22.7, 48.0)
-    route(board, "V_BASE_REG", F, PWR, (22.7, 48.0), (21.65, 48.0))
+    route(board, "V_BASE_REG", B, PWR, (20.7, 44.0), (20.7, 48.0), (23.0, 48.0))
+    via(board, "V_BASE_REG", 23.0, 48.0)
+    route(board, "V_BASE_REG", F, PWR, (23.0, 48.0), (21.65, 48.0))
 
     # ── V_MID: bus at x=7 (left of R_BIAS1 VPLUS pad at x=9.925) ───────────
     # R5 pad1 (7.0,48) on bus; C4 via stub; C5 via B.Cu branch
@@ -444,15 +445,15 @@ def route_all(board):
           (15.23, 12.0),
           (7.0,   12.0),
           (7.0,   27.5))
-    # C5 pad2(V_MID) at (31.8,43): via at bus x=7, B.Cu trace, via below pad, F.Cu stub up to pad
+    # C5 pad2(V_MID) at (31.8,43): via at bus x=7, B.Cu trace, via right of the pad, F.Cu stub into the pad.
+    # The via was below the pad at (31.8,44.5), under the corner of C5's silk outline.
     via(board, "V_MID", 7.0, 43.0)
     route(board, "V_MID", B, PWR,
           (7.0,  43.0),
-          (31.8, 43.0),
-          (31.8, 44.5))
-    via(board, "V_MID", 31.8, 44.5)
+          (33.7, 43.0))
+    via(board, "V_MID", 33.7, 43.0)
     route(board, "V_MID", F, PWR,
-          (31.8, 44.5),
+          (33.7, 43.0),
           (31.8, 43.0))
 
     # ── V_OSC: R_ZEN-pad2 → Z_OSC-pad1 → U3-pad14 → C_U3-pad1 → U4 ────────
@@ -1250,8 +1251,11 @@ def main():
     # Clock (#121): R_OSC1, C10, C_U4 labels right of the parts; U3, U4 on their bodies (no pads there).
     fix_ref(board, "R_OSC1", x_mm=15.9, y_mm=57.0, angle_deg=0)
     fix_ref(board, "C_U4", x_mm=17.9, y_mm=55.2, angle_deg=0, size_mm=0.8)
-    fix_ref(board, "U3", x_mm=8.0, y_mm=51.6, angle_deg=0)
-    fix_ref(board, "U4", x_mm=8.0, y_mm=57.6, angle_deg=0)
+    # U3/U4 references sit inside the body, between the vias there: U3 (0.8 mm) right of and below the
+    # CLKA via (8.4,50.95), clear of the GND via (7.3,52.9); U4 between the OSC_OUT via (8.7,56.97)
+    # and the V_OSC via (7.1,59.51). Silk over a via loses ink into the hole (check_silk.py).
+    fix_ref(board, "U3", x_mm=8.9, y_mm=51.95, angle_deg=0, size_mm=0.8)
+    fix_ref(board, "U4", x_mm=8.0, y_mm=58.25, angle_deg=0)
 
     # D1: default silk lands left of component; move right of body (SOT-23 right edge ~x=23.8).
     fix_ref(board, "D1", x_mm=25, y_mm=52)
@@ -1356,8 +1360,9 @@ def main():
 
     # TVS1/TVS2 (#60, #93): refs placed outboard of each part (away from J3),
     # rotated to run alongside the vertical body.
-    fix_ref(board, "TVS1", x_mm=12.6, y_mm=89.6, angle_deg=90)
-    fix_ref(board, "TVS2", x_mm=27.4, y_mm=89.6, angle_deg=90)
+    # 0.8 mm so they fit between the C_RFI pads above (y to 87.47) and the GND vias below (y from 91.1)
+    fix_ref(board, "TVS1", x_mm=12.6, y_mm=89.3, angle_deg=90, size_mm=0.8)
+    fix_ref(board, "TVS2", x_mm=27.4, y_mm=89.3, angle_deg=90, size_mm=0.8)
 
     # ZT1/ZT2 and MH1-MH4: no label needed on silk
     for ref in ("ZT1", "ZT2", "MH1", "MH2", "MH3", "MH4"):

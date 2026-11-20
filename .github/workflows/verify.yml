@@ -32,7 +32,7 @@ jobs:
         run: |
           python3 -m py_compile \
             pcb/gen_project.py pcb/gen_schematic.py \
-            pcb/gen_pcb.py pcb/gen_bom.py pcb/check_netclasses.py sim/plot_all.py \
+            pcb/gen_pcb.py pcb/gen_bom.py pcb/check_netclasses.py pcb/check_silk.py sim/plot_all.py \
             tools/measure/gen_signals.py tools/measure/analyze.py tools/measure/wavio.py
 
       - name: Generate KiCad files
@@ -61,6 +61,9 @@ jobs:
       - name: Net classes survive PCB generation
         working-directory: pcb
         run: python3 check_netclasses.py
+
+      - name: Silkscreen clear of vias and pads
+        run: python3 pcb/check_silk.py
 
       - name: PCB DRC report (all severities)
         if: always()
