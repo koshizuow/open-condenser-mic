@@ -44,14 +44,15 @@ Charge pump settles to ~68 V within ~1 ms. HV_FILT is RC-filtered (1 MΩ + 470 n
 
 Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within about ±1 dB from ~500 Hz to ~20 kHz. Two high-pass mechanisms shape the low end: the input network (R_GBIAS1 ∥ R_BIAS1 = 100 MΩ against the 55 pF capsule, corner ~29 Hz) and the output DC block (C_DC = 4.7 µF) with the transformer. A third sits below them: C_G1 (10 µF) in series with R3, corner 7.2 Hz, about 0.7 dB at 20 Hz. It makes the amplifier's gain 1 at DC, so offset and leakage at the 200 MΩ input do not move the operating point (`amp_dc_offset.sp`, #123).
 
-> **Below about 100 Hz the default wiring's response is known only within a range.** The plot uses `Lp = 1 H` for the driven 3-turn section, which is a lower bound from a measurement (#114): a sweep on a board wired on the full winding fits for any full-winding inductance above about 10 H, which is 0.9 H for the 3-turn section, and cannot tell how much higher it is. With the 3-turn section the transformer's inductance against its own 521 Ω winding resistance sets a low corner, so the low end depends strongly on `Lp`:
+> **The low end of the default wiring is measured (#128).** The plot uses `Lp = 8 H` for the driven 3-turn section, fitted from a sweep on the 3-turn wiring into a 1.2 kΩ input (6 to 10 H fit about as well). With the 3-turn section the transformer's inductance against its own winding resistance (521 to 540 Ω) and C_DC sets a corner with a small resonance near 30 Hz. The earlier `Lp = 1 H` was a lower bound scaled from a full-winding sweep, whose low end is set by the input network, and it was too pessimistic.
 >
-> | `Lp` (3-turn section) | 20 Hz | 30 Hz | 50 Hz | 100 Hz |
+> | | 20 Hz | 30 Hz | 50 Hz | 100 Hz |
 > |---|---|---|---|---|
-> | 1 H (lower bound, plotted) | −27 dB | −18 dB | −8 dB | −1 dB |
-> | 4.5 H (earlier estimate) | −12 dB | −1 dB | +1 dB | 0 dB |
+> | measured, 3-turn, presence fitted, 1.2 kΩ (relative to 1 kHz) | −5.0 dB | −0.6 dB | −1.4 dB | −0.7 dB |
+> | model, `Lp = 8 H` (plotted, baseline) | −4.7 dB | +1.4 dB | +0.6 dB | +0.1 dB |
+> | model, `Lp = 1 H` (the earlier lower bound) | −27 dB | −18 dB | −8 dB | −1 dB |
 >
-> A larger C_DC does not help: the corner is set by the inductance and the winding resistance. On the full winding (inductance above 10 H) the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
+> The measured row is on a board with the presence network, which lowers the band below 1 kHz by about 0.4 dB against 1 kHz. The 30 Hz bump in the model is not seen in the measurement. On the full winding the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
  The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
 
 #### Optional presence-peak network (R_PRES1, C_PRES1)
@@ -120,7 +121,7 @@ Pad numbers run left to right as viewed from the **front** (component side). The
 | S2 (centre) | GND | **Blue** — centre tap (return) |
 | S3 (rightmost) | — (floating) | **Black** — far end of winding; leave unconnected |
 
-> **Full winding option:** swap S2 and S3 — connect **Black** (S3) to GND, leave **Blue** (S2) unconnected. This uses the complete secondary winding and reduces output level by ~10.5 dB relative to the default. Combine with the `-hi-gain` BOM variant (R6 = 47 kΩ) to partially compensate for the lower sensitivity.
+> **Full winding option:** swap S2 and S3 — connect **Black** (S3) to GND, leave **Blue** (S2) unconnected. This uses the complete secondary winding and reduces output level relative to the default by ~10.5 dB from the turns ratio, 8.8 dB as measured into a 1.2 kΩ input (#132). Combine with the `-hi-gain` BOM variant (R6 = 47 kΩ) to partially compensate for the lower sensitivity.
 
 **TS1 — 2 pads below transformer cutout (primary, XLR output)**
 
