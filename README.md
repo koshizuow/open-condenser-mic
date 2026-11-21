@@ -14,7 +14,7 @@ This design uses a Dickson charge pump oscillator to generate a 68 V HV rail fro
 - CD40106B Schmitt-trigger oscillator + 3-stage active Dickson charge pump
 - About 57 V capsule polarization (HV_FILT ≈ 69 V, set by the 15 V clock rail; a 75 V zener only protects it), referenced to the 12 V midpoint
 - HV rail RC filter: 1 MΩ (R_HV) + 470 nF, corner ~0.34 Hz; no LC resonance
-- Output sensitivity (simulated, 13 mV/Pa capsule, into a 1.5 kΩ preamp input): about −39 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); about −23 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×). About 1.4 dB lower into 600 Ω and 1.1 dB higher unloaded; output impedance is about 200 Ω (about 310 Ω up to v3.6, with 100 Ω RFI resistors; #113)
+- Output sensitivity (simulated, 13 mV/Pa capsule, into a 1.5 kΩ preamp input): about −40 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); about −24 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×), with the transformer's core loss modelled (#132). A built board measured about 1.3 dB below this, flat across the band; that offset is not from the transformer model and is still open. About 1.4 dB lower into 600 Ω and 1.1 dB higher unloaded; output impedance is about 200 Ω (about 310 Ω up to v3.6, with 100 Ω RFI resistors; #113)
 - Maximum SPL before the op-amp output clips (calculated): about 143 dB SPL peak at default gain, about 127 dB SPL peak at hi-gain
 - RFI filter on XLR output: 47 Ω + 220 pF on each leg (R_RFI1/R_RFI2, C_RFI1/C_RFI2; corner about 15 MHz). C_RFI is rated 100 V because it sits on the phantom-fed pins
 - Phantom power draw: ~4.6 mA typical at 48 V (IEC 61938 P48 rated maximum: 10 mA)
@@ -44,15 +44,16 @@ Charge pump settles to ~68 V within ~1 ms. HV_FILT is RC-filtered (1 MΩ + 470 n
 
 Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within about ±1 dB from ~500 Hz to ~20 kHz. Two high-pass mechanisms shape the low end: the input network (R_GBIAS1 ∥ R_BIAS1 = 100 MΩ against the 55 pF capsule, corner ~29 Hz) and the output DC block (C_DC = 4.7 µF) with the transformer. A third sits below them: C_G1 (10 µF) in series with R3, corner 7.2 Hz, about 0.7 dB at 20 Hz. It makes the amplifier's gain 1 at DC, so offset and leakage at the 200 MΩ input do not move the operating point (`amp_dc_offset.sp`, #123).
 
-> **The low end of the default wiring is measured (#128).** The plot uses `Lp = 8 H` for the driven 3-turn section, fitted from a sweep on the 3-turn wiring into a 1.2 kΩ input (6 to 10 H fit about as well). With the 3-turn section the transformer's inductance against its own winding resistance (521 to 540 Ω) and C_DC sets a corner with a small resonance near 30 Hz. The earlier `Lp = 1 H` was a lower bound scaled from a full-winding sweep, whose low end is set by the input network, and it was too pessimistic.
+> **The low end of the default wiring is measured (#128).** The transformer is modelled with the standard equivalent circuit, including core loss: its driven 3-turn section is `Lp = 10 H` with `Rc = 4 kΩ` in parallel, fitted from a sweep on the 3-turn wiring into a 1.2 kΩ input (#132). With the 3-turn section the transformer's inductance against its own winding resistance (521 to 540 Ω) and C_DC sets the low corner. An ideal inductor (8 H) fits the low end less well and rings with C_DC near 30 Hz. The earlier `Lp = 1 H` was a lower bound scaled from a full-winding sweep, whose low end is set by the input network, and it was too pessimistic.
 >
 > | | 20 Hz | 30 Hz | 50 Hz | 100 Hz |
 > |---|---|---|---|---|
 > | measured, 3-turn, presence fitted, 1.2 kΩ (relative to 1 kHz) | −5.0 dB | −0.6 dB | −1.4 dB | −0.7 dB |
-> | model, `Lp = 8 H` (plotted, baseline) | −4.7 dB | +1.4 dB | +0.6 dB | +0.1 dB |
+> | model, `Lp = 10 H`, `Rc = 4 kΩ` (plotted, baseline) | −4.5 dB | −1.0 dB | −0.4 dB | −0.1 dB |
+> | model, ideal `Lp = 8 H` | −4.7 dB | +1.4 dB | +0.6 dB | +0.1 dB |
 > | model, `Lp = 1 H` (the earlier lower bound) | −27 dB | −18 dB | −8 dB | −1 dB |
 >
-> The measured row is on a board with the presence network, which lowers the band below 1 kHz by about 0.4 dB against 1 kHz. The 30 Hz bump in the model is not seen in the measurement. On the full winding the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
+> The measured row is on a board with the presence network, which lowers the band below 1 kHz by about 0.4 dB against 1 kHz. On the full winding the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
  The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
 
 #### Optional presence-peak network (R_PRES1, C_PRES1)

@@ -11,27 +11,35 @@
 .model BZX55C56 D (Is=1n N=1 Rs=10 Cj0=50p Bv=56 Ibv=5m Vj=0.6 M=0.4)
 
 * NTE10/3 transformer model (used reversed: 3-turn section as primary)
-* Primary inductance (red-blue, 3-turn section): 8H, measured (#128). A
-*   configuration S sweep on the 3-turn wiring into a 1.2 kohm input fits
-*   Lp = 8 H (rms error 1.1 dB from 20 to 300 Hz; 6 to 10 H within 1.7 dB) with
-*   the measured winding resistances. The full-winding sweep fits anything from
-*   14 to 200 H (its low end is set by the input network), so the earlier 1 H,
-*   scaled from that lower bound, was too pessimistic.
-* Secondary inductance (white-yellow, 1-turn): 8 / 9 = 889mH  (Ls = Lp/n^2, n=3)
-* Coupling k=0.99937: keeps the leakage inductance at (1 - k^2) x Lp = 10mH, where
-*   it was with Lp = 0.5H and k = 0.99, so the change of Lp leaves the top end alone.
+* The standard equivalent circuit of an audio transformer: winding resistance,
+*   magnetising inductance with core loss Rc in parallel, and leakage (#132).
+*   An ideal inductor without Rc rang with C_DC near 26 Hz (+1.4 dB at 30 Hz)
+*   where the measurement has no such bump, and put the gain 2.4 to 4.3 dB
+*   above the measurement; with Rc the shape matches and a flat 1.2 to 1.4 dB
+*   remains, which the transformer cannot account for (a smaller Rc to cover it
+*   spoils the low-end fit).
+* Primary inductance (red-blue, 3-turn section): 10H, with Rc = 4k, fitted to a
+*   configuration S sweep on the 3-turn wiring into 1.2 kohm (rms error 0.4 dB
+*   from 20 to 300 Hz, against 1.1 dB for the best ideal inductor, 8 H). It is
+*   consistent with Neutrik's spec of at most -2 dB from 20 Hz to 20 kHz in the
+*   intended use (200 ohm source, 10 kohm load): if that -2 dB is at 20 Hz, the
+*   1-turn side has about 0.7 H, i.e. about 6 H on the 3-turn section.
+* Lp and Rc are fitted values; they trade against each other (14 H with 6k fits
+*   nearly as well). Rc is taken as independent of frequency and level; real
+*   core loss is neither. Measuring the transformer alone would pin them down.
+* Secondary inductance (white-yellow, 1-turn): 10 / 9 = 1.111H  (Ls = Lp/n^2, n=3)
+* Coupling k=0.9995: keeps the leakage inductance at (1 - k^2) x Lp = 10mH.
 *   The measured sweep matches a model without leakage within 0.2dB to 15kHz.
 * Primary DC resistance: 521Ω measured (Red-Blue, S1-S2); 540Ω on a second board
 *   (red-black 1720Ω, blue-black 1182Ω: the tap sits at 0.314 of the winding)
 * Secondary DC resistance: 42Ω measured (White-Yellow, P1-P2)
-* The tap gives 8.8 dB more output than the full winding where the turns predict
-*   about 10 dB, and the gain is below the model on both wirings (#132).
 .subckt NTE10_3 PRI_A PRI_B SEC_P SEC_N
 Rp1  PRI_A    PRI_A2   521
-Lp   PRI_A2   PRI_B    8
-Ls   SEC_P2   SEC_N    889m
+Lp   PRI_A2   PRI_B    10
+Rc   PRI_A2   PRI_B    4k
+Ls   SEC_P2   SEC_N    1.111
 Rs1  SEC_P    SEC_P2   42
-K1   Lp Ls    0.99937
+K1   Lp Ls    0.9995
 .ends NTE10_3
 
 * L78L24 simplified model: ideal 24V regulator with dropout
