@@ -121,8 +121,15 @@ line out (sleeve) ──── mic GND (J3 pad 1)
 mic XLR out ──── interface mic input, phantom on
 ```
 
-Solder the capacitor directly at the FP pad with short leads. The housing
-stays open. Hum pickup does not matter here because the test signal is large.
+Solder the capacitor directly at the FP pad, inside the housing, with the
+FP-side lead as short as possible. Only the line-out side, which is low
+impedance, leaves the housing: a shielded lead or a twisted pair, signal with
+ground, through a gap in the closed housing. Any wire on the FP side of the
+capacitor is part of the 200 MΩ input node. A few centimetres of it next to a
+connector shell or the housing edge add several pF to ground, divide the test
+signal and read the gain low (about 1.3 dB with the capacitor in an XLR
+adapter outside the housing, #136), and with the housing open the node picks
+up strong mains hum.
 
 **S1. Gain, with the multimeter.** Play `cal_tone_400Hz_-20dBFS.wav` on loop.
 Meter on AC volts.
