@@ -11,26 +11,27 @@
 .model BZX55C56 D (Is=1n N=1 Rs=10 Cj0=50p Bv=56 Ibv=5m Vj=0.6 M=0.4)
 
 * NTE10/3 transformer model (used reversed: 3-turn section as primary)
-* Primary inductance (red-blue, 3-turn section): 1H, a LOWER BOUND from a
-*   measurement (#114, #99). A sweep through a dummy capsule on a board wired on
-*   the full winding fits equally well for any full-winding inductance above
-*   about 10 H, which is 0.9 H for this section (inductance goes with turns
-*   squared, 3/10). Below that the fit falls apart (8 H: 6 dB off at 20 Hz).
-*   The measured low corner, 33 Hz, is set by the input network, so the sweep
-*   cannot say how much higher Lp is; an earlier note put it near 4.5H. With 1H
-*   the plotted low end is the least it can be, not a prediction of it.
-* Secondary inductance (white-yellow, 1-turn): 1 / 9 = 111mH  (Ls = Lp/n^2, n=3)
-* Coupling k=0.995: keeps the leakage inductance, (1 - k^2) x Lp = 10mH, where it
-*   was with Lp = 0.5H and k = 0.99, so the change of Lp leaves the top end alone.
+* Primary inductance (red-blue, 3-turn section): 8H, measured (#128). A
+*   configuration S sweep on the 3-turn wiring into a 1.2 kohm input fits
+*   Lp = 8 H (rms error 1.1 dB from 20 to 300 Hz; 6 to 10 H within 1.7 dB) with
+*   the measured winding resistances. The full-winding sweep fits anything from
+*   14 to 200 H (its low end is set by the input network), so the earlier 1 H,
+*   scaled from that lower bound, was too pessimistic.
+* Secondary inductance (white-yellow, 1-turn): 8 / 9 = 889mH  (Ls = Lp/n^2, n=3)
+* Coupling k=0.99937: keeps the leakage inductance at (1 - k^2) x Lp = 10mH, where
+*   it was with Lp = 0.5H and k = 0.99, so the change of Lp leaves the top end alone.
 *   The measured sweep matches a model without leakage within 0.2dB to 15kHz.
-* Primary DC resistance: 521Ω measured (Red-Blue, S1-S2)
+* Primary DC resistance: 521Ω measured (Red-Blue, S1-S2); 540Ω on a second board
+*   (red-black 1720Ω, blue-black 1182Ω: the tap sits at 0.314 of the winding)
 * Secondary DC resistance: 42Ω measured (White-Yellow, P1-P2)
+* The tap gives 8.8 dB more output than the full winding where the turns predict
+*   about 10 dB, and the gain is below the model on both wirings (#132).
 .subckt NTE10_3 PRI_A PRI_B SEC_P SEC_N
 Rp1  PRI_A    PRI_A2   521
-Lp   PRI_A2   PRI_B    1
-Ls   SEC_P2   SEC_N    111m
+Lp   PRI_A2   PRI_B    8
+Ls   SEC_P2   SEC_N    889m
 Rs1  SEC_P    SEC_P2   42
-K1   Lp Ls    0.995
+K1   Lp Ls    0.99937
 .ends NTE10_3
 
 * L78L24 simplified model: ideal 24V regulator with dropout
