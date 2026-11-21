@@ -23,13 +23,23 @@
 *   source 200 + 42Ω, load (10k + 1720)/100Ω, so 79Ω across the 1-turn side,
 *   which needs 103Ω of reactance at 20 Hz: 0.82 H on the 1-turn side, 7.4 H on
 *   the 3-turn section (x 3^2). An assumption, until the transformer is measured
-*   on its own. No core loss: the data sheet gives nothing to set it from.
+*   on its own.
+* Core loss Rc = 3k across the 3-turn section: PROVISIONAL (#137). Neither the
+*   data sheet nor published data gives a figure, and the model needs one: without
+*   it C_DC and Lp resonate near 26 Hz undamped (+1.2 dB at 30 Hz), which the
+*   measurement does not show. The value is inferred from whole-microphone
+*   measurements, which the model otherwise does not take values from: the
+*   3-turn wiring measured 8.8 dB above the full winding against 10.0 dB without
+*   core loss (about 2.5 to 3k matches), and damping the bump takes about 4k.
+*   Rc is taken as independent of frequency and level, which real core loss is
+*   not. To be replaced by a measurement of the transformer on its own.
 * Secondary inductance (white-yellow, 1-turn): 7.4 / 9 = 822mH  (Ls = Lp/n^2, n=3)
 * Coupling k=0.99932: keeps the leakage inductance at (1 - k^2) x Lp = 10mH, where
 *   it was with Lp = 0.5H and k = 0.99, so the change of Lp leaves the top end alone.
 .subckt NTE10_3 PRI_A PRI_B SEC_P SEC_N
 Rp1  PRI_A    PRI_A2   521
 Lp   PRI_A2   PRI_B    7.4
+Rc   PRI_A2   PRI_B    3k     ; PROVISIONAL core loss (#137)
 Ls   SEC_P2   SEC_N    822m
 Rs1  SEC_P    SEC_P2   42
 K1   Lp Ls    0.99932
