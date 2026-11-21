@@ -44,15 +44,15 @@ Charge pump settles to ~68 V within ~1 ms. HV_FILT is RC-filtered (1 MΩ + 470 n
 
 Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within about ±1 dB from ~500 Hz to ~20 kHz. Two high-pass mechanisms shape the low end: the input network (R_GBIAS1 ∥ R_BIAS1 = 100 MΩ against the 55 pF capsule, corner ~29 Hz) and the output DC block (C_DC = 4.7 µF) with the transformer. A third sits below them: C_G1 (10 µF) in series with R3, corner 7.2 Hz, about 0.7 dB at 20 Hz. It makes the amplifier's gain 1 at DC, so offset and leakage at the 200 MΩ input do not move the operating point (`amp_dc_offset.sp`, #123).
 
-> **The low end of the default wiring is measured (#128).** The plot uses `Lp = 8 H` for the driven 3-turn section, fitted from a sweep on the 3-turn wiring into a 1.2 kΩ input (6 to 10 H fit about as well). With the 3-turn section the transformer's inductance against its own winding resistance (521 to 540 Ω) and C_DC sets a corner with a small resonance near 30 Hz. The earlier `Lp = 1 H` was a lower bound scaled from a full-winding sweep, whose low end is set by the input network, and it was too pessimistic.
+> **Model values come from data sheets, measurements check them (#132).** The transformer's data sheet gives no inductance, only a response of at most −2 dB from 20 Hz to 20 kHz in its intended use. Taking that −2 dB at 20 Hz gives `Lp ≈ 7.4 H` for the driven 3-turn section (the derivation is in `sim/models/passives.lib`), which the plot uses. The model has no core loss, since the data sheet gives nothing to set it from. With the 3-turn section the inductance against the winding resistance (521 to 540 Ω, measured on the part) and C_DC sets the low corner, with a small resonance near 30 Hz.
 >
 > | | 20 Hz | 30 Hz | 50 Hz | 100 Hz |
 > |---|---|---|---|---|
-> | measured, 3-turn, presence fitted, 1.2 kΩ (relative to 1 kHz) | −5.0 dB | −0.6 dB | −1.4 dB | −0.7 dB |
-> | model, `Lp = 8 H` (plotted, baseline) | −4.7 dB | +1.4 dB | +0.6 dB | +0.1 dB |
+> | measured, 3-turn, presence fitted, 1.2 kΩ (relative to 1 kHz; #128) | −5.0 dB | −0.6 dB | −1.4 dB | −0.7 dB |
+> | model, `Lp = 7.4 H` (plotted, baseline) | −5.9 dB | +1.2 dB | +0.6 dB | +0.1 dB |
 > | model, `Lp = 1 H` (the earlier lower bound) | −27 dB | −18 dB | −8 dB | −1 dB |
 >
-> The measured row is on a board with the presence network, which lowers the band below 1 kHz by about 0.4 dB against 1 kHz. The 30 Hz bump in the model is not seen in the measurement. On the full winding the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
+> The measured row is on a board with the presence network, which lowers the band below 1 kHz by about 0.4 dB against 1 kHz. The measurement does not show the model's 30 Hz bump, and the measured gain is lower than the model's: both are open in #132. On the full winding the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
  The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
 
 #### Optional presence-peak network (R_PRES1, C_PRES1)
@@ -75,7 +75,7 @@ R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, parallel with R3 (2.2 kΩ), are
 
 ![Noise spectrum](img/noise_spectrum.png)
 
-SPICE input-referred noise, computed by dividing total output noise by the signal transfer function at each frequency. The slope reflects the signal path's high-pass characteristic (coupling caps attenuate low-frequency signal more than noise), not a real frequency-dependent noise source. Below a few kHz the noise is set by the two 200 MΩ bias resistors (R_GBIAS1 and R_BIAS1): their thermal noise current flows into the capsule capacitance, so it falls with frequency. Simulated input-referred noise is 40 nV/√Hz at 1 kHz and about 12 nV/√Hz at 10 kHz, where the OPA1641 (5.1 nV/√Hz) and R_IN1 take over. The capacitance at the op-amp input (its own 6 pF plus strays, about 12 pF in all) divides the capsule signal but not the op-amp's noise, which raises the high-frequency part. A-weighted over 20 Hz–20 kHz this is about 2.3 µV, equivalent to roughly 19 dB(A) SPL for a 13 mV/Pa, 55 pF capsule.
+SPICE input-referred noise, computed by dividing total output noise by the signal transfer function at each frequency. The slope reflects the signal path's high-pass characteristic (coupling caps attenuate low-frequency signal more than noise), not a real frequency-dependent noise source. Below a few kHz the noise is set by the two 200 MΩ bias resistors (R_GBIAS1 and R_BIAS1): their thermal noise current flows into the capsule capacitance, so it falls with frequency. Simulated input-referred noise is 40 nV/√Hz at 1 kHz and about 12 nV/√Hz at 10 kHz, where the OPA1641 (5.1 nV/√Hz) and R_IN1 take over. The capacitance at the op-amp input (its own 6 pF common mode from the data sheet plus about 3 pF of layout strays, about 9 pF in all) divides the capsule signal but not the op-amp's noise, which raises the high-frequency part. A-weighted over 20 Hz–20 kHz this is about 2.3 µV, equivalent to about 18.9 dB(A) SPL for a 13 mV/Pa, 55 pF capsule.
 
 Measured on a v3.5 board through a 47 pF dummy capsule: 21.4 dB(A), 44 nV/√Hz at 1 kHz and 13 nV/√Hz at 10 kHz, against 20.0 dB(A), 46 and 12 simulated for that capacitance (#114). A smaller capacitance shunts less of the bias resistors' noise, so a 47 pF dummy reads about 1 dB higher than a 55 pF capsule.
 
@@ -85,9 +85,9 @@ Both are 0805 and must be the same value. A higher value lowers the noise floor 
 
 | Value (both) | Simulated self-noise | Input corner | Leakage sensitivity |
 |---|---|---|---|
-| 100 MΩ (up to v3.4.1, 1206) | 21.4 dB(A) | 59 Hz | 1× |
-| **200 MΩ (default)** | **19.1 dB(A)** | **29 Hz** | **2×** |
-| 470 MΩ (drop-in, e.g. Vishay CRCW0805470MJPEAHR) | 16.8 dB(A) | 12.5 Hz | 4.7× |
+| 100 MΩ (up to v3.4.1, 1206) | 21.3 dB(A) | 59 Hz | 1× |
+| **200 MΩ (default)** | **18.9 dB(A)** | **29 Hz** | **2×** |
+| 470 MΩ (drop-in, e.g. Vishay CRCW0805470MJPEAHR) | 16.6 dB(A) | 12.5 Hz | 4.7× |
 
 The 470 MΩ option is not a generated BOM variant; fit it by hand if wanted. Clean the area around C8, R_IN1, R_BIAS1 and U1 pin 3 thoroughly whichever value is used. Clean around R_OSC1, C10 and U4 pins 2 and 6 too: leakage at the oscillator's timing node stops the charge pump (#120).
 
