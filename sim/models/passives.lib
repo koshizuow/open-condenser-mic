@@ -11,27 +11,28 @@
 .model BZX55C56 D (Is=1n N=1 Rs=10 Cj0=50p Bv=56 Ibv=5m Vj=0.6 M=0.4)
 
 * NTE10/3 transformer model (used reversed: 3-turn section as primary)
-* Primary inductance (red-blue, 3-turn section): 8H, measured (#128). A
-*   configuration S sweep on the 3-turn wiring into a 1.2 kohm input fits
-*   Lp = 8 H (rms error 1.1 dB from 20 to 300 Hz; 6 to 10 H within 1.7 dB) with
-*   the measured winding resistances. The full-winding sweep fits anything from
-*   14 to 200 H (its low end is set by the input network), so the earlier 1 H,
-*   scaled from that lower bound, was too pessimistic.
-* Secondary inductance (white-yellow, 1-turn): 8 / 9 = 889mH  (Ls = Lp/n^2, n=3)
-* Coupling k=0.99937: keeps the leakage inductance at (1 - k^2) x Lp = 10mH, where
+* Model values come from the data sheet and from measurements of the part on
+*   its own, not from fitting a measurement of the whole microphone (#132).
+* Turns 1:3:10 (data sheet). DC resistance measured on the part with a meter:
+*   red-blue (3-turn) 521Ω on one unit, 540Ω on another (red-black 1720Ω,
+*   blue-black 1182Ω); white-yellow (1-turn) 42Ω.
+* Primary inductance (red-blue, 3-turn section): 7.4H, derived from the data
+*   sheet, which gives no inductance but a response of at most -2 dB from 20 Hz
+*   to 20 kHz in the intended use (200Ω source on the 1-turn side, 10kΩ load on
+*   the 10-turn side). Taking that -2 dB at 20 Hz and from the inductance alone:
+*   source 200 + 42Ω, load (10k + 1720)/100Ω, so 79Ω across the 1-turn side,
+*   which needs 103Ω of reactance at 20 Hz: 0.82 H on the 1-turn side, 7.4 H on
+*   the 3-turn section (x 3^2). An assumption, until the transformer is measured
+*   on its own. No core loss: the data sheet gives nothing to set it from.
+* Secondary inductance (white-yellow, 1-turn): 7.4 / 9 = 822mH  (Ls = Lp/n^2, n=3)
+* Coupling k=0.99932: keeps the leakage inductance at (1 - k^2) x Lp = 10mH, where
 *   it was with Lp = 0.5H and k = 0.99, so the change of Lp leaves the top end alone.
-*   The measured sweep matches a model without leakage within 0.2dB to 15kHz.
-* Primary DC resistance: 521Ω measured (Red-Blue, S1-S2); 540Ω on a second board
-*   (red-black 1720Ω, blue-black 1182Ω: the tap sits at 0.314 of the winding)
-* Secondary DC resistance: 42Ω measured (White-Yellow, P1-P2)
-* The tap gives 8.8 dB more output than the full winding where the turns predict
-*   about 10 dB, and the gain is below the model on both wirings (#132).
 .subckt NTE10_3 PRI_A PRI_B SEC_P SEC_N
 Rp1  PRI_A    PRI_A2   521
-Lp   PRI_A2   PRI_B    8
-Ls   SEC_P2   SEC_N    889m
+Lp   PRI_A2   PRI_B    7.4
+Ls   SEC_P2   SEC_N    822m
 Rs1  SEC_P    SEC_P2   42
-K1   Lp Ls    0.99937
+K1   Lp Ls    0.99932
 .ends NTE10_3
 
 * L78L24 simplified model: ideal 24V regulator with dropout

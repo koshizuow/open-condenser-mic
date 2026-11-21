@@ -2,8 +2,8 @@
 * Behavioral op-amp noise model for OPA1641:
 *   Voltage noise: 5.1 nV/rtHz at 1 kHz (OPA1641 datasheet, SBOS484; this deck
 *   used 2.5 until #114)
-*   Input capacitance C_IN (op-amp plus strays, estimated from a measurement in
-*   #114): it divides the capsule signal but not the op-amp's own noise, so it
+*   Input capacitance C_IN (op-amp 6 pF from the data sheet plus about 3 pF of
+*   layout strays, #132): it divides the capsule signal but not the op-amp's own noise, so it
 *   raises the input-referred noise where the op-amp dominates, above ~5 kHz
 *   Current noise: ~0.8 fA/rtHz (JFET input, negligible vs resistor noise)
 *   GBW: 11 MHz (behavioral single-pole at 110Hz -> GBW=11MHz with gain 100k)

@@ -136,7 +136,8 @@ echo "========================================================"
 
 * ── Sensitivity assertion (#111) ───────────────────────────────────────────
 * Vcap is 13.07mV (1 Pa), so the 1kHz output in dBV is the sensitivity in
-* dBV/Pa into this deck's 600Ω load: expected -40.7 (default gain; -42.0 with
+* dBV/Pa into this deck's 600Ω load: expected -40.2 (default gain; C_IN 9 pF and
+* Lp 7.4 H from the data sheets, #132; -40.7 with C_IN 12 pF; -42.0 with
 * R_RFI 100Ω before #113, -40.2 before C_IN was added in #114). The README
 * quotes -39 into 1.5kΩ, which is the same result at a lighter load.
 let sens_lo = -42.0

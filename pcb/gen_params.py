@@ -45,9 +45,10 @@ PARAMS = {
     # ── OPA1641 behavioral model (from datasheet) ─────────────────────────
     "OPA_OL_GAIN":  "100k",   # open-loop gain (100 dB)
     "OPA_VN_REQ":   "1570",   # voltage noise equiv. resistor (5.1 nV/√Hz at 1 kHz → 1570 Ω; was 2.5 nV, #114)
-    "C_IN":         "12p",    # capacitance at IN+: OPA1641 6 pF common mode plus board and lead strays.
-                              # Estimate: the gain measured through a 47 pF dummy is 0.67 dB below a model
-                              # with 7 pF, which 12 pF accounts for (#114).
+    "C_IN":         "9p",     # capacitance at IN+, from the data sheet and the layout, not from a measurement
+                              # (#132): OPA1641 common-mode 6 pF (SBOS484; the differential 8 pF is bootstrapped
+                              # by the loop gain) plus about 3 pF of board strays calculated from the layout
+                              # (traces over the ground plane, pads; #131). Was 12 pF, fitted to a measurement.
 }
 
 _OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "sim", "params.inc")
