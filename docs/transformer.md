@@ -13,6 +13,8 @@ Issue #137. One unit, taken off the board, 2026-11-24.
 | Loss beyond turns and winding resistance | — | none that the levels show (0.03 dB on the full winding) |
 | Inductance of the tap section, small level | — | about 22 H (see below) |
 
+The data sheet gives only the turns and a response figure, so these values are what `sim/models/passives.lib` uses.
+
 The tap section's ratio explains two things that the model carried as a provisional 3 kΩ core loss:
 
 - the tap wiring sits 1.5 dB below what 3:1 gives;
@@ -34,16 +36,34 @@ The tap section's ratio explains two things that the model carried as a provisio
 
 ## Levels at 1 kHz
 
-| Driven winding | Input | Measured | Ideal 1:3:10 with these resistances | With 3.58 and 10.03 |
-|---|---|---|---|---|
-| tap | open (1 MΩ) | −11.07 dB | −9.54 dB | −11.07 dB (defines 3.58) |
-| full | open (1 MΩ) | −20.03 dB | −20.0 dB | −20.03 dB (defines 10.03) |
-| tap | 1.2 kΩ | −6.13 dB | −5.07 dB | −6.24 dB |
-| full | 1.2 kΩ | −14.35 dB | −14.47 dB | −14.50 dB |
+Relative to the reference with the same series resistor and input.
 
-The open-output levels were the same at every level tried (played −27, −17 and −7 dBFS) and flat within
-0.2 dB from 500 Hz to 40 kHz. The two loaded levels are not fitted; they come out 0.1 dB above the
-prediction, both by the same amount, which the input's real impedance against its nominal 1.2 kΩ can account for.
+| Driven winding | Series resistor | Input | Measured | With 1 : 3 : 10 | With 1 : 3.58 : 10.03 |
+|---|---|---|---|---|---|
+| tap | 1.2 kΩ | open (1 MΩ) | −11.07 dB | −9.54 dB | −11.07 dB (defines 3.58) |
+| full | 1.2 kΩ | open (1 MΩ) | −20.03 dB | −20.0 dB | −20.03 dB (defines 10.03) |
+| tap | 1.2 kΩ | 1.2 kΩ | −6.13 dB | −5.07 dB | −6.24 dB |
+| full | 1.2 kΩ | 1.2 kΩ | −14.35 dB | −14.47 dB | −14.50 dB |
+| tap | 4.7 kΩ | 1.2 kΩ | −0.17 dB | +0.7 dB | 0.0 dB |
+| full | 4.7 kΩ | 1.2 kΩ | −6.76 dB | −6.78 dB | −6.81 dB |
+
+None of the last four rows is fitted. Levels were the same at every level tried (played −27, −17 and −7 dBFS).
+
+### A ratio, not a core loss
+
+With one series resistor the open-output level cannot tell a ratio of 3.58 from a ratio of 3 with a core
+loss of about 9 kΩ across the tap section. A loss depends on the series resistor, a ratio does not, so the
+tap section was measured again behind 4.7 kΩ:
+
+| | 1 kHz, tap, 4.7 kΩ, into 1.2 kΩ |
+|---|---|
+| measured | −0.17 dB |
+| ratio 3.58, no loss | 0.0 dB |
+| ratio 3, core loss 9 kΩ | −2.2 dB |
+
+From 20 Hz to 20 kHz the measured response follows the first within 0.25 dB rms (with the magnetising
+branch below, fitted earlier behind 1.2 kΩ) and is 2.2 dB or more above the second everywhere. A small loss
+remains that changes with frequency: 0.2 to 0.4 dB between 200 Hz and 1 kHz.
 
 ## Low end
 
@@ -61,11 +81,12 @@ Tap section, output open, 1.2 kΩ in series, relative to 1 kHz:
   squared) comes out within 0.2 dB, without fitting them.
 - The full winding, open, is 0.5 dB down at 10 Hz.
 
-**Not settled.** In the whole microphone the tap section behaves as about 8 H (#128: C_DC and the
-inductance give a small bump near 32 Hz). On its own it measures about 22 H. Here no winding carried
-direct current; in the microphone the output winding sits between the two phantom feed resistors. Whether
-that is the reason has not been tested. `sim/models/passives.lib` therefore keeps the 7.4 H derived from
-the data sheet.
+**Not settled.** `sim/models/passives.lib` uses this branch. In the whole microphone the low end is
+different: −5.0 dB at 20 Hz and −0.6 dB at 30 Hz relative to 1 kHz on the tap wiring (#128), where the
+model with this branch gives −1.9 and −1.8 dB; from 50 Hz up they agree within 0.2 dB. The microphone
+behaves as a lower inductance would (about 8 H with C_DC). Here no winding carried direct current; in the
+microphone the output winding sits between the two phantom feed resistors. Whether that is the reason has
+not been tested.
 
 ## Distortion
 
@@ -89,6 +110,7 @@ The 1.2 kΩ source raises these: in the microphone the op-amp drives the winding
 
 - One unit. The ratio of another has not been measured.
 - The output voltage was inferred, not measured, so the distortion table is not yet tied to sound levels.
-- On the instrument input the path itself dropped by 6 dB for a second or two at the highest levels
-  (1 kHz played at −1 dBFS, once 30 Hz at −7 dBFS), with the transformer taken out too. The cause is not
-  known. The figures above use levels at which every run was steady.
+- On the instrument input the path itself moved between two levels 6 dB apart, slowly and at no fixed
+  level or frequency, with the transformer taken out too. The cause is not known. The open-output figures
+  above are from runs that were steady throughout; the microphone input showed none of it, and the
+  4.7 kΩ measurements were made there.

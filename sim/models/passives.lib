@@ -11,32 +11,40 @@
 .model BZX55C56 D (Is=1n N=1 Rs=10 Cj0=50p Bv=56 Ibv=5m Vj=0.6 M=0.4)
 
 * NTE10/3 transformer model (used reversed: the tap section as primary)
-* Turns and resistances are measured on the part on its own (#137, docs/transformer.md), one unit:
-*   Turns, output : tap : full = 1 : 3.58 : 10.03, from the level with the output side open (about 1 MΩ)
-*     and 1.2kΩ in series with the driven winding. The data sheet says 1:3:10. The full winding then shows
-*     no loss (0.03 dB) and the tap section reads 1.5 dB below 3:1 at every level, flat from 500 Hz to
-*     20 kHz: a ratio, not a loss. It also accounts for the whole microphone measuring the tap wiring
-*     8.8 dB above the full winding where 10:3 gives 10.0 (3.58 gives 8.9).
+* The data sheet gives the turns as 1:3:10 and a response figure, and nothing else: no inductance, no
+* winding resistance, no loss. The values here are measured on the part on its own (one unit, #137,
+* docs/transformer.md):
+*   Turns, output : tap : full = 1 : 3.58 : 10.03. The full winding agrees with the data sheet, the tap
+*     does not. Told from a core loss by using two series resistors (1.2k and 4.7k): the level follows
+*     3.58 without loss within 0.2 dB with both, where a ratio of 3 with a loss would be 2.2 dB lower with
+*     4.7k. It accounts for the whole microphone measuring the tap wiring 8.8 dB above the full winding
+*     (10:3 gives 10.0, 10.03:3.58 gives 8.9).
 *   DC resistance: red-blue (tap) 527Ω, red-black (full) 1658Ω, white-yellow (output) 41.8Ω.
 *     Two other units: red-blue 521 and 540Ω, red-black 1720Ω, white-yellow 42Ω.
-*   No core loss resistor: with the output side open the full winding loses nothing that can be told
-*     from the level. The 3k that stood here was inferred from the 8.8 dB above, which the ratio explains.
-* Primary inductance (red-blue, tap section): 7.4H, still the value derived from the data sheet, which
-*   gives no inductance but a response of at most -2 dB from 20 Hz to 20 kHz in the intended use (200Ω
-*   source on the 1-turn side, 10kΩ load on the 10-turn side): 0.82 H on the 1-turn side, x 3^2.
-*   OPEN (#137): on its own, with no direct current in any winding, the part measures about 22H on the
-*     tap section at a small level (17.9H in series with 8.5H parallel 2.23kΩ fits the response within
-*     0.06 dB; docs/transformer.md). The whole microphone behaves as about 8H (#128: a small bump near
-*     32 Hz with C_DC). The two do not agree and the reason is not known; the 7.4H is kept until it is.
-* Secondary inductance (white-yellow): 7.4 / 3.58^2 = 577mH  (Ls = Lp/n^2)
-* Coupling k=0.99932: leakage (1 - k^2) x Lp = 10mH. Not measured: with the output side open the
-*   response is flat within 0.2 dB to 40 kHz.
+*   Magnetising branch across the tap section: 17.9H in series with (8.5H parallel 2.23kΩ), fitted to the
+*     response with the output side open behind 1.2k, 10 Hz to 5 kHz, small level (rms error 0.06 dB).
+*     One inductance does not fit (22H, 0.2 dB): below 100 Hz the response falls more slowly than one
+*     pole. Not fitted, and within 0.25 dB rms from 20 Hz to 20 kHz with these values: the response into
+*     1.2kΩ, behind 4.7k, and of the full winding. Level dependence is not modelled.
+*   No core loss resistor: none shows in the levels (the 3k that stood here was inferred from the 8.8 dB
+*     above, which the ratio explains).
+*   Leakage inductance 10mH on the tap side, as before. Not measured: with the output side open the
+*     response is flat within 0.2 dB to 40 kHz.
+* OPEN: in the whole microphone the low end below 50 Hz does not follow this branch (measured -5.0 dB at
+*   20 Hz and -0.6 dB at 30 Hz re 1 kHz on the tap wiring, #128; this model gives about -1.9 and -1.8
+*   there). The part was measured with no direct current in any winding; the reason is not known.
+* The ideal transformer is a pair of controlled sources, so the ratio is exact and the measured branch
+*   carries the low-frequency behaviour.
 .subckt NTE10_3 PRI_A PRI_B SEC_P SEC_N
-Rp1  PRI_A    PRI_A2   527
-Lp   PRI_A2   PRI_B    7.4
-Ls   SEC_P2   SEC_N    577m
-Rs1  SEC_P    SEC_P2   41.8
-K1   Lp Ls    0.99932
+Rp1    PRI_A  P1     527
+Lleak  P1     P2     10m
+Lma    P2     PM     17.9
+Lmb    PM     PRI_B  8.5
+Rme    PM     PRI_B  2.23k
+Esec   S1     SEC_N  P2 PRI_B  {1/3.58}
+Vsec   S1     S2     DC 0
+Fpri   P2     PRI_B  Vsec  {1/3.58}
+Rs1    S2     SEC_P  41.8
 .ends NTE10_3
 
 * L78L24 simplified model: ideal 24V regulator with dropout
