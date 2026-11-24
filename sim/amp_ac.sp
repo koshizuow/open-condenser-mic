@@ -113,10 +113,10 @@ wrdata _ac.dat xlr_db
 
 * ── Passband flatness measurements ─────────────────────────────────────────
 * Relative gains: all measurements against 1kHz mid-band reference.
-* LF note: the low end depends on the NTE10/3's magnetising branch, measured on
-* the part alone (passives.lib, #137). Below 50Hz the whole microphone rolls off
-* more than this model. Check at 500Hz instead, where the model is insensitive
-* to it.
+* LF note: the low end depends on the NTE10/3's magnetising branch, which
+* changes with level (passives.lib, #137). This deck runs the default, K=1 (loud
+* sources); plot_all.py also draws K=0.41 (quiet sources). Check at 500Hz
+* instead, where the model is insensitive to it.
 meas ac G_1K   find v(xlr_diff) at=1000
 meas ac G_500  find v(xlr_diff) at=500
 meas ac G_10K  find v(xlr_diff) at=10000

@@ -115,8 +115,10 @@ Relative to 1 kHz, where the level is the same at all four (−11.90 dB re playe
   like about 8 H, while the part behind 1.2 kΩ at a larger level looks like 22 H.
 - Only the product of inductance and capacitance comes out of this. C_DC under its 12 V bias has not been
   measured on its own.
-- The model's branch is one fixed set of values, fitted at a larger level. It describes loud signals; for
-  quiet ones the real low end has less at 20 Hz and a higher, taller bump.
+- The model's branch takes a factor `K` for this (`sim/models/passives.lib`): `K = 1` is the branch as fitted
+  above at a larger level, `K = 0.41` puts the resonance near 25 Hz with C_DC at its nominal 4.7 µF, as
+  measured at the smallest level. With `K = 0.41` the whole-microphone response (#128, a different unit)
+  is met within 0.9 dB rms at 20, 30, 50 and 100 Hz, against 1.7 dB with `K = 1`.
 
 ## Distortion
 

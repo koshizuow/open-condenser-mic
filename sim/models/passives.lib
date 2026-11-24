@@ -30,17 +30,22 @@
 *     above, which the ratio explains).
 *   Leakage inductance 10mH on the tap side, as before. Not measured: with the output side open the
 *     response is flat within 0.2 dB to 40 kHz.
-* OPEN: in the whole microphone the low end below 50 Hz does not follow this branch (measured -5.0 dB at
-*   20 Hz and -0.6 dB at 30 Hz re 1 kHz on the tap wiring, #128; this model gives about -1.9 and -1.8
-*   there). The part was measured with no direct current in any winding; the reason is not known.
+* The inductance depends on the level (docs/transformer.md, "In the microphone's output network"): through
+*   the board's own C_DC the resonance moves from 18 Hz to 25 Hz as the level falls by 30 dB. K scales the
+*   whole branch:
+*     K=1     as fitted above, at a larger level: loud sources. The default.
+*     K=0.41  reproduces the resonance near 25 Hz measured at a small level with C_DC at its nominal
+*             4.7 µF: quiet sources, and the level of the whole-microphone measurement (#128).
+*   Only the product of this inductance and C_DC was measured in the network; C_DC under its 12 V bias
+*   was not measured on its own. The phantom supply's direct current has no effect on the low end.
 * The ideal transformer is a pair of controlled sources, so the ratio is exact and the measured branch
 *   carries the low-frequency behaviour.
-.subckt NTE10_3 PRI_A PRI_B SEC_P SEC_N
+.subckt NTE10_3 PRI_A PRI_B SEC_P SEC_N params: K=1
 Rp1    PRI_A  P1     527
 Lleak  P1     P2     10m
-Lma    P2     PM     17.9
-Lmb    PM     PRI_B  8.5
-Rme    PM     PRI_B  2.23k
+Lma    P2     PM     {17.9*K}
+Lmb    PM     PRI_B  {8.5*K}
+Rme    PM     PRI_B  {2.23k*K}
 Esec   S1     SEC_N  P2 PRI_B  {1/3.58}
 Vsec   S1     S2     DC 0
 Fpri   P2     PRI_B  Vsec  {1/3.58}
