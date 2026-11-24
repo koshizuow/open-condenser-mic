@@ -51,15 +51,19 @@ Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) 
 > - a magnetising branch of 17.9 H in series with 8.5 H ∥ 2.23 kΩ, fitted to the part's response with the output side open;
 > - no core loss resistor: none shows in the levels.
 >
-> Against the whole microphone the model agrees in level (within 0.5 dB at 1 kHz), in the 8.8 dB between the two wirings (8.9), and in the response from 50 Hz up. **Below 50 Hz it does not yet agree:**
+> Against the whole microphone the model agrees in level (within 0.5 dB at 1 kHz), in the 8.8 dB between the two wirings (8.9), and in the response from 50 Hz up.
+>
+> **Below 50 Hz the response depends on how loud the source is.** The transformer's inductance falls with level, to about half for quiet sources, and with it the resonance with C_DC moves from 18 Hz to 25 Hz (measured through the board's own output network; the phantom supply's direct current has no effect). The model's branch takes a factor `K` for this: `K = 1` is the part as fitted at a larger level, `K = 0.41` reproduces the resonance measured at a small level. The plot shows both.
 >
 > | | 20 Hz | 30 Hz | 50 Hz | 100 Hz |
 > |---|---|---|---|---|
-> | measured, whole microphone, tap wiring, presence fitted, 1.2 kΩ (relative to 1 kHz; #128) | −5.0 dB | −0.6 dB | −1.4 dB | −0.7 dB |
-> | model, same conditions | −1.9 dB | −1.8 dB | −1.2 dB | −0.6 dB |
-> | model as plotted (baseline, no presence, 600 Ω) | −1.8 dB | −1.4 dB | −0.7 dB | −0.2 dB |
+> | measured, whole microphone, tap wiring, presence fitted, 1.2 kΩ, small level (relative to 1 kHz; #128) | −5.0 dB | −0.6 dB | −1.4 dB | −0.7 dB |
+> | model, same conditions, `K = 0.41` (quiet source) | −3.5 dB | −0.3 dB | −0.5 dB | −0.5 dB |
+> | model, same conditions, `K = 1` (loud source) | −1.9 dB | −1.8 dB | −1.2 dB | −0.6 dB |
+> | model as plotted (baseline, no presence, 600 Ω), `K = 0.41` | −3.3 dB | 0.0 dB | −0.1 dB | −0.1 dB |
+> | model as plotted, `K = 1` | −1.8 dB | −1.4 dB | −0.7 dB | −0.2 dB |
 >
-> The microphone has less at 20 Hz and a small bump at 30 Hz, as a lower inductance (about 8 H) would give with C_DC. The part was measured with no direct current in any winding; whether that is the difference is not known.
+> The measured row is from another transformer and board than the one the values were taken from. `K = 0.41` assumes C_DC at its nominal 4.7 µF; only the product of the inductance and C_DC was measured in the network.
 >
 > The measured row is on a board with the presence network, which lowers the band below 1 kHz by about 0.4 dB against 1 kHz. On the full winding the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
  The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.

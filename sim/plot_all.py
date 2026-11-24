@@ -237,6 +237,9 @@ def plot_freq_response():
         lambda s: s.replace('\n.control', '\n' + PRESENCE_PEAK_LINES + '\n.control', 1)
     )
 
+    # the transformer's inductance at a small level (passives.lib, K=0.41): quiet sources
+    freq_quiet, db_quiet = _run_ac(lambda s: s.replace("XLR_P3  NTE10_3", "XLR_P3  NTE10_3 K=0.41", 1))
+
     mask = (freq_base >= 20) & (freq_base <= 200000)
 
     fig, ax = plt.subplots(figsize=(7, 4))
@@ -245,6 +248,9 @@ def plot_freq_response():
                 label="Baseline (R_PRES1/C_PRES1 DNP)")
     ax.semilogx(freq_peak[mask_peak], db_peak[mask_peak], color=C2, lw=1.5,
                 label="With presence peak (Rs=6.2k, C=12nF, f_c≈2.1 kHz)")
+    mask_quiet = (freq_quiet >= 20) & (freq_quiet <= 200000)
+    ax.semilogx(freq_quiet[mask_quiet], db_quiet[mask_quiet], color=C1, lw=1.2, ls="--",
+                label="Baseline, quiet source (transformer inductance at a small level)")
     ax.axhline(-3, color="#aaaaaa", lw=0.8, ls="--", label="−3 dB")
     ax.axvline(20000, color="#cccccc", lw=0.8, ls=":", label="20 kHz")
     ax.set_xlabel("Frequency (Hz)")
@@ -252,6 +258,9 @@ def plot_freq_response():
     ax.set_title("AC Frequency Response — XLR Differential Output", fontweight="bold")
     ax.legend(fontsize=9)
     ax.set_xlim(20, 200000)
+    # a fixed scale: left to fit the data, the axis spanned 6 dB and made the 1.5 dB presence peak look large
+    ax.set_ylim(-12, 6)
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(3))
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(
         lambda x, _: f"{int(x/1000)}k" if x >= 1000 else f"{int(x)}"
     ))
