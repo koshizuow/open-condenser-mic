@@ -10,11 +10,11 @@ This design uses a Dickson charge pump oscillator to generate a 68 V HV rail fro
 
 **Key design points:**
 - Op-amp output stage; reference design uses OPA1641 (5.1 nV/√Hz voltage noise)
-- NTE10/3 audio transformer, 3:1 step-down, transformer-coupled output
+- NTE10/3 audio transformer, 3.58:1 step-down as measured (data sheet: 3:1), transformer-coupled output
 - CD40106B Schmitt-trigger oscillator + 3-stage active Dickson charge pump
 - About 57 V capsule polarization (HV_FILT ≈ 69 V, set by the 15 V clock rail; a 75 V zener only protects it), referenced to the 12 V midpoint
 - HV rail RC filter: 1 MΩ (R_HV) + 470 nF, corner ~0.34 Hz; no LC resonance
-- Output sensitivity (simulated, 13 mV/Pa capsule, into a 1.5 kΩ preamp input): about −40 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); about −24 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×). These include the transformer's provisional core loss (#137). Capacitance from FP to ground that the circuit does not have (a lead, the housing close to FP) lowers them by about 0.14 dB per pF. About 1.4 dB lower into 600 Ω and 1.1 dB higher unloaded; output impedance is about 200 Ω (about 310 Ω up to v3.6, with 100 Ω RFI resistors; #113)
+- Output sensitivity (simulated, 13 mV/Pa capsule, into a 1.5 kΩ preamp input): about −40 dBV/Pa default (R6 = 5.6 kΩ, gain ≈ 3.5×); about −24 dBV/Pa hi-gain (R6 = 47 kΩ, gain ≈ 22×). The transformer's values are measured on the part, since its data sheet gives only the turns (#137, `docs/transformer.md`). Capacitance from FP to ground that the circuit does not have (a lead, the housing close to FP) lowers them by about 0.14 dB per pF. About 1.3 dB lower into 600 Ω and 1.0 dB higher unloaded; output impedance is about 200 Ω (about 310 Ω up to v3.6, with 100 Ω RFI resistors; #113)
 - Maximum SPL before the op-amp output clips (calculated): about 143 dB SPL peak at default gain, about 127 dB SPL peak at hi-gain
 - RFI filter on XLR output: 47 Ω + 220 pF on each leg (R_RFI1/R_RFI2, C_RFI1/C_RFI2; corner about 15 MHz). C_RFI is rated 100 V because it sits on the phantom-fed pins
 - Phantom power draw: ~4.6 mA typical at 48 V (IEC 61938 P48 rated maximum: 10 mA)
@@ -44,14 +44,22 @@ Charge pump settles to ~68 V within ~1 ms. HV_FILT is RC-filtered (1 MΩ + 470 n
 
 Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) is flat within about ±1 dB from ~500 Hz to ~20 kHz. Two high-pass mechanisms shape the low end: the input network (R_GBIAS1 ∥ R_BIAS1 = 100 MΩ against the 55 pF capsule, corner ~29 Hz) and the output DC block (C_DC = 4.7 µF) with the transformer. A third sits below them: C_G1 (10 µF) in series with R3, corner 7.2 Hz, about 0.7 dB at 20 Hz. It makes the amplifier's gain 1 at DC, so offset and leakage at the 200 MΩ input do not move the operating point (`amp_dc_offset.sp`, #123).
 
-> **Model values come from data sheets; measurements check them.** The transformer's data sheet gives no inductance, only a response of at most −2 dB from 20 Hz to 20 kHz in its intended use. Taking that −2 dB at 20 Hz gives `Lp ≈ 7.4 H` for the driven 3-turn section (the derivation is in `sim/models/passives.lib`). The one exception is the transformer's core loss: no data sheet or published figure exists, so the model carries a **provisional** `Rc = 3 kΩ` across the 3-turn section, inferred from whole-microphone measurements, until the transformer is measured on its own (#137). Without it, C_DC and Lp resonate near 26 Hz undamped, a bump the measurement does not show.
+> **Where the transformer's values come from.** The NTE10/3 data sheet gives the turns (1 : 3 : 10) and a response figure, and nothing else: no inductance, no winding resistance, no loss. So the model uses values measured on the part on its own (one unit; #137, `docs/transformer.md`):
+>
+> - turns 1 : 3.58 : 10.03. The full winding agrees with the data sheet; the tap section, which the default wiring drives, does not, and the output is 1.5 dB lower for it;
+> - winding resistances 527 Ω (tap) and 41.8 Ω (output);
+> - a magnetising branch of 17.9 H in series with 8.5 H ∥ 2.23 kΩ, fitted to the part's response with the output side open;
+> - no core loss resistor: none shows in the levels.
+>
+> Against the whole microphone the model agrees in level (within 0.5 dB at 1 kHz), in the 8.8 dB between the two wirings (8.9), and in the response from 50 Hz up. **Below 50 Hz it does not yet agree:**
 >
 > | | 20 Hz | 30 Hz | 50 Hz | 100 Hz |
 > |---|---|---|---|---|
-> | measured, 3-turn, presence fitted, 1.2 kΩ (relative to 1 kHz; #128) | −5.0 dB | −0.6 dB | −1.4 dB | −0.7 dB |
-> | model, `Lp = 7.4 H`, provisional `Rc = 3 kΩ` (plotted, baseline) | −6.9 dB | −1.6 dB | −0.4 dB | −0.1 dB |
-> | model, `Lp = 7.4 H` without core loss | −5.9 dB | +1.2 dB | +0.6 dB | +0.1 dB |
-> | model, `Lp = 1 H` (the earlier lower bound) | −27 dB | −18 dB | −8 dB | −1 dB |
+> | measured, whole microphone, tap wiring, presence fitted, 1.2 kΩ (relative to 1 kHz; #128) | −5.0 dB | −0.6 dB | −1.4 dB | −0.7 dB |
+> | model, same conditions | −1.9 dB | −1.8 dB | −1.2 dB | −0.6 dB |
+> | model as plotted (baseline, no presence, 600 Ω) | −1.8 dB | −1.4 dB | −0.7 dB | −0.2 dB |
+>
+> The microphone has less at 20 Hz and a small bump at 30 Hz, as a lower inductance (about 8 H) would give with C_DC. The part was measured with no direct current in any winding; whether that is the difference is not known.
 >
 > The measured row is on a board with the presence network, which lowers the band below 1 kHz by about 0.4 dB against 1 kHz. On the full winding the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
  The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
@@ -102,11 +110,11 @@ The figures above are simulated. [docs/measurement.md](docs/measurement.md) desc
 | Item | Spec | Notes |
 |---|---|---|
 | Capsule | Single-diaphragm condenser | Design delivers ~56 V polarization (HV_FILT ≈ 68.0 V − V_MID 12 V). Compatible with most standard large/small-diaphragm capsules; K47-type capsules (typically rated 40–60 V) are compatible at this voltage. |
-| Transformer | **Neutrik NTE10/3** (3:1, audio) | Mouser / Newark. No other transformer is currently supported; the PCB cutout and solder pads are sized for this specific part. |
+| Transformer | **Neutrik NTE10/3** (1:3:10 on the data sheet, 1:3.58:10.03 measured) | Mouser / Newark. No other transformer is currently supported; the PCB cutout and solder pads are sized for this specific part. |
 
 ### Transformer wiring
 
-The NTE10/3 has 5 free wires and connects to two sets of bare solder pads on the PCB (5 mm pitch). The circuit uses the transformer in reverse — the secondary (3-turn tap) is driven from the OPA1641 and the primary is the XLR output, giving a 3:1 step-down.
+The NTE10/3 has 5 free wires and connects to two sets of bare solder pads on the PCB (5 mm pitch). The circuit uses the transformer in reverse — the secondary (3-turn tap) is driven from the OPA1641 and the primary is the XLR output, giving a 3.58:1 step-down (measured).
 
 ![Transformer wiring diagram](img/transformer_wiring.png)
 
@@ -122,7 +130,7 @@ Pad numbers run left to right as viewed from the **front** (component side). The
 | S2 (centre) | GND | **Blue** — centre tap (return) |
 | S3 (rightmost) | — (floating) | **Black** — far end of winding; leave unconnected |
 
-> **Full winding option:** swap S2 and S3 — connect **Black** (S3) to GND, leave **Blue** (S2) unconnected. This uses the complete secondary winding and reduces output level relative to the default by ~10.5 dB from the turns ratio, 8.8 dB as measured into a 1.2 kΩ input (#132). Combine with the `-hi-gain` BOM variant (R6 = 47 kΩ) to partially compensate for the lower sensitivity.
+> **Full winding option:** swap S2 and S3 — connect **Black** (S3) to GND, leave **Blue** (S2) unconnected. This uses the complete secondary winding and reduces output level relative to the default by 8.9 dB from the measured turns (10.03 against 3.58), 8.8 dB as measured into a 1.2 kΩ input (#132). Combine with the `-hi-gain` BOM variant (R6 = 47 kΩ) to partially compensate for the lower sensitivity.
 
 **TS1 — 2 pads below transformer cutout (primary, XLR output)**
 

@@ -35,15 +35,13 @@ SMALL_TONE_DB = -40.0        # cal_tone -60 dBFS relative to cal_tone -20 dBFS
 CAPSULE_V_PER_PA = 13.07e-3  # vendor sheet, see working notes; only used to express results in SPL
 
 # Transformer and output parts not in gen_params (sim/models/passives.lib, gen_schematic.py)
-RS = 42.0                    # XLR-side winding DC resistance, measured
+RS = 41.8                    # XLR-side winding DC resistance, measured
 R7, R_RFI = 100.0, 47.0      # R_RFI 100 ohm up to v3.6 (#113)
 # Driven winding of the NTE10/3: (step-down ratio, DC resistance)
-#   tap   red to blue, the default wiring: 3:1, 521 ohm measured
-#   full  red to black (README, "Full winding option"): 10:1, about 10.5 dB lower.
-#         Its resistance is not measured; scaled from the tap by the turns
-#         (10/3), so likely higher. It hardly matters: the reflected load is
-#         N^2 times the XLR side, about 100 kohm against 1.7 kohm.
-WINDINGS = {"tap": (3.0, 521.0), "full": (10.0, 521.0 * 10 / 3)}
+#   tap   red to blue, the default wiring: 3.58:1, 527 ohm
+#   full  red to black (README, "Full winding option"): 10.03:1, 1658 ohm, 8.9 dB lower.
+#   Measured on the part on its own (docs/transformer.md, #137); the data sheet says 3:1 and 10:1.
+WINDINGS = {"tap": (3.58, 527.0), "full": (10.03, 1658.0)}
 # Presence network, fitted with the --presence BOM variant: R_PRES1 + C_PRES1 in parallel with R3
 R_PRES, C_PRES = 6.2e3, 12e-9
 
