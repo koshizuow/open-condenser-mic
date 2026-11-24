@@ -135,7 +135,7 @@ table above shows (the resonance falls from 25 Hz to 18 Hz as the level rises by
   winding's reactance matters, at low frequencies, and growing with level. That is the pattern of the next section's
   table: the third harmonic rises steeply towards 30 Hz and with level, and is some 80 dB down at 1 kHz at every
   level. The flux for a given voltage goes as one over the turns and one over the frequency, so the tap section
-  (3.58 against 10.03 turns, 2.8 times the flux for the same drive) distorts more than the full winding in every
+  (3.58 against 10.03 in the turns ratio, so 2.8 times the flux for the same drive) distorts more than the full winding in every
   row.
 
 ## Distortion
