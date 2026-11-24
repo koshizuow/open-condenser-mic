@@ -81,12 +81,42 @@ Tap section, output open, 1.2 kΩ in series, relative to 1 kHz:
   squared) comes out within 0.2 dB, without fitting them.
 - The full winding, open, is 0.5 dB down at 10 Hz.
 
-**Not settled.** `sim/models/passives.lib` uses this branch. In the whole microphone the low end is
-different: −5.0 dB at 20 Hz and −0.6 dB at 30 Hz relative to 1 kHz on the tap wiring (#128), where the
-model with this branch gives −1.9 and −1.8 dB; from 50 Hz up they agree within 0.2 dB. The microphone
-behaves as a lower inductance would (about 8 H with C_DC). Here no winding carried direct current; in the
-microphone the output winding sits between the two phantom feed resistors. Whether that is the reason has
-not been tested.
+In the whole microphone the low end is different from what this branch gives: −5.0 dB at 20 Hz and
+−0.6 dB at 30 Hz relative to 1 kHz on the tap wiring (#128), where the model gives −1.9 and −1.8 dB; from
+50 Hz up they agree within 0.2 dB. The next section finds the reason.
+
+## In the microphone's output network
+
+The output side (white, yellow) was soldered to a spare v3.6 board (no capsule), and the board's XLR output
+taken to the microphone input with a plain cable.
+
+**Phantom on or off makes no difference.** Tap section driven from the fixture through 1.2 kΩ, the board's
+own primary pads left open. Response relative to 1 kHz, played −37 dBFS: 20 Hz −1.85 dB off, −1.83 dB on;
+30 Hz −1.07 and −1.06 dB. The two sweeps differ by 0.07 dB at most from 10 Hz to 40 kHz. On the board the
+windings sit at 31 V; the voltage across the output winding is too small for a meter. So the phantom
+supply's direct current is not what changes the low end.
+
+**The resonance with C_DC moves with level.** Red to the board's primary signal pad, blue straight to the
+interface's output, no series resistor, phantom on. The powered op-amp's output is an AC ground, so the
+loop is source, winding, C_DC with its 12 V bias, 100 Ω: the microphone's own output network.
+
+| Played | Peak | 20 Hz | 30 Hz | 50 Hz | 100 Hz |
+|---|---|---|---|---|---|
+| −47 dBFS | +5.1 dB near 25 Hz | +3.7 dB | +4.3 dB | +1.5 dB | +0.35 dB |
+| −37 dBFS | +4.4 dB near 22 Hz | +4.0 dB | +3.4 dB | +1.3 dB | +0.30 dB |
+| −27 dBFS | +3.1 dB near 22 Hz | +3.0 dB | +2.4 dB | +1.0 dB | +0.25 dB |
+| −17 dBFS | +2.5 dB near 18 Hz | +2.2 dB | +1.3 dB | +0.6 dB | +0.17 dB |
+
+Relative to 1 kHz, where the level is the same at all four (−11.90 dB re played).
+
+- The resonance rises from 18 Hz to 25 Hz as the level falls by 30 dB: the inductance at the small level is
+  about half of that at the large one. With C_DC at its nominal 4.7 µF that is 17 H and 8.5 H.
+- The whole-microphone measurement (#128) was made near the lowest of these levels, which is why it looks
+  like about 8 H, while the part behind 1.2 kΩ at a larger level looks like 22 H.
+- Only the product of inductance and capacitance comes out of this. C_DC under its 12 V bias has not been
+  measured on its own.
+- The model's branch is one fixed set of values, fitted at a larger level. It describes loud signals; for
+  quiet ones the real low end has less at 20 Hz and a higher, taller bump.
 
 ## Distortion
 
@@ -108,7 +138,8 @@ The 1.2 kΩ source raises these: in the microphone the op-amp drives the winding
 
 ## Limits
 
-- One unit. The ratio of another has not been measured.
+- One unit. The ratio of another has not been measured. The whole-microphone figures (#128) are from a
+  different unit and board than the measurements here.
 - The output voltage was inferred, not measured, so the distortion table is not yet tied to sound levels.
 - On the instrument input the path itself moved between two levels 6 dB apart, slowly and at no fixed
   level or frequency, with the transformer taken out too. The cause is not known. The open-output figures
