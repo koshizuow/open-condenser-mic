@@ -258,6 +258,9 @@ def plot_freq_response():
     ax.set_title("AC Frequency Response — XLR Differential Output", fontweight="bold")
     ax.legend(fontsize=9)
     ax.set_xlim(20, 200000)
+    # a fixed scale: left to fit the data, the axis spanned 6 dB and made the 1.5 dB presence peak look large
+    ax.set_ylim(-12, 6)
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(3))
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(
         lambda x, _: f"{int(x/1000)}k" if x >= 1000 else f"{int(x)}"
     ))
