@@ -82,8 +82,8 @@ X_XFMR  XFMR_PRI_IN  0  XLR_P2  XLR_P3  NTE10_3
 
 * RFI filter: 47Ω series + 220pF C0G shunt on each XLR leg (fc ~15 MHz; was 100Ω
 * + 100pF until #113). The series resistors cost about 1.3 dB into 600Ω.
-R_RFI1  XLR_P2  XLR_HOT_F  47
-R_RFI2  XLR_P3  XLR_COLD_F  47
+R_RFI1  XLR_P2  XLR_HOT_F  {R_RFI}
+R_RFI2  XLR_P3  XLR_COLD_F  {R_RFI}
 C_RFI1  XLR_HOT_F  0  220p
 C_RFI2  XLR_COLD_F  0  220p
 

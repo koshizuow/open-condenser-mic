@@ -2,7 +2,8 @@
 * ────────────────────────────────────────────────────────────────────────────
 * Solves the regulator's DC operating point with the REAL phantom source:
 * V_phantom behind the interface's 6.8 kΩ per leg (IEC 61938 P48), in series
-* with the on-board tap resistors R1/R2. Earlier analysis assumed a stiff
+* with the RF filter resistors R_RFI1/R_RFI2 (47 Ω) and the on-board tap
+* resistors R1/R2. Earlier analysis assumed a stiff
 * source at the XLR pins, which overstated Z_REG1's current by ~3x (#95).
 *
 * Loads on V_OPA:
@@ -38,14 +39,17 @@
 .param V_PH  = 48      ; phantom open-circuit voltage (44 / 48 / 52)
 .param I_OP  = 1.8m    ; op-amp quiescent current
 .param VZ    = 24      ; Z_REG1 breakdown (22.8 / 24 / 25.2 for ±5%)
-.param I_DZ  = 0       ; DZ1 clamp current (0 when not clamping, ~0.4m with DZ1 at -5%)
+.param I_DZ  = 0       ; DZ1 clamp current (0 when not clamping; 0.12m as a margin in cases 6 and 7)
 .param I_OSC = 0.42m   ; clock supply current from V_OSC (ICM7555 + CD40106 buffers, 0.75m worst; 1.5m for the v3.5 RC oscillator, #121)
 .param VZO   = 15      ; Z_OSC1 breakdown (14.25 / 15 / 15.75 for ±5%)
 
-* Phantom source: two feed legs in the interface, two tap legs on the board
+* Phantom source: two feed legs in the interface; on the board each leg passes
+* its RF filter resistor (XLR pin to XLR_HOT / XLR_COLD), then its tap resistor
 V_ph    PH      0        DC {V_PH}
-R_fh    PH      XLR_HOT  {R_PH_FEED}
-R_fc    PH      XLR_COLD {R_PH_FEED}
+R_fh    PH      PIN2     {R_PH_FEED}
+R_fc    PH      PIN3     {R_PH_FEED}
+R_RFI1  PIN2    XLR_HOT  {R_RFI}
+R_RFI2  PIN3    XLR_COLD {R_RFI}
 R1      XLR_HOT  RAW     {R_PH_TAP}
 R2      XLR_COLD RAW     {R_PH_TAP}
 
@@ -134,8 +138,7 @@ echo "--- 44V, Iq 2.3mA, Vz 24V, DZ1 0.12mA (margin) ---"
 echo "  V_OPA_RAW = $&v(raw) V   V_OPA = $&v(vopa) V   V_OSC = $&v(vosc) V   I(Z_REG1) = $&iz6 A"
 
 * ── Case 7: all four stacked (44V, Iq max, Vz +5%, DZ1 clamping) ─────────
-* Z_REG1 is at its knee here. The check is that V_OPA still holds, not that
-* a bias-current margin remains.
+* Z_REG1 keeps about 0.2 mA here. The check is that V_OPA still holds.
 alterparam VZ = 25.2
 reset
 op
@@ -173,8 +176,8 @@ echo "--- 46.5V, nominal, I_OSC 1.5mA (v3.5 RC oscillator, as measured) ---"
 echo "  V_OPA = $&v(vopa) V   V_OSC = $&v(vosc) V   I(Z_OSC1) = $&io9 A"
 
 * ── Pass/fail assertions ─────────────────────────────────────────────────
-* Limits sit below the simulated values (1.51 / 0.92 / 0.59 / 0.30 mA and
-* 52 mW) so a change that erodes the headroom fails before regulation is lost.
+* Limits sit below the simulated values (1.51 / 0.93 / 0.59 / 0.31 mA and
+* 53 mW) so a change that erodes the headroom fails before regulation is lost.
 setplot op1
 let a1 = i(Vamm_z)
 setplot op2
@@ -215,8 +218,8 @@ if op5.a5 > 100m
 else
   echo "PASS supply_dc_op: 52V P(Z_REG1) = $&op5.a5 W"
 end
-* Case 6 simulates 0.31 mA. Case 7 simulates V_OPA = 24.46 V against
-* 24.53 V without the clamp current, so the rail has moved by 0.07 V.
+* Case 6 simulates 0.50 mA. Case 7 simulates V_OPA = 24.52 V against
+* 24.53 V without the clamp current, so the rail has moved by 0.01 V.
 if op6.a6 < 0.2m
   echo "FAIL supply_dc_op: 44V/Iq-max/DZ1-clamp I(Z_REG1) = $&op6.a6 A (min 0.2 mA)"
 else

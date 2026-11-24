@@ -35,6 +35,7 @@ PARAMS = {
     # ── Phantom feed + V_OPA regulator (gen_schematic.py: R1/R2, R_REG1, R_ZEN1) ─
     "R_PH_FEED":    "6.8k",   # phantom feed resistor per leg, in the interface (IEC 61938 P48)
     "R_PH_TAP":     "2.2k",   # R1/R2: on-board phantom tap resistor per leg (#95)
+    "R_RFI":        "47",     # R_RFI1/R_RFI2: RF filter resistor in series with each XLR leg (#113); the phantom current passes through it
     "R_REG1":       "2.2k",   # Z_REG1 bias resistor (#95)
     "R_ZEN1":       "6.8k",   # V_OPA → V_OSC dropper
     # ── Supply voltages ───────────────────────────────────────────────────

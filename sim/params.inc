@@ -20,6 +20,7 @@
 .param C_LC             = 470n
 .param R_PH_FEED        = 6.8k
 .param R_PH_TAP         = 2.2k
+.param R_RFI            = 47
 .param R_REG1           = 2.2k
 .param R_ZEN1           = 6.8k
 .param V_OPA            = 24
