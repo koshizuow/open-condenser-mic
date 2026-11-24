@@ -223,8 +223,8 @@ group of inputs is optional, so a partial session still gives a partial report.
 
 | Result | Simulation | What a difference means |
 |---|---|---|
-| Gain at 1 kHz | about −2.0 dB into 4 kΩ with a 56 pF dummy, with the transformer's provisional core loss (#137) (sensitivity about −40 dBV/Pa with a 13 mV/Pa capsule); about 0.2 dB lower on boards up to v3.6 (100 Ω RFI resistors) | more than ±1.5 dB off: check R3, R6, the load value and the meter readings |
-| Low-frequency −3 dB corner | about 30 Hz on the full winding (set by the input network); on the 3-turn section about 22 Hz (−5 dB at 20 Hz, nearly flat from 30 Hz) | measured on the 3-turn section (#128); `sim/models/passives.lib` uses 7.4 H derived from the data sheet with a provisional core loss (#137) |
+| Gain at 1 kHz | about −2.0 dB into 4 kΩ with a 56 pF dummy, with the transformer's measured 3.58:1 (#137) (sensitivity about −40 dBV/Pa with a 13 mV/Pa capsule); about 0.2 dB lower on boards up to v3.6 (100 Ω RFI resistors) | more than ±1.5 dB off: check R3, R6, the load value and the meter readings |
+| Low-frequency −3 dB corner | about 30 Hz on the full winding (set by the input network); on the 3-turn section about 22 Hz (−5 dB at 20 Hz, nearly flat from 30 Hz) | measured on the 3-turn section (#128); `sim/models/passives.lib` uses 7.4 H derived from the data sheet; the part on its own measures about 22 H, not yet reconciled (#137, `docs/transformer.md`) |
 | Fit error | below about 1 dB | larger: the low end is not behaving like the model. Compare with the hot sweep for saturation |
 | Self-noise | about 20 dB(A) equivalent with a 47 to 56 pF dummy (18.9 with a 55 pF capsule); about 45 nV/√Hz at 1 kHz, 12 nV/√Hz at 10 kHz | higher at low frequency only: leakage or hum. Higher everywhere: supply or interface noise. Check the interface margin line |
 | Interface margin | 10 dB or more | less: raise the preamp gain and repeat S3, N1, N2 |

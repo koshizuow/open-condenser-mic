@@ -113,10 +113,10 @@ wrdata _ac.dat xlr_db
 
 * ── Passband flatness measurements ─────────────────────────────────────────
 * Relative gains: all measurements against 1kHz mid-band reference.
-* LF note: the low end depends on the NTE10/3 primary inductance, which the
-* model sets to its measured lower bound, 1H (passives.lib, #114): about -8dB
-* at 50Hz with 1H, about +1dB with 4.5H. Check at 500Hz instead, where the
-* model is insensitive to Lp.
+* LF note: the low end depends on the NTE10/3 primary inductance, which is not
+* settled (passives.lib, #137: 7.4H from the data sheet, about 22H measured on
+* the part alone, about 8H in the whole microphone). Check at 500Hz instead,
+* where the model is insensitive to Lp.
 meas ac G_1K   find v(xlr_diff) at=1000
 meas ac G_500  find v(xlr_diff) at=500
 meas ac G_10K  find v(xlr_diff) at=10000
@@ -136,11 +136,11 @@ echo "========================================================"
 
 * ── Sensitivity assertion (#111) ───────────────────────────────────────────
 * Vcap is 13.07mV (1 Pa), so the 1kHz output in dBV is the sensitivity in
-* dBV/Pa into this deck's 600Ω load: expected -41.7 (default gain; C_IN 9 pF and
-* Lp 7.4 H from the data sheets with the provisional core loss Rc 3k, #137;
-* -40.2 without Rc; -40.7 with C_IN 12 pF; -42.0 with
+* dBV/Pa into this deck's 600Ω load: expected -41.5 (default gain; C_IN 9 pF, the
+* transformer's measured 3.58:1 and no core loss resistor, #137; -41.7 with the
+* earlier 3:1 and provisional Rc 3k; -40.7 with C_IN 12 pF; -42.0 with
 * R_RFI 100Ω before #113, -40.2 before C_IN was added in #114). The README
-* quotes -39 into 1.5kΩ, which is the same result at a lighter load.
+* quotes -40 into 1.5kΩ, which is the same result at a lighter load.
 let sens_lo = -43.0
 let sens_hi = -39.0
 if gain_1k < sens_lo
