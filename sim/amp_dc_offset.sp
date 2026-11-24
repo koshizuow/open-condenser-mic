@@ -48,7 +48,7 @@ R5      MID    0      {R_MID}
 C45     MID    0      {C_MID}
 
 * Polarisation and input network. The capsule's backplate is on V_MID.
-V_HV    HV     0      DC {V_HV_clamp}
+V_HV    HV     0      DC {V_HV_nom}
 R_GBIAS HV     CAPFP  {R_GBIAS}
 E_sig   CAPFP  CX     SIG 0 1
 Cc      CX     MID    {Cc}

@@ -35,12 +35,13 @@ PARAMS = {
     # ── Phantom feed + V_OPA regulator (gen_schematic.py: R1/R2, R_REG1, R_ZEN1) ─
     "R_PH_FEED":    "6.8k",   # phantom feed resistor per leg, in the interface (IEC 61938 P48)
     "R_PH_TAP":     "2.2k",   # R1/R2: on-board phantom tap resistor per leg (#95)
+    "R_RFI":        "47",     # R_RFI1/R_RFI2: RF filter resistor in series with each XLR leg (#113); the phantom current passes through it
     "R_REG1":       "2.2k",   # Z_REG1 bias resistor (#95)
     "R_ZEN1":       "6.8k",   # V_OPA → V_OSC dropper
     # ── Supply voltages ───────────────────────────────────────────────────
     "V_OPA":        "24",     # regulated supply (Z_REG1 = 24V BZT52C24)
-    "V_OSC":        "15",     # oscillator rail (Z_OSC1 = 15V MMSZ15VT1G)
-    "V_HV_clamp":   "68",     # HV boost clamp (DZ1 = 68V BZX55C68)
+    "V_OSC":        "15",     # oscillator rail (Z_OSC1 = 15V MMSZ4702T1G, #121)
+    "V_HV_nom":     "68",     # VBOOST at the nominal point, about 68 V (pump_real_vosc.sp gives 68.7 V); DZ1 (75 V) does not conduct there
     "V_MID":        "12",     # V_OPA/2 midpoint (R4/R5 divider)
     # ── OPA1641 behavioral model (from datasheet) ─────────────────────────
     "OPA_OL_GAIN":  "100k",   # open-loop gain (100 dB)

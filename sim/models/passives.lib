@@ -54,7 +54,10 @@ Rout  IN   INT_IN   0.1
 Iq    INT_IN GND_PIN 3m
 .ends L78L24
 
-* BZX55C68 — 68V zener diode (DZ1 HV clamp, replaces BZX55C56)
+* MMSZ5267B — 75V zener diode (DZ1 HV clamp since #121; it only protects)
+.model MMSZ5267B D (Is=1n N=1 Rs=10 Cj0=50p Bv=75 Ibv=10u Vj=0.6 M=0.4)
+
+* BZX55C68 — the 68V DZ1 before #121. Kept for the history section of docs/wcca.md
 .model BZX55C68 D (Is=1n N=1 Rs=10 Cj0=50p Bv=68 Ibv=5m Vj=0.6 M=0.4)
 
 * BAT54S — Schottky diode (each junction modeled individually)

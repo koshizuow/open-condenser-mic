@@ -22,6 +22,7 @@ Component tolerances used (from `pcb/bom.csv` / LCSC part datasheets):
 | Ref | Part | Nominal | Tolerance | Worst-case bound used |
 |---|---|---|---|---|
 | R1, R2 | RT0603BRD072K2L (YAGEO) | 2.2 kΩ | ±0.1% | −0.1% (maximizes current into V_OPA_RAW); changed from 6.8 kΩ for #95 |
+| R_RFI1, R_RFI2 | 0402WGF470JTCE (UNI-ROYAL) | 47 Ω | ±1% | nominal: in series with each XLR leg (#113), 0.5% of the 9 kΩ feed path per leg, so its tolerance moves no figure below |
 | R_REG1 | 0402 thick film (LCSC C25879) | 2.2 kΩ | ±1% | −1% (maximizes current into Z_REG1); 2.2 kΩ → 1.2 kΩ in PR #75, back to 2.2 kΩ for #95 (see below) |
 | Z_REG1 | BZT52C24 (MDD) | 24 V | ±5% (22.8–25.2 V) | 25.2 V (maximizes P = Vz·Iz at fixed Iz-driving network) |
 | Z_OSC1 | MMSZ4702T1G (onsemi), specified at 50 µA (#121; MMSZ15T1G before) | 15 V | ±5% (14.25–15.75 V) | 15.75 V (drives Dickson pump harder) |
@@ -42,7 +43,7 @@ in this design):
 
 ## Z_REG1 (24 V) — resistively-biased shunt regulator
 
-Circuit: `XLR_HOT`/`XLR_COLD` (phantom) → R1‖R2 (2.2 kΩ each) → `V_OPA_RAW` →
+Circuit: XLR pins 2/3 (phantom) → R_RFI1/R_RFI2 (47 Ω each) → `XLR_HOT`/`XLR_COLD` → R1‖R2 (2.2 kΩ each) → `V_OPA_RAW` →
 R_REG1 (2.2 kΩ) → `V_BASE_REG` → Z_REG1 (K) → GND. Q1's base current is
 negligible (high-hFE emitter follower), so nearly all current through
 R_REG1 flows through Z_REG1.
@@ -77,37 +78,37 @@ ambient. At an elevated in-enclosure ambient of 60 °C, T_j ≈ 130 °C, below
 the 150 °C junction limit.
 
 With a compliant source (6.8 kΩ feed resistors) the dissipation is far lower:
-52 mW at 52 V, V_z +5%, light load (`sim/supply_dc_op.sp`, case 5).
+53 mW at 52 V, V_z +5%, light load (`sim/supply_dc_op.sp`, case 5).
 
 ### 2. Operating point and regulation headroom (real source, real load)
 
 The real source is V_phantom behind 6.8 kΩ per leg in the interface, in
-series with R1/R2. Loads on `V_OPA` are the op-amp quiescent current
+series with R_RFI1/R_RFI2 (47 Ω) and R1/R2. Loads on `V_OPA` are the op-amp quiescent current
 (OPA1641: 1.8 mA typ, 2.3 mA max), the R4+R5 divider and R_ZEN1 into
 Z_OSC1. Solved in `sim/supply_dc_op.sp`, which runs in CI with FAIL
 thresholds on each row:
 
 | Condition | V_phantom | Op-amp Iq | V_z | V_OPA_RAW | V_OPA | I_z | CI minimum |
 |---|---|---|---|---|---|---|---|
-| Nominal | 48 V | 1.8 mA | 24 V | 27.48 V | 23.42 V | 1.51 mA | 1.2 mA |
-| Phantom low | 44 V | 1.8 mA | 24 V | 26.15 V | 23.39 V | 0.92 mA | 0.7 mA |
-| Phantom low, Iq max | 44 V | 2.3 mA | 24 V | 25.41 V | 23.36 V | 0.59 mA | 0.4 mA |
-| Phantom low, Iq max, V_z +5% | 44 V | 2.3 mA | 25.2 V | 25.95 V | 24.53 V | 0.30 mA | 0.15 mA |
-| Phantom low, Iq max, DZ1 clamping | 44 V | 2.3 mA | 24 V | 24.79 V | 23.33 V | 0.31 mA | 0.2 mA |
-| All four stacked (V_z +5% and DZ1 clamping) | 44 V | 2.3 mA | 25.2 V | 25.32 V | 24.46 V | 0.03 mA | V_OPA ≥ 24.2 V |
+| Nominal | 48 V | 1.8 mA | 24 V | 27.50 V | 23.42 V | 1.51 mA | 1.2 mA |
+| Phantom low | 44 V | 1.8 mA | 24 V | 26.18 V | 23.39 V | 0.93 mA | 0.7 mA |
+| Phantom low, Iq max | 44 V | 2.3 mA | 24 V | 25.43 V | 23.36 V | 0.59 mA | 0.4 mA |
+| Phantom low, Iq max, V_z +5% | 44 V | 2.3 mA | 25.2 V | 25.98 V | 24.53 V | 0.31 mA | 0.15 mA |
+| Phantom low, Iq max, DZ1 clamp margin | 44 V | 2.3 mA | 24 V | 25.23 V | 23.35 V | 0.50 mA | 0.2 mA |
+| All four stacked (V_z +5% and DZ1 clamp margin) | 44 V | 2.3 mA | 25.2 V | 25.77 V | 24.52 V | 0.22 mA | V_OPA ≥ 24.2 V |
 
 **DZ1 clamp current as a load (#112).** When DZ1's actual voltage is below the
 pump's open-circuit voltage it clamps `VBOOST`, and the clamp current is drawn
 from `V_OPA`: once through the diode chain and three times through the clock
-drivers on `V_OSC`. `sim/pump_real_vosc.sp` models the pump with its real
-`V_OSC` supply and gives 0.39 mA with DZ1 at −5%, limited by R_ZEN1's budget;
-`V_OSC` sags to 14.96 V and `VBOOST` sits at DZ1's voltage. The last two rows
-above add 0.4 mA for this. With all four tolerances stacked Z_REG1 is at its
-knee (0.03 mA), but `V_OPA` has moved by only 0.07 V, so the rail still holds.
-At 46 V phantom the same stack leaves 0.32 mA. No component change is made
-for this corner.
+drivers on `V_OSC`. With the 75 V DZ1 (#121) it conducts only at the high corners:
+`sim/pump_real_vosc.sp` models the pump with its real `V_OSC` supply and gives
+0.11 mA at the high corner with DZ1 at −5% (0.18 mA at −20 °C), and nothing at
+the low corner. At 44 V phantom it would not conduct at all; the last two rows
+above still add 0.12 mA as a margin. With all four stacked Z_REG1 keeps
+0.22 mA and `V_OPA` has moved by 0.01 V. With the earlier 68 V DZ1 the clamp
+took 0.39 mA and the same stack left Z_REG1 at its knee (0.03 mA).
 
-Phantom draw at the nominal point is 4.56 mA (P48 rated maximum: 10 mA).
+Phantom draw at the nominal point is 4.53 mA (P48 rated maximum: 10 mA).
 
 **History (#95).** With the earlier R1/R2 = 6.8 kΩ and R_REG1 = 1.2 kΩ the same
 analysis gives I_z = 0.41 mA at nominal and zero (out of regulation) in all
