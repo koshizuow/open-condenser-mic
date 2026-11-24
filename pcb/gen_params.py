@@ -40,8 +40,8 @@ PARAMS = {
     "R_ZEN1":       "6.8k",   # V_OPA → V_OSC dropper
     # ── Supply voltages ───────────────────────────────────────────────────
     "V_OPA":        "24",     # regulated supply (Z_REG1 = 24V BZT52C24)
-    "V_OSC":        "15",     # oscillator rail (Z_OSC1 = 15V MMSZ15VT1G)
-    "V_HV_clamp":   "68",     # HV boost clamp (DZ1 = 68V BZX55C68)
+    "V_OSC":        "15",     # oscillator rail (Z_OSC1 = 15V MMSZ4702T1G, #121)
+    "V_HV_nom":     "68",     # VBOOST at the nominal point, about 68 V (pump_real_vosc.sp gives 68.7 V); DZ1 (75 V) does not conduct there
     "V_MID":        "12",     # V_OPA/2 midpoint (R4/R5 divider)
     # ── OPA1641 behavioral model (from datasheet) ─────────────────────────
     "OPA_OL_GAIN":  "100k",   # open-loop gain (100 dB)

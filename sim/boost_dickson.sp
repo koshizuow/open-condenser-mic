@@ -6,7 +6,7 @@
 * Clock       : V_OSC = 15V, 100 kHz, 50% duty (CD40106B on V_OSC rail)
 * Expected SS : V_BOOST = V_OPA + N*V_OSC - (N+1)*V_F
 *             = 24 + 3*15 - 4*0.2 = 68.2V  (before DZ1 clamp)
-* DZ1 clamp   : BZX55C68 (68V) -> clamped to ~68V
+* DZ1 clamp   : MMSZ5267B (75V, #121): does not conduct at this nominal point
 * HV filter   : mode-selectable LC or RC (see .control block)
 *   LC default: L1=10mH (DCR 8Ω), C=470nF, fc≈2.3kHz, Q≈18
 *   RC alt    : R=1MΩ (C22935),   C=470nF, fc≈0.34Hz
@@ -56,9 +56,9 @@ D4   N3      VBOOST  BAT54S
 Cres  VBOOST  0  {Cres}  IC=60
 
 * ---------------------------------------------------------------------------
-* DZ1: 68V zener clamp on V_BOOST (anode=GND, cathode=VBOOST)
+* DZ1: 75V zener clamp on V_BOOST (anode=GND, cathode=VBOOST)
 * ---------------------------------------------------------------------------
-DZ1   0   VBOOST   BZX55C68
+DZ1   0   VBOOST   MMSZ5267B
 
 * ---------------------------------------------------------------------------
 * HV FILTER — parameterised; defaults to LC mode
@@ -70,7 +70,7 @@ DZ1   0   VBOOST   BZX55C68
 .param L_HV    = {L1_val}
 * C_LC_IC: initial condition for HVFILT capacitor
 *   LC case: 60V (settles within ~5ms via resonance)
-*   RC case: 67V ≈ VBOOST_clamp − I_load×R_HV (minimises settling drift in 15ms window)
+*   RC case: 68V ≈ VBOOST − I_load×R_HV (minimises settling drift in 15ms window)
 .param C_LC_IC = 60
 
 R_HV  VBOOST   LNODE   {R_HV}
@@ -101,20 +101,29 @@ echo "--- LC filter: L=10mH DCR=8Ω, C=470nF, fc≈2.3kHz, Q≈18 ---"
 reset
 tran 100n 15m 0 100n uic
 meas tran VBOOST_avg    avg V(VBOOST)  from=10m to=15m
-meas tran VBOOST_max    max V(VBOOST)  from=10m to=15m
-meas tran VBOOST_min    min V(VBOOST)  from=10m to=15m
 meas tran HV_avg_LC     avg V(HVFILT)  from=10m to=15m
-meas tran HV_max_LC     max V(HVFILT)  from=10m to=15m
-meas tran HV_min_LC     min V(HVFILT)  from=10m to=15m
-let VBOOST_ripple = VBOOST_max - VBOOST_min
-let LC_ripple     = HV_max_LC  - HV_min_LC
+* Ripple over the last two clock periods (20 us), with the slope between the window's ends taken
+* out. Without the 68 V clamp (#121) VBOOST is still creeping up at 15 ms, and max - min would
+* read that drift as ripple.
+meas tran vb_a find V(VBOOST) at=14.97m
+meas tran vb_b find V(VBOOST) at=14.99m
+let vb_det = V(VBOOST) - (vb_b - vb_a) / 20u * (time - 14.97m)
+meas tran vb_max max vb_det from=14.97m to=14.99m
+meas tran vb_min min vb_det from=14.97m to=14.99m
+meas tran lc_a find V(HVFILT) at=14.97m
+meas tran lc_b find V(HVFILT) at=14.99m
+let lc_det = V(HVFILT) - (lc_b - lc_a) / 20u * (time - 14.97m)
+meas tran lc_max max lc_det from=14.97m to=14.99m
+meas tran lc_min min lc_det from=14.97m to=14.99m
+let VBOOST_ripple = vb_max - vb_min
+let LC_ripple     = lc_max - lc_min
 echo "  VBOOST_avg    = $&VBOOST_avg V"
 echo "  VBOOST_ripple = $&VBOOST_ripple V p-p"
 echo "  HV_avg  (LC)  = $&HV_avg_LC V"
 echo "  HV_ripple(LC) = $&LC_ripple V p-p"
 
 * ── VBOOST assertion: check here before reset clears the meas result ────────
-* DZ1 clamps VBOOST at 68V; bounds allow ±5V for model/param variation.
+* VBOOST settles near 68.7 V, below the 75 V DZ1; bounds allow ±5V for model/param variation.
 let vboost_lo = 63
 let vboost_hi = 73
 if VBOOST_avg < vboost_lo
@@ -132,21 +141,24 @@ echo ""
 echo "--- RC filter: R=1MΩ (C22935), C=470nF, fc≈0.34Hz ---"
 alterparam R_HV = 1Meg
 alterparam L_HV = 1p
-* IC=67.3: ≈ SS (VBOOST_avg 67.97V − 0.67µA×1MΩ); avoids 470ms settling ramp masking ripple
-alterparam C_LC_IC = 67.3
+* IC=68.0: ≈ SS (VBOOST_avg 68.67V − 0.68µA×1MΩ); avoids 470ms settling ramp masking ripple
+alterparam C_LC_IC = 68.0
 reset
 tran 100n 15m 0 100n uic
 * write transient data for plot_all.py — RC run (production config)
 wrdata _hv_tran.dat v(vboost) v(hvfilt)
 meas tran HV_avg_RC     avg V(HVFILT)  from=10m to=15m
-meas tran HV_max_RC     max V(HVFILT)  from=10m to=15m
-meas tran HV_min_RC     min V(HVFILT)  from=10m to=15m
-let RC_ripple = HV_max_RC - HV_min_RC
+meas tran rc_a find V(HVFILT) at=14.97m
+meas tran rc_b find V(HVFILT) at=14.99m
+let rc_det = V(HVFILT) - (rc_b - rc_a) / 20u * (time - 14.97m)
+meas tran rc_max max rc_det from=14.97m to=14.99m
+meas tran rc_min min rc_det from=14.97m to=14.99m
+let RC_ripple = rc_max - rc_min
 echo "  HV_avg  (RC)  = $&HV_avg_RC V"
 echo "  HV_ripple(RC) = $&RC_ripple V p-p"
 
 * ── HV_avg_RC assertion ──────────────────────────────────────────────────────
-* 1MΩ drop across R_HV into 100MΩ R_GBIAS → ≈0.67V below VBOOST (~67.3V).
+* 1MΩ drop across R_HV into 100MΩ R_GBIAS → ≈0.68V below VBOOST (~68.0V).
 let hvrc_lo = 61
 let hvrc_hi = 73
 if HV_avg_RC < hvrc_lo

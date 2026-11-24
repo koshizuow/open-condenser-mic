@@ -26,17 +26,17 @@ Run with ngspice from `sim/` (see [Running Simulations](#running-simulations)):
 
 | Parameter | Simulated | Notes |
 |---|---|---|
-| V_BOOST steady-state | 67.97 V | target 68.2 V, DZ1-clamped |
-| HV_FILT DC | 67.30 V | Sim models a 100 MΩ load to GND, giving a 0.67 V drop across R_HV. The real circuit has no DC load on HV_FILT (R_GBIAS1 feeds the capsule and C8), so it settles at V_BOOST, about 0.7 V higher. Small next to DZ1's ±5% tolerance |
-| HV_FILT ripple | ~47 nV p-p calc | RC at 100 kHz: −109 dB; LC ref sim: 10 µV p-p |
+| V_BOOST steady-state | 68.67 V | ideal 24 V and 15 V supplies; DZ1 (75 V) does not conduct. With the real `V_OSC` supply: 65.0 / 68.7 / 71.3 V at the low / nominal / high corners (`pump_real_vosc.sp`) |
+| HV_FILT DC | 67.99 V | Sim models a 100 MΩ load to GND, giving a 0.68 V drop across R_HV. The real circuit has no DC load on HV_FILT (R_GBIAS1 feeds the capsule and C8), so it settles at V_BOOST, about 0.7 V higher. Small next to the spread of V_BOOST |
+| HV_FILT ripple | ~47 nV p-p calc | RC at 100 kHz: −109 dB. The transient run cannot resolve it (HV_FILT ripple reads 0 once the slow rise of V_BOOST is taken out) |
 | RC filter corner | ~0.34 Hz | R_HV=1 MΩ × C9=470 nF; no LC resonance |
-| Capsule polarization | ~55 V | HV_FILT (67.3 V) − V_MID (12 V) at steady state |
+| Capsule polarization | ~56 V | HV_FILT (68.0 V) − V_MID (12 V) at steady state |
 
 ### HV Rail Startup (`boost_dickson.sp`)
 
 ![HV startup](img/hv_startup.png)
 
-Charge pump settles to ~68 V within ~1 ms. HV_FILT is RC-filtered (1 MΩ + 470 nF); steady-state 67.3 V (0.67 V drop across R_HV), theoretical ripple ~47 nV p-p at 100 kHz (−109 dB). The simulation also runs an LC filter reference for ripple comparison (earlier board revisions used an LC filter before switching to the simpler RC approach); LC results are printed to the terminal but not plotted.
+Charge pump settles to ~68 V within ~1 ms. HV_FILT is RC-filtered (1 MΩ + 470 nF); steady-state 68.0 V (0.68 V drop across R_HV), theoretical ripple ~47 nV p-p at 100 kHz (−109 dB). The simulation also runs an LC filter reference for ripple comparison (earlier board revisions used an LC filter before switching to the simpler RC approach); LC results are printed to the terminal but not plotted.
 
 ### AC Frequency Response (`amp_ac.sp`)
 
@@ -101,7 +101,7 @@ The figures above are simulated. [docs/measurement.md](docs/measurement.md) desc
 ### Customer-supplied (not in PCBA BOM)
 | Item | Spec | Notes |
 |---|---|---|
-| Capsule | Single-diaphragm condenser | Design delivers ~55 V polarization (HV_FILT ≈ 67.3 V − V_MID 12 V). Compatible with most standard large/small-diaphragm capsules; K47-type capsules (typically rated 40–60 V) are compatible at this voltage. |
+| Capsule | Single-diaphragm condenser | Design delivers ~56 V polarization (HV_FILT ≈ 68.0 V − V_MID 12 V). Compatible with most standard large/small-diaphragm capsules; K47-type capsules (typically rated 40–60 V) are compatible at this voltage. |
 | Transformer | **Neutrik NTE10/3** (3:1, audio) | Mouser / Newark. No other transformer is currently supported; the PCB cutout and solder pads are sized for this specific part. |
 
 ### Transformer wiring
@@ -139,7 +139,7 @@ Pad numbers run left to right as viewed from the **front** (component side). The
 
 ### Safety note — HV rail (IEC 62368-1)
 
-The internal HV rail (VBOOST ≈ 68 V DC, HV\_FILT ≈ 67.3 V DC) is generated from 48 V phantom power by the Dickson charge pump and is entirely enclosed inside the microphone housing. It is **not connected to any externally accessible connector pin, contact, or exposed surface** under normal or single-fault conditions.
+The internal HV rail (VBOOST ≈ 68 V DC, HV\_FILT ≈ 68.0 V DC; at most 75 V +5%, where DZ1 clamps) is generated from 48 V phantom power by the Dickson charge pump and is entirely enclosed inside the microphone housing. It is **not connected to any externally accessible connector pin, contact, or exposed surface** under normal or single-fault conditions.
 
 Under IEC 62368-1, a DC source in the 60–120 V range is classified as **ES2**. ES2 is permissible in a product provided that the source is not accessible to the user during normal operation; the sealed housing satisfies this requirement. The XLR output pins carry only the transformer-coupled signal and phantom supply (≤ 48 V, ES1), not the HV rail.
 

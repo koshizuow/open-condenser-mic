@@ -139,9 +139,6 @@ def plot_hv_startup():
     hvfilt = d[:, 3]
 
     hv_avg    = measures.get("hv_avg_rc", hvfilt.mean())
-    hv_max    = measures.get("hv_max_rc", float("nan"))
-    hv_min    = measures.get("hv_min_rc", float("nan"))
-    hv_ripple = hv_max - hv_min
 
     fig, ax = plt.subplots(figsize=(7, 4))
     fig.suptitle("HV Rail — Dickson Charge Pump Startup", fontsize=12, fontweight="bold")
@@ -155,7 +152,8 @@ def plot_hv_startup():
     ax.set_xlim(0, 15)
     ax.set_ylim(0, 80)
 
-    annotation = f"Steady-state: {hv_avg:.2f} V\nHV_FILT ripple: {hv_ripple*1e6:.1f} µV p-p"
+    # the ripple after the RC filter (about 47 nV by calculation) is below what the transient run resolves
+    annotation = f"Steady-state: {hv_avg:.2f} V"
     ax.text(0.98, 0.05, annotation, transform=ax.transAxes,
             ha="right", va="bottom", fontsize=9,
             bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#cccccc"))
