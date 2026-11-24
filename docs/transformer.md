@@ -120,6 +120,24 @@ Relative to 1 kHz, where the level is the same at all four (−11.90 dB re playe
   measured at the smallest level. With `K = 0.41` the whole-microphone response (#128, a different unit)
   is met within 0.9 dB rms at 20, 30, 50 and 100 Hz, against 1.7 dB with `K = 1`.
 
+**Why the inductance moves, and which value to design with.** The inductance of a winding on an iron core is
+proportional to the core's permeability, and the permeability of a magnetic alloy is not a constant: it is low at
+very small flux densities, rises as the flux grows, and collapses when the core saturates. A quiet source puts very
+little flux through the core, so the winding shows its smallest inductance; a louder one raises it, which is what the
+table above shows (the resonance falls from 25 Hz to 18 Hz as the level rises by 30 dB). Two things follow:
+
+- The value that sets the low end in use is the small-signal one. In the microphone the winding works at small
+  signals (the whole-microphone measurement agrees with the smallest level here), and the low-level inductance is
+  the lowest the winding shows short of saturation, so a low end that is acceptable with it is acceptable at every
+  level below overload. For the low-frequency response take `K = 0.41`; `K = 1` describes a source about 30 dB
+  louder.
+- An inductance that changes with the instantaneous current is itself a source of distortion, strongest where the
+  winding's reactance matters, at low frequencies, and growing with level. That is the pattern of the next section's
+  table: the third harmonic rises steeply towards 30 Hz and with level, and is some 80 dB down at 1 kHz at every
+  level. The flux for a given voltage goes as one over the turns and one over the frequency, so the tap section
+  (3.58 against 10.03 turns, 2.8 times the flux for the same drive) distorts more than the full winding in every
+  row.
+
 ## Distortion
 
 Third harmonic relative to the fundamental, 1.2 kΩ in series, into 1.2 kΩ. The second harmonic is at
