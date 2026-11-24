@@ -156,11 +156,44 @@ least 10 dB lower in every row. The path without the transformer is below −90 
 
 The 1.2 kΩ source raises these: in the microphone the op-amp drives the winding through 100 Ω.
 
+### In sound levels (an estimate)
+
+The table's four levels, taken to the sound level that puts the same voltage on the core in the microphone
+(tap wiring):
+
+| Played | −27 dBFS | −17 dBFS | −7 dBFS | −1 dBFS |
+|---|---|---|---|---|
+| Default gain (R6 = 5.6 kΩ) | 97 dB SPL | 107 dB SPL | 117 dB SPL | 123 dB SPL |
+| Hi-gain (R6 = 47 kΩ) | 81 dB SPL | 91 dB SPL | 101 dB SPL | 107 dB SPL |
+
+Reading the tap rows against these, with a straight line in decibels between two measured points:
+
+| Third harmonic | 30 Hz | 50 Hz | 100 Hz | 1 kHz |
+|---|---|---|---|---|
+| 1 % (−40 dB), default gain | about 109 dB SPL | about 119 dB SPL | above 123 dB SPL (−49 dB there) | above 123 dB SPL (−82 dB there) |
+| 1 % (−40 dB), hi-gain | about 93 dB SPL | about 103 dB SPL | above 107 dB SPL | above 107 dB SPL |
+
+So the op-amp's clipping point (about 143 dB SPL peak at default gain) is the microphone's limit only from a
+few hundred hertz up; under about 100 Hz the transformer distorts first, and at hi-gain it does so at levels
+a close source can reach (plosives, the proximity effect).
+
+How it was worked out, and how far to trust it:
+
+- 0 dBFS taken as 1.6 V rms (inferred, see Method). Of the source voltage, 0.90 reaches the core in the fixture
+  (1.2 kΩ, 527 Ω, and the 1.2 kΩ load seen through the turns) and 0.97 in the microphone (100 Ω, 527 Ω, a 1.5 kΩ
+  preamp input). The op-amp's output is 45.5 mV/Pa at default gain and 286 mV/Pa at hi-gain (a 13 mV/Pa capsule
+  times the stage's gain).
+- The fixture's source is 1.2 kΩ and the microphone's 100 Ω. The core's changing magnetising current distorts the
+  voltage across whatever is in series with it, so the microphone should distort less than these figures at the
+  same level: they are on the safe side by an amount that has not been measured.
+- The voltage scale is inferred: an error there moves every sound level by the same number of decibels.
+- One unit, and the capsule is taken at the 13 mV/Pa the simulations assume.
+
 ## Limits
 
 - One unit. The ratio of another has not been measured. The whole-microphone figures (#128) are from a
   different unit and board than the measurements here.
-- The output voltage was inferred, not measured, so the distortion table is not yet tied to sound levels.
+- The output voltage was inferred, not measured, so the sound levels given for the distortion table are an estimate.
 - On the instrument input the path itself moved between two levels 6 dB apart, slowly and at no fixed
   level or frequency, with the transformer taken out too. The cause is not known. The open-output figures
   above are from runs that were steady throughout; the microphone input showed none of it, and the
