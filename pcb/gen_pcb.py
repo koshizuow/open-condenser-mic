@@ -1297,7 +1297,8 @@ def main():
     # above SIG_PROT via at (27,25.5) copper top ~y=25.0; both at y=24.5
     fix_ref(board, "R6", x_mm=25.0, y_mm=29, angle_deg=0)
     fix_ref(board, "R7", x_mm=27.0, y_mm=29, angle_deg=0)
-    fix_ref(board, "C_DE1", x_mm=23.0, y_mm=30.9, angle_deg=0, size_mm=0.8)
+    # C_DE1: upright in the gap between U1 and the part, so that the name sits right beside it
+    fix_ref(board, "C_DE1", x_mm=22.4, y_mm=27.0, angle_deg=90, size_mm=0.8)
     # R4: angle=180 rotates silk; force horizontal and place above component
     fix_ref(board, "R4", x_mm=7.51, y_mm=39.5, angle_deg=0)
     # R3 (vertical) and C_G1 (#123): references left of the V_MID bus (x=7), where the board is empty.
