@@ -94,7 +94,7 @@ Simulated response of the circuit alone, relative to 1 kHz:
 
 A larger C_DE1 cuts more and starts lower: 330 pF at hi-gain gives −1.1 dB at 10 kHz and −3.6 dB at 16 kHz, and takes the rise at 6.3 kHz down to +0.4 dB. Leave C_DE1 out for the plain shelf. Use C0G for it: the part is in the signal path.
 
-In the plot the presence curve keeps falling above 20 kHz, to −12 dB at 100 kHz. That part is outside the audio band (shaded): a capacitor across the feedback resistor is a first-order low-pass, the usual way to limit an amplifier's bandwidth, and it falls at 6 dB per octave for as far as the plot goes. Inside the band the whole change is from +1 dB near 4 kHz to −2.3 dB at 20 kHz. The curve is the electronics alone; what comes out of the microphone is this plus the capsule's own response.
+The plot covers the audio band. Above it the baseline is flat for a long way (−3 dB at 174 kHz), while the presence build keeps falling at 6 dB per octave, to −12 dB at 100 kHz: a capacitor across the feedback resistor is a first-order low-pass, the usual way to limit an amplifier's bandwidth. The curves are the electronics alone; what comes out of the microphone is this plus the capsule's own response.
 
 `gen_bom.py` generates four BOM/CPL pairs in one run. The default build (`bom.csv` / `cpl.csv`, R6=5.6 kΩ, R_PRES1/C_PRES1/C_DE1 DNP) is packaged in the `fabrication-outputs` CI artifact. The three variant pairs (`-hi-gain`, `-presence`, `-hi-gain-presence`) are packaged in the `bom-variants` artifact.
 
