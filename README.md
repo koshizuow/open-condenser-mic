@@ -66,23 +66,39 @@ Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) 
 > The measured row is from another transformer and board than the one the values were taken from. `K = 0.41` assumes C_DC at its nominal 4.7 µF; only the product of the inductance and C_DC was measured in the network.
 >
 > The measured row is on a board with the presence network, which lowers the band below 1 kHz by about 0.4 dB against 1 kHz. On the full winding the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
- The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
+ The **orange curve** shows the optional presence build: a broad rise of about 1 dB centred near 4 kHz, back to the 1 kHz level at 10 kHz and −2.3 dB at 20 kHz. The dotted orange curve is the same network without C_DE1, as on boards up to v3.7.
 
-#### Optional presence-peak network (R_PRES1, C_PRES1)
+#### Optional presence network (R_PRES1, C_PRES1, C_DE1)
 
-R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, parallel with R3 (2.2 kΩ), are footprinted on the board but **DNP by default**. If the capsule you use has a relatively flat frequency response and you'd like to add some presence lift, populate these two parts. The corner frequency and boost level can be tuned by adjusting their values:
+Three parts are footprinted on the board but **DNP by default**. They are meant for a large-diaphragm capsule with a flat response: with them the microphone comes closer to the response of a classic large-diaphragm microphone, a gentle rise through the presence region and a falling top, which suits vocals.
 
-- **Corner frequency**: f_c = 1 / (2π × R_PRES1 × C_PRES1) ≈ 2.1 kHz at the default values
-- **HF shelf**: set by R_PRES1 ∥ R3; default +2.6 dB
+- R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, across the gain resistor R3: the rise, from about 2 kHz (1 / (2π × R_PRES1 × C_PRES1) ≈ 2.1 kHz).
+- C_DE1 across the feedback resistor R6: the fall at the top. Its value goes with R6, for the same corner (1 / (2π × R6 × C_DE1) ≈ 15.5 kHz) with either gain. Use C0G: the part is in the signal path.
 
-`gen_bom.py` generates four BOM/CPL pairs in one run. The default build (`bom.csv` / `cpl.csv`, R6=5.6 kΩ, R_PRES1/C_PRES1 DNP) is packaged in the `fabrication-outputs` CI artifact. The three variant pairs (`-hi-gain`, `-presence`, `-hi-gain-presence`) are packaged in the `bom-variants` artifact.
+| R6 | C_DE1 |
+|---|---|
+| 5.6 kΩ (default gain) | 1.8 nF C0G |
+| 47 kΩ (hi-gain) | 220 pF C0G |
+
+Simulated response of the circuit alone, relative to 1 kHz:
+
+| | 2 kHz | 4 kHz | 6.3 kHz | 8 kHz | 10 kHz | 12.5 kHz | 16 kHz | 20 kHz |
+|---|---|---|---|---|---|---|---|---|
+| hi-gain | +0.7 | +1.2 | +1.1 | +0.8 | +0.3 | −0.4 | −1.4 | −2.6 dB |
+| default gain | +0.6 | +1.0 | +0.8 | +0.6 | +0.1 | −0.4 | −1.3 | −2.3 dB |
+
+Without C_DE1, as on boards up to v3.7, the rise stays up as a shelf to beyond 20 kHz (+1.9 dB at hi-gain, +1.5 dB at default gain).
+
+The earlier presence network was a plain shelf. With a capsule whose response stays up late at the top, it tended to give too much gain above 10 kHz, and a shelf is too simple a way to add presence in any case, so it was changed to the present version.
+
+`gen_bom.py` generates four BOM/CPL pairs in one run. The default build (`bom.csv` / `cpl.csv`, R6=5.6 kΩ, R_PRES1/C_PRES1/C_DE1 DNP) is packaged in the `fabrication-outputs` CI artifact. The three variant pairs (`-hi-gain`, `-presence`, `-hi-gain-presence`) are packaged in the `bom-variants` artifact.
 
 | File suffix | R6 | Presence network | Notes |
 |---|---|---|---|
 | *(none)* | 5.6 kΩ | DNP | Default — more headroom, flat response |
 | `-hi-gain` | 47 kΩ | DNP | Higher output level, transformer coloring |
-| `-presence` | 5.6 kΩ | populated | Flat gain + +2.6 dB shelf above 2.1 kHz |
-| `-hi-gain-presence` | 47 kΩ | populated | High-gain + presence lift |
+| `-presence` | 5.6 kΩ | populated, C_DE1 1.8 nF | Default gain + presence lift |
+| `-hi-gain-presence` | 47 kΩ | populated, C_DE1 220 pF | High-gain + presence lift |
 
 ### Input-Referred Noise Spectrum (`amp_noise_opa1641.sp`)
 

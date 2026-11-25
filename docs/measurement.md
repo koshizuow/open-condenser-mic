@@ -10,7 +10,8 @@ with data. Neither needs an oscilloscope.
 
 Written for a board at default gain (R6 = 5.6 kΩ). For a hi-gain board
 (R6 = 47 kΩ) pass `--hi-gain` to both scripts. Tell `analyze.py` about the
-other options too: `--presence` with R_PRES1 and C_PRES1 fitted,
+other options too: `--presence` with R_PRES1, C_PRES1 and C_DE1 fitted (add
+`--no-cde` for a presence board without C_DE1, as up to v3.7),
 `--full-winding` with the transformer on its full winding. A board up to v3.6
 needs `--no-cg` (no C_G1, #123) and `--rfi-ohms 100` (100 Ω RFI resistors; 47 Ω
 since #113).
