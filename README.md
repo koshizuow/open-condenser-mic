@@ -66,18 +66,14 @@ Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) 
 > The measured row is from another transformer and board than the one the values were taken from. `K = 0.41` assumes C_DC at its nominal 4.7 µF; only the product of the inductance and C_DC was measured in the network.
 >
 > The measured row is on a board with the presence network, which lowers the band below 1 kHz by about 0.4 dB against 1 kHz. On the full winding the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
- The **orange curve** shows the optional presence build: a broad rise of about 1 dB centred near 4 kHz, back to the 1 kHz level at 10 kHz and −2.3 dB at 20 kHz. The dotted orange curve is the same network without C_DE1, as on boards up to v3.7: a shelf that stays up.
+ The **orange curve** shows the optional presence build: a broad rise of about 1 dB centred near 4 kHz, back to the 1 kHz level at 10 kHz and −2.3 dB at 20 kHz. The dotted orange curve is the same network without C_DE1, as on boards up to v3.7.
 
 #### Optional presence network (R_PRES1, C_PRES1, C_DE1)
 
-Three parts are footprinted on the board but **DNP by default**. Fit them if the capsule you use is fairly flat through the midrange and you'd like some presence lift.
+Three parts are footprinted on the board but **DNP by default**. They are meant for a large-diaphragm capsule with a flat response: with them the microphone comes closer to the response of a classic large-diaphragm microphone, a gentle rise through the presence region and a falling top, which suits vocals.
 
-R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, across the gain resistor R3 (2.2 kΩ), raise the gain above about 2 kHz:
-
-- **Corner frequency**: f_c = 1 / (2π × R_PRES1 × C_PRES1) ≈ 2.1 kHz at the default values
-- **HF shelf**: set by R_PRES1 ∥ R3; +2.6 dB at hi-gain, +2.0 dB at default gain
-
-C_DE1, across the feedback resistor R6, brings that shelf back down at the top of the band, so that the lift is a broad rise in the presence region and not a raised top octave. Large-diaphragm capsules often rise by themselves above 8 kHz, and a shelf on top of that makes the top end too bright. Its value goes with R6, for a corner 1 / (2π × R6 × C_DE1) near 15.5 kHz with either:
+- R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, across the gain resistor R3: the rise, from about 2 kHz (1 / (2π × R_PRES1 × C_PRES1) ≈ 2.1 kHz).
+- C_DE1 across the feedback resistor R6: the fall at the top. Its value goes with R6, for the same corner (1 / (2π × R6 × C_DE1) ≈ 15.5 kHz) with either gain. Use C0G: the part is in the signal path.
 
 | R6 | C_DE1 |
 |---|---|
@@ -88,13 +84,10 @@ Simulated response of the circuit alone, relative to 1 kHz:
 
 | | 2 kHz | 4 kHz | 6.3 kHz | 8 kHz | 10 kHz | 12.5 kHz | 16 kHz | 20 kHz |
 |---|---|---|---|---|---|---|---|---|
-| R_PRES1 + C_PRES1 only, hi-gain | +0.8 | +1.5 | +1.8 | +1.8 | +1.9 | +1.9 | +1.9 | +1.9 dB |
-| with C_DE1, hi-gain | +0.7 | +1.2 | +1.1 | +0.8 | +0.3 | −0.4 | −1.4 | −2.6 dB |
-| with C_DE1, default gain | +0.6 | +1.0 | +0.8 | +0.6 | +0.1 | −0.4 | −1.3 | −2.3 dB |
+| hi-gain | +0.7 | +1.2 | +1.1 | +0.8 | +0.3 | −0.4 | −1.4 | −2.6 dB |
+| default gain | +0.6 | +1.0 | +0.8 | +0.6 | +0.1 | −0.4 | −1.3 | −2.3 dB |
 
-A larger C_DE1 cuts more and starts lower: 330 pF at hi-gain gives −1.1 dB at 10 kHz and −3.6 dB at 16 kHz, and takes the rise at 6.3 kHz down to +0.4 dB. Leave C_DE1 out for the plain shelf. Use C0G for it: the part is in the signal path.
-
-The plot covers the audio band. Above it the baseline is flat for a long way (−3 dB at 174 kHz), while the presence build keeps falling at 6 dB per octave, to −12 dB at 100 kHz: a capacitor across the feedback resistor is a first-order low-pass, the usual way to limit an amplifier's bandwidth. The curves are the electronics alone; what comes out of the microphone is this plus the capsule's own response.
+Without C_DE1, as on boards up to v3.7, the rise stays up as a shelf to beyond 20 kHz (+1.9 dB at hi-gain, +1.5 dB at default gain).
 
 `gen_bom.py` generates four BOM/CPL pairs in one run. The default build (`bom.csv` / `cpl.csv`, R6=5.6 kΩ, R_PRES1/C_PRES1/C_DE1 DNP) is packaged in the `fabrication-outputs` CI artifact. The three variant pairs (`-hi-gain`, `-presence`, `-hi-gain-presence`) are packaged in the `bom-variants` artifact.
 

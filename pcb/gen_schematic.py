@@ -703,7 +703,7 @@ elements += component("Device:R", "R6", "5.6k",
     pins={"1": "~SIG_OUT", "2": "VINV"})
 
 # C_DE1: across R6, fitted with the presence network (DNP otherwise). It turns the presence shelf into a broad
-# rise that comes back down above about 5 kHz, for a capsule whose own response rises at the top (the default one).
+# rise with a falling top: with a flat large-diaphragm capsule, closer to a classic large-diaphragm microphone.
 # The value goes with R6: 1.8n with 5.6k, 220p with 47k (gen_bom.py), both a corner near 15.5 kHz.
 elements += component("Device:C", "C_DE1", "1.8n 50V C0G",
     99, 52,
