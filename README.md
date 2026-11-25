@@ -66,23 +66,42 @@ Behavioral model, gain normalized to 1 kHz. The **blue curve** (baseline / DNP) 
 > The measured row is from another transformer and board than the one the values were taken from. `K = 0.41` assumes C_DC at its nominal 4.7 µF; only the product of the inductance and C_DC was measured in the network.
 >
 > The measured row is on a board with the presence network, which lowers the band below 1 kHz by about 0.4 dB against 1 kHz. On the full winding the measured response is −3 dB at 33 Hz and −5 dB at 20 Hz, set by the input network.
- The **orange curve** shows the optional presence-peak network populated: +2.6 dB shelving above f_c ≈ 2.1 kHz.
+ The **orange curve** shows the optional presence build: a broad rise of about 1 dB centred near 4 kHz, back to the 1 kHz level at 10 kHz and −2.3 dB at 20 kHz. The dotted orange curve is the same network without C_DE1, as on boards up to v3.7: a shelf that stays up.
 
-#### Optional presence-peak network (R_PRES1, C_PRES1)
+#### Optional presence network (R_PRES1, C_PRES1, C_DE1)
 
-R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, parallel with R3 (2.2 kΩ), are footprinted on the board but **DNP by default**. If the capsule you use has a relatively flat frequency response and you'd like to add some presence lift, populate these two parts. The corner frequency and boost level can be tuned by adjusting their values:
+Three parts are footprinted on the board but **DNP by default**. Fit them if the capsule you use is fairly flat through the midrange and you'd like some presence lift.
+
+R_PRES1 (6.2 kΩ) and C_PRES1 (12 nF) in series, across the gain resistor R3 (2.2 kΩ), raise the gain above about 2 kHz:
 
 - **Corner frequency**: f_c = 1 / (2π × R_PRES1 × C_PRES1) ≈ 2.1 kHz at the default values
-- **HF shelf**: set by R_PRES1 ∥ R3; default +2.6 dB
+- **HF shelf**: set by R_PRES1 ∥ R3; +2.6 dB at hi-gain, +2.0 dB at default gain
 
-`gen_bom.py` generates four BOM/CPL pairs in one run. The default build (`bom.csv` / `cpl.csv`, R6=5.6 kΩ, R_PRES1/C_PRES1 DNP) is packaged in the `fabrication-outputs` CI artifact. The three variant pairs (`-hi-gain`, `-presence`, `-hi-gain-presence`) are packaged in the `bom-variants` artifact.
+C_DE1, across the feedback resistor R6, brings that shelf back down at the top of the band, so that the lift is a broad rise in the presence region and not a raised top octave. Large-diaphragm capsules often rise by themselves above 8 kHz, and a shelf on top of that makes the top end too bright. Its value goes with R6, for a corner 1 / (2π × R6 × C_DE1) near 15.5 kHz with either:
+
+| R6 | C_DE1 |
+|---|---|
+| 5.6 kΩ (default gain) | 1.8 nF C0G |
+| 47 kΩ (hi-gain) | 220 pF C0G |
+
+Simulated response of the circuit alone, relative to 1 kHz:
+
+| | 2 kHz | 4 kHz | 6.3 kHz | 8 kHz | 10 kHz | 12.5 kHz | 16 kHz | 20 kHz |
+|---|---|---|---|---|---|---|---|---|
+| R_PRES1 + C_PRES1 only, hi-gain | +0.8 | +1.5 | +1.8 | +1.8 | +1.9 | +1.9 | +1.9 | +1.9 dB |
+| with C_DE1, hi-gain | +0.7 | +1.2 | +1.1 | +0.8 | +0.3 | −0.4 | −1.4 | −2.6 dB |
+| with C_DE1, default gain | +0.6 | +1.0 | +0.8 | +0.6 | +0.1 | −0.4 | −1.3 | −2.3 dB |
+
+A larger C_DE1 cuts more and starts lower: 330 pF at hi-gain gives −1.1 dB at 10 kHz and −3.6 dB at 16 kHz, and takes the rise at 6.3 kHz down to +0.4 dB. Leave C_DE1 out for the plain shelf. Use C0G for it: the part is in the signal path.
+
+`gen_bom.py` generates four BOM/CPL pairs in one run. The default build (`bom.csv` / `cpl.csv`, R6=5.6 kΩ, R_PRES1/C_PRES1/C_DE1 DNP) is packaged in the `fabrication-outputs` CI artifact. The three variant pairs (`-hi-gain`, `-presence`, `-hi-gain-presence`) are packaged in the `bom-variants` artifact.
 
 | File suffix | R6 | Presence network | Notes |
 |---|---|---|---|
 | *(none)* | 5.6 kΩ | DNP | Default — more headroom, flat response |
 | `-hi-gain` | 47 kΩ | DNP | Higher output level, transformer coloring |
-| `-presence` | 5.6 kΩ | populated | Flat gain + +2.6 dB shelf above 2.1 kHz |
-| `-hi-gain-presence` | 47 kΩ | populated | High-gain + presence lift |
+| `-presence` | 5.6 kΩ | populated, C_DE1 1.8 nF | Default gain + presence lift |
+| `-hi-gain-presence` | 47 kΩ | populated, C_DE1 220 pF | High-gain + presence lift |
 
 ### Input-Referred Noise Spectrum (`amp_noise_opa1641.sp`)
 

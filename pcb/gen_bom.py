@@ -6,7 +6,7 @@ Usage:
 
 Flags:
     --hi-gain    Use R6=47k (high-gain variant); default R6=5.6k
-    --presence   Populate R_PRES1/C_PRES1 presence-peak network; default DNP
+    --presence   Populate R_PRES1/C_PRES1 presence-peak network and C_DE1 (its top roll-off); default DNP
 
 Output suffix is derived from active flags:
     (none)            → bom.csv / cpl.csv
@@ -32,13 +32,16 @@ def _parse_args():
     p.add_argument("--hi-gain", action="store_true",
                    help="Use R6=47k instead of 5.6k")
     p.add_argument("--presence", action="store_true",
-                   help="Populate R_PRES1/C_PRES1 presence-peak network")
+                   help="Populate R_PRES1/C_PRES1 presence-peak network and C_DE1")
     return p.parse_args()
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 R6_DEFAULT = {"val": "5.6k",  "lcsc": "C25908"}
 R6_HI_GAIN = {"val": "47k",   "lcsc": "C25792"}
+# C_DE1 goes with R6 (same corner, about 15.5 kHz with either pair); fitted only with the presence network
+C_DE_DEFAULT = {"val": "1.8n 50V C0G", "lcsc": "C385028"}
+C_DE_HI_GAIN = {"val": "220p 50V C0G", "lcsc": "C71693"}
 
 # ── DNP: skip footprint library prefixes (test points, mounting holes) ───────
 DNP_LIB_PREFIXES = (
@@ -85,6 +88,8 @@ LCSC = {
     ("100n 50V X7R",  "C_0402_1005Metric"):        "C131394",   # YAGEO CC0402KRX7R9BB104 ±10% 50V — C2/C3 on V_OPA (up to 24.6V), same margin reasoning as C5/C6 in #54 (#100). Not C60474: that is the 16V CC0402KRX7R7BB104
     ("100n 63V X7R",  "C_0402_1005Metric"):        "C162178",   # GRM155R62A104KE14D muRata 100V X5R
     ("100p C0G",      "C_0402_1005Metric"):        "C445763",
+    ("1.8n 50V C0G",  "C_0402_1005Metric"):        "C385028",   # muRata GRM1555C1H182JA01D ±5% — C_DE1 with R6 5.6k (presence builds); Extended, 21.6k JLCPCB stock 2026-11-25
+    ("220p 50V C0G",  "C_0402_1005Metric"):        "C71693",    # muRata GRM1555C1H221JA01D ±5% — C_DE1 with R6 47k (presence builds); Extended, 1.2M JLCPCB stock 2026-11-25
     ("220p 100V C0G", "C_0603_1608Metric"):        "C327164",   # YAGEO CC0603JRNPO0BN221 220pF 100V NP0 ±5%; C_RFI1/2 (#113): phantom-fed pins need > 52V. Extended, 864 in stock 2026-11-11   # TDK C1005C0G1H101JT000F 100pF 50V C0G; C1554 maps to 20pF in JLCPCB
 
     # Standard capacitors (0603/0805/1206)
@@ -147,9 +152,12 @@ def _bom_note(val, lcsc):
     return "LCSC# needed"
 
 
-def write_variant(board, suffix, r6_val, r6_lcsc, presence):
+def write_variant(board, suffix, r6_val, r6_lcsc, presence, c_de=None):
     """Write bom{suffix}.csv and cpl{suffix}.csv for one build variant."""
-    dnp_refs = set() if presence else {"R_PRES1", "C_PRES1"}
+    dnp_refs = set() if presence else {"R_PRES1", "C_PRES1", "C_DE1"}
+    swap = {"R6": (r6_val, r6_lcsc)}                 # parts whose value depends on the variant
+    if c_de:
+        swap["C_DE1"] = (c_de["val"], c_de["lcsc"])
 
     components = []
     dnp_components = []
@@ -163,10 +171,10 @@ def write_variant(board, suffix, r6_val, r6_lcsc, presence):
         if fp.GetAttributes() & pcbnew.FP_THROUGH_HOLE:
             continue
 
-        val   = r6_val if ref == "R6" else fp.GetValue()
+        val   = swap[ref][0] if ref in swap else fp.GetValue()
         fp_nm = normalise_fp(fp_id)
         pos   = fp.GetPosition()
-        lcsc  = r6_lcsc if ref == "R6" else LCSC.get((val, fp_nm), "")
+        lcsc  = swap[ref][1] if ref in swap else LCSC.get((val, fp_nm), "")
 
         record = {
             "ref":   ref,
@@ -246,7 +254,8 @@ def main():
 
     board = pcbnew.LoadBoard(PCB)
     print(f"Generating BOM/CPL from {os.path.basename(PCB)}:")
-    write_variant(board, suffix, r6["val"], r6["lcsc"], _args.presence)
+    write_variant(board, suffix, r6["val"], r6["lcsc"], _args.presence,
+                  C_DE_HI_GAIN if _args.hi_gain else C_DE_DEFAULT)
 
 
 if __name__ == "__main__":

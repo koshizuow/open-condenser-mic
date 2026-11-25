@@ -550,6 +550,13 @@ def route_all(board):
           (19.975, 27.635),
           (27.0,   27.635),
           (27.0,   27.51 ))
+    # C_DE1: pad2 down to the SIG_OUT track under it; pad1 across to R6.pad1 (VINV)
+    route(board, "SIG_OUT", F, SIG,
+          (23.8, 27.51),
+          (23.8, 27.635))
+    route(board, "VINV", F, SIG,
+          (23.8, 26.49),
+          (25.0, 26.49))
     route(board, "SIG_OUT", F, SIG,
           (25.0, 27.635),
           (25.0, 27.51 ))
@@ -957,6 +964,12 @@ def main():
           "R6", "5.6k", 25, 27, -90,
           {"1": "VINV", "2": "SIG_OUT"})
 
+    # C_DE1: across R6, beside it on the left (DNP unless the presence network is fitted).
+    # Same angle as R6: pad1(VINV) at (23.8,26.49), pad2(SIG_OUT) at (23.8,27.51), which the SIG_OUT track passes.
+    place(board, "Capacitor_SMD", "C_0402_1005Metric",
+          "C_DE1", "1.8n 50V C0G", 23.8, 27, -90,
+          {"1": "VINV", "2": "SIG_OUT"})
+
     # R7: SIG_OUT -> SIG_PROT  (100R output series protection)
     place(board, "Resistor_SMD", "R_0402_1005Metric",
           "R7", "100R", 27, 27, 90,
@@ -1284,6 +1297,7 @@ def main():
     # above SIG_PROT via at (27,25.5) copper top ~y=25.0; both at y=24.5
     fix_ref(board, "R6", x_mm=25.0, y_mm=29, angle_deg=0)
     fix_ref(board, "R7", x_mm=27.0, y_mm=29, angle_deg=0)
+    fix_ref(board, "C_DE1", x_mm=23.0, y_mm=30.9, angle_deg=0, size_mm=0.8)
     # R4: angle=180 rotates silk; force horizontal and place above component
     fix_ref(board, "R4", x_mm=7.51, y_mm=39.5, angle_deg=0)
     # R3 (vertical) and C_G1 (#123): references left of the V_MID bus (x=7), where the board is empty.

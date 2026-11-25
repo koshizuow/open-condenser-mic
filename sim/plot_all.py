@@ -198,12 +198,17 @@ def plot_noise_spectrum():
     print(f"Written: {out}")
 
 
-# Presence peak: Rs (6.2k) + C (12nF) in series, parallel with R4 (gain resistor = R3 in schematic)
-# Corner f = 1/(2π × 6.2k × 12n) ≈ 2.1 kHz; HF boost = +2.6 dB (R3‖Rs = 2.2k‖6.2k = 1.61k)
+# Presence network: R_PRES1 (6.2k) + C_PRES1 (12n) in series, across the gain resistor (R4 here, R3 in the schematic):
+# a shelf of +2.6 dB above 1/(2π × 6.2k × 12n) ≈ 2.1 kHz. With it comes C_DE1 across the feedback resistor (R7 here,
+# R6 in the schematic; 1.8n with 5.6k), which brings the shelf back down above about 5 kHz.
 PRESENCE_PEAK_LINES = """\
-* Presence-peak network (R_PRES1 + C_PRES1, in series, parallel with R4)
-R_PRES1  NET_VBIAS  RS_MID  6.2k
-C_PRES1  RS_MID  PIN2_NODE  12n
+* Presence network (R_PRES1 + C_PRES1 in series, parallel with R4)
+R_PRES1  NET_VBIAS  RS_MID  {R_PRES}
+C_PRES1  RS_MID  PIN2_NODE  {C_PRES}
+"""
+C_DE_LINE = """\
+* C_DE1 across the feedback resistor
+C_DE1  NET_OPA_OUT  PIN2_NODE  {C_DE_default}
 """
 
 
@@ -234,6 +239,10 @@ def _run_ac(content_modifier=None):
 def plot_freq_response():
     freq_base, db_base = _run_ac()
     freq_peak, db_peak = _run_ac(
+        lambda s: s.replace('\n.control', '\n' + PRESENCE_PEAK_LINES + C_DE_LINE + '\n.control', 1)
+    )
+    # a presence board without C_DE1 (up to v3.7): the shelf stays up
+    freq_shelf, db_shelf = _run_ac(
         lambda s: s.replace('\n.control', '\n' + PRESENCE_PEAK_LINES + '\n.control', 1)
     )
 
@@ -245,9 +254,12 @@ def plot_freq_response():
     fig, ax = plt.subplots(figsize=(7, 4))
     mask_peak = (freq_peak >= 20) & (freq_peak <= 200000)
     ax.semilogx(freq_base[mask], db_base[mask], color=C1, lw=1.5,
-                label="Baseline (R_PRES1/C_PRES1 DNP)")
+                label="Baseline (presence parts DNP)")
     ax.semilogx(freq_peak[mask_peak], db_peak[mask_peak], color=C2, lw=1.5,
-                label="With presence peak (Rs=6.2k, C=12nF, f_c≈2.1 kHz)")
+                label="Presence build (R_PRES1, C_PRES1, C_DE1)")
+    mask_shelf = (freq_shelf >= 20) & (freq_shelf <= 200000)
+    ax.semilogx(freq_shelf[mask_shelf], db_shelf[mask_shelf], color=C2, lw=1.0, ls=":",
+                label="Presence without C_DE1 (boards up to v3.7)")
     mask_quiet = (freq_quiet >= 20) & (freq_quiet <= 200000)
     ax.semilogx(freq_quiet[mask_quiet], db_quiet[mask_quiet], color=C1, lw=1.2, ls="--",
                 label="Baseline, quiet source (transformer inductance at a small level)")

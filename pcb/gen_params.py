@@ -14,6 +14,10 @@ PARAMS = {
     "R3":           "2.2k",   # gain resistor (R3 in schematic)
     "R6_default":   "5.6k",   # feedback resistor, default BOM
     "R6_hi_gain":   "47k",    # feedback resistor, hi-gain BOM variant
+    "R_PRES":       "6.2k",   # R_PRES1: presence network, in series with C_PRES1, across R3 + C_G1 (DNP by default)
+    "C_PRES":       "12n",    # C_PRES1
+    "C_DE_default": "1.8n",   # C_DE1 across R6 with the presence network, default BOM (R6 5.6k)
+    "C_DE_hi_gain": "220p",   # C_DE1, hi-gain BOM variant (R6 47k)
     "C_G":          "10u",    # C_G1: in series with R3, so the DC gain is 1 (#123)
     "R_MID":        "470k",   # R4, R5: V_MID divider, each
     "C_MID":        "20u",    # C4 + C5: V_MID bypass

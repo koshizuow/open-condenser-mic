@@ -702,6 +702,20 @@ elements += component("Device:R", "R6", "5.6k",
     footprint="Resistor_SMD:R_0402_1005Metric",
     pins={"1": "~SIG_OUT", "2": "VINV"})
 
+# C_DE1: across R6, fitted with the presence network (DNP otherwise). It turns the presence shelf into a broad
+# rise that comes back down above about 5 kHz, for a capsule whose own response rises at the top (the default one).
+# The value goes with R6: 1.8n with 5.6k, 220p with 47k (gen_bom.py), both a corner near 15.5 kHz.
+elements += component("Device:C", "C_DE1", "1.8n 50V C0G",
+    99, 52,
+    footprint="Capacitor_SMD:C_0402_1005Metric",
+    pins={"1": "~SIG_OUT", "2": "~VINV"},
+    ref_at=(-17, -2.54), val_at=(-17, 1.27))   # text on the left; R6 is on the right
+# left of R6, in parallel: pin1 stub_end (99,45.65) and pin2 stub_end (99,58.35) run right to R6's two stub ends
+elements.append(wire(99, 45.65, 107, 45.65))
+elements.append(junction(107, 45.65))
+elements.append(wire(99, 58.35, 107, 58.35))
+elements.append(junction(107, 58.35))
+
 # U1: OPA1641; GND(pin4,D)→GND sym automatically; V_OPA connected via local wire below
 elements += component("Amplifier_Operational:OPA1641", "U1", "OPA1641",
     122, 67,
