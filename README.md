@@ -89,12 +89,7 @@ Simulated response of the circuit alone, relative to 1 kHz:
 
 Without C_DE1, as on boards up to v3.7, the rise stays up as a shelf to beyond 20 kHz (+1.9 dB at hi-gain, +1.5 dB at default gain).
 
-Notes from building these, for what they are worth:
-
-- Low-cost capsules tend to have a rise at the top of the band that the vendor's response plot does not show. We suspect a backplate design that leaves it untreated, and a measurement setup at the vendor that cannot detect it.
-- The earlier presence network was a plain shelf. With such capsules it led to too much gain above 10 kHz, and a shelf is too simple a way to add presence in any case, so it was changed to the present version.
-
-This is experience from a DIY setting, not laboratory measurement data. Take it as a hint only.
+The earlier presence network was a plain shelf. With a capsule whose response stays up late at the top, it tended to give too much gain above 10 kHz, and a shelf is too simple a way to add presence in any case, so it was changed to the present version.
 
 `gen_bom.py` generates four BOM/CPL pairs in one run. The default build (`bom.csv` / `cpl.csv`, R6=5.6 kΩ, R_PRES1/C_PRES1/C_DE1 DNP) is packaged in the `fabrication-outputs` CI artifact. The three variant pairs (`-hi-gain`, `-presence`, `-hi-gain-presence`) are packaged in the `bom-variants` artifact.
 
