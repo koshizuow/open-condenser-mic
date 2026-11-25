@@ -251,24 +251,27 @@ def plot_freq_response():
 
     mask = (freq_base >= 20) & (freq_base <= 200000)
 
-    fig, ax = plt.subplots(figsize=(7, 4))
+    fig, ax = plt.subplots(figsize=(7, 5.4))
     mask_peak = (freq_peak >= 20) & (freq_peak <= 200000)
     ax.semilogx(freq_base[mask], db_base[mask], color=C1, lw=1.5,
                 label="Baseline (presence parts DNP)")
     ax.semilogx(freq_peak[mask_peak], db_peak[mask_peak], color=C2, lw=1.5,
-                label="Presence build (R_PRES1, C_PRES1, C_DE1)")
+                label="Presence build (R_PRES1, C_PRES1, C_DE1): +1 dB near 4 kHz, −2.3 dB at 20 kHz")
     mask_shelf = (freq_shelf >= 20) & (freq_shelf <= 200000)
     ax.semilogx(freq_shelf[mask_shelf], db_shelf[mask_shelf], color=C2, lw=1.0, ls=":",
-                label="Presence without C_DE1 (boards up to v3.7)")
+                label="Presence without C_DE1 (boards up to v3.7): a shelf")
     mask_quiet = (freq_quiet >= 20) & (freq_quiet <= 200000)
     ax.semilogx(freq_quiet[mask_quiet], db_quiet[mask_quiet], color=C1, lw=1.2, ls="--",
                 label="Baseline, quiet source (transformer inductance at a small level)")
     ax.axhline(-3, color="#aaaaaa", lw=0.8, ls="--", label="−3 dB")
-    ax.axvline(20000, color="#cccccc", lw=0.8, ls=":", label="20 kHz")
+    # above 20 kHz is out of band: shaded, so that the presence build's roll-off up there (one capacitor across
+    # the feedback resistor, 6 dB per octave) does not read as a loss of treble
+    ax.axvspan(20000, 200000, color="#e9e9e9", zorder=0)
+    ax.text(63000, 4.6, "above the audio band", ha="center", fontsize=8.5, color="#666666")
     ax.set_xlabel("Frequency (Hz)")
     ax.set_ylabel("Gain (dB, normalized to 1 kHz)")
     ax.set_title("AC Frequency Response — XLR Differential Output", fontweight="bold")
-    ax.legend(fontsize=9)
+    ax.legend(fontsize=8.5, loc="upper center", bbox_to_anchor=(0.5, -0.2), frameon=False)   # below: no curve hidden
     ax.set_xlim(20, 200000)
     # a fixed scale: left to fit the data, the axis spanned 6 dB and made the 1.5 dB presence peak look large
     ax.set_ylim(-12, 6)
